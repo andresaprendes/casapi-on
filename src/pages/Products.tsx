@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import { motion } from 'framer-motion'
-import { Search, Filter, Grid, List } from 'lucide-react'
+import { Search, Grid, List } from 'lucide-react'
 import ProductCard from '../components/ProductCard'
 import { products, categories } from '../data/mockData'
 

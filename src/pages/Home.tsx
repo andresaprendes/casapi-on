@@ -1,7 +1,7 @@
 import { Helmet } from 'react-helmet-async'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Star, ArrowRight, Shield, Truck, Clock, Award } from 'lucide-react'
+import { ArrowRight, Shield, Truck, Clock, Award } from 'lucide-react'
 import HeroSection from '../components/HeroSection'
 import ProductCard from '../components/ProductCard'
 import TestimonialCard from '../components/TestimonialCard'

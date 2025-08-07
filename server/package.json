@@ -1,0 +1,35 @@
+{
+  "name": "casa-pinon-bold-payment-api",
+  "version": "1.0.0",
+  "description": "Backend API for Bold payment integration - Casa Piñón Ebanistería",
+  "main": "bold-payment-api.js",
+  "scripts": {
+    "start": "node bold-payment-api.js",
+    "dev": "nodemon bold-payment-api.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "bold",
+    "payment",
+    "api",
+    "colombia",
+    "ebanisteria",
+    "furniture"
+  ],
+  "author": "Casa Piñón Ebanistería",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "mercadopago": "^2.8.0",
+    "node-fetch": "^3.3.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
+
