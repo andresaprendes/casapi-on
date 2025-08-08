@@ -13,6 +13,10 @@ app.use(express.json());
 const MERCADOPAGO_ACCESS_TOKEN = process.env.MERCADOPAGO_ACCESS_TOKEN || 'TEST-12345678-1234-1234-1234-123456789012';
 const client = new MercadoPagoConfig({ accessToken: MERCADOPAGO_ACCESS_TOKEN });
 
+// Environment variables for URLs
+const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
+const API_URL = process.env.API_URL || 'http://localhost:3001';
+
 // 1. Create payment preference
 app.post('/api/mercadopago/create-preference', async (req, res) => {
   try {
@@ -47,11 +51,11 @@ app.post('/api/mercadopago/create-preference', async (req, res) => {
         email: customerEmail
       },
       external_reference: orderId,
-      notification_url: 'http://localhost:3001/api/mercadopago/webhook',
+      notification_url: `${API_URL}/api/mercadopago/webhook`,
       back_urls: {
-        success: 'http://localhost:3000/checkout/success',
-        failure: 'http://localhost:3000/checkout?step=payment',
-        pending: 'http://localhost:3000/checkout?step=payment'
+        success: `${BASE_URL}/checkout/success`,
+        failure: `${BASE_URL}/checkout?step=payment`,
+        pending: `${BASE_URL}/checkout?step=payment`
       },
       auto_return: 'approved',
       payment_methods: {
