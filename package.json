@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",
-    "@mercadopago/sdk-react": "^1.0.3",
+    "@mercadopago/sdk-react": "^1.0.4",
     "framer-motion": "^10.16.4",
     "lucide-react": "^0.292.0",
     "mercadopago": "^2.8.0",

@@ -1,13 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { CreditCard, Building2, DollarSign, Lock, ArrowLeft, CheckCircle, Loader2 } from 'lucide-react'
+import { CreditCard, Building2, DollarSign, Lock, ArrowLeft, Loader2 } from 'lucide-react'
 import { initMercadoPago, Wallet } from '@mercadopago/sdk-react'
 
 const MercadoPagoPayment = () => {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
-  const [paymentSuccess, setPaymentSuccess] = useState(false)
   const [preferenceId, setPreferenceId] = useState<string | null>(null)
 
   // Get parameters from URL
@@ -75,16 +73,9 @@ const MercadoPagoPayment = () => {
     }
   }
 
-  const handleSuccess = () => {
-    setPaymentSuccess(true)
-    setTimeout(() => {
-      if (returnUrl) {
-        window.location.href = returnUrl
-      } else {
-        navigate('/checkout/success')
-      }
-    }, 3000)
-  }
+
+
+
 
   return (
     <div className="min-h-screen bg-cream-50 py-8 px-4">
@@ -156,17 +147,12 @@ const MercadoPagoPayment = () => {
               <Wallet 
                 initialization={{ preferenceId }}
                 customization={{ 
-                  visual: {
+                  customStyle: {
                     buttonBackground: 'default',
                     borderRadius: '6px'
                   }
                 }}
-                onReady={() => console.log('MercadoPago Wallet ready')}
-                onSubmit={async () => {
-                  handleSuccess();
-                  return Promise.resolve();
-                }}
-                onError={(error) => console.error('MercadoPago error:', error)}
+                locale="es-CO"
               />
               
               <div className="text-center text-sm text-gray-600">
@@ -200,28 +186,7 @@ const MercadoPagoPayment = () => {
         </div>
       </div>
 
-      {/* Success Modal */}
-      {paymentSuccess && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-        >
-          <div className="bg-white rounded-lg p-8 text-center max-w-md mx-4">
-            <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-brown-900 mb-2">
-              ¡Pago Exitoso!
-            </h2>
-            <p className="text-brown-700 mb-4">
-              Tu pago ha sido procesado correctamente. 
-              Te redirigiremos en unos segundos...
-            </p>
-            <div className="flex justify-center">
-              <Loader2 className="w-6 h-6 text-brown-600 animate-spin" />
-            </div>
-          </div>
-        </motion.div>
-      )}
+
     </div>
   )
 }
