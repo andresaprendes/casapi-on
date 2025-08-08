@@ -186,3 +186,4 @@ Una vez completada la configuración, Casa Piñón podrá:
 
 **¡MercadoPago es la solución más completa y confiable para pagos en Colombia!**
 
+
