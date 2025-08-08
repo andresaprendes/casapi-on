@@ -474,12 +474,14 @@ const Checkout = () => {
                     />
                   )}
 
-                  {paymentInfo?.method === 'bold' && customerInfo && (
-                    <BoldPayment
+                  {paymentInfo?.method === 'mercadopago' && customerInfo && (
+                    <MercadoPagoPayment
                       amount={total}
                       orderId={`CP-${Date.now()}`}
-                      onSuccess={handleBoldSuccess}
-                      onError={handleBoldError}
+                      customerEmail={customerInfo.email}
+                      customerName={`${customerInfo.firstName} ${customerInfo.lastName}`}
+                      onSuccess={handleMercadoPagoSuccess}
+                      onError={handleMercadoPagoError}
                     />
                   )}
 
@@ -510,7 +512,7 @@ const Checkout = () => {
                     </div>
                   )}
 
-                  {paymentInfo?.method !== 'epayco' && paymentInfo?.method !== 'bold' && (
+                  {paymentInfo?.method !== 'epayco' && paymentInfo?.method !== 'mercadopago' && (
                     <button
                       onClick={() => handlePaymentSubmit(paymentInfo!)}
                       disabled={!paymentInfo?.method}

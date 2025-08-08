@@ -7,7 +7,6 @@ import { initMercadoPago, Wallet } from '@mercadopago/sdk-react'
 const MercadoPagoPayment = () => {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
-  const [isProcessing, setIsProcessing] = useState(false)
   const [paymentSuccess, setPaymentSuccess] = useState(false)
   const [preferenceId, setPreferenceId] = useState<string | null>(null)
 
@@ -28,7 +27,7 @@ const MercadoPagoPayment = () => {
 
   useEffect(() => {
     // Initialize MercadoPago SDK
-    initMercadoPago(process.env.REACT_APP_MERCADOPAGO_PUBLIC_KEY || 'TEST-12345678-1234-1234-1234-123456789012')
+    initMercadoPago(import.meta.env.VITE_MERCADOPAGO_PUBLIC_KEY || 'TEST-12345678-1234-1234-1234-123456789012')
     
     // Create preference when component mounts
     createPreference()
@@ -156,9 +155,17 @@ const MercadoPagoPayment = () => {
             <div className="space-y-4">
               <Wallet 
                 initialization={{ preferenceId }}
-                customization={{ texts: { valueProp: 'smart_option' } }}
+                customization={{ 
+                  visual: {
+                    buttonBackground: 'default',
+                    borderRadius: '6px'
+                  }
+                }}
                 onReady={() => console.log('MercadoPago Wallet ready')}
-                onSubmit={handleSuccess}
+                onSubmit={async () => {
+                  handleSuccess();
+                  return Promise.resolve();
+                }}
                 onError={(error) => console.error('MercadoPago error:', error)}
               />
               

@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { motion } from 'framer-motion'
 import { CreditCard, Building2, DollarSign, Lock, CheckCircle, AlertCircle } from 'lucide-react'
 
 interface MercadoPagoPaymentProps {
@@ -60,7 +59,7 @@ const MercadoPagoPayment = ({
         setPreferenceId(result.preferenceId)
         
         // Initialize MercadoPago checkout
-        const mp = new (window as any).Mercadopago(process.env.REACT_APP_MERCADOPAGO_PUBLIC_KEY || 'TEST-12345678-1234-1234-1234-123456789012')
+        const mp = new (window as any).Mercadopago(import.meta.env.VITE_MERCADOPAGO_PUBLIC_KEY || 'TEST-12345678-1234-1234-1234-123456789012')
         
         mp.checkout({
           preference: {
