@@ -1,15 +1,15 @@
 {
-  "name": "casa-pinon-bold-payment-api",
+  "name": "casa-pinon-mercadopago-api",
   "version": "1.0.0",
-  "description": "Backend API for Bold payment integration - Casa Piñón Ebanistería",
-  "main": "bold-payment-api.js",
+  "description": "Backend API for MercadoPago payment integration - Casa Piñón Ebanistería",
+  "main": "mercadopago-api.js",
   "scripts": {
-    "start": "node bold-payment-api.js",
-    "dev": "nodemon bold-payment-api.js",
+    "start": "node mercadopago-api.js",
+    "dev": "nodemon mercadopago-api.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
-    "bold",
+    "mercadopago",
     "payment",
     "api",
     "colombia",
