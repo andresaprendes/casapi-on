@@ -10,6 +10,7 @@ app.use(cors({
   origin: [
     'http://localhost:3000',
     'https://casapi-on-production.up.railway.app',
+    'https://casa-pinon-backend-production.up.railway.app',
     'https://*.railway.app'
   ],
   credentials: true,
