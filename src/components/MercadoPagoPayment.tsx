@@ -22,7 +22,6 @@ const MercadoPagoPayment = ({
   const [isProcessing, setIsProcessing] = useState(false)
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle')
   const [errorMessage, setErrorMessage] = useState('')
-  const [preferenceId, setPreferenceId] = useState<string>('')
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('es-CO', {
@@ -61,8 +60,6 @@ const MercadoPagoPayment = ({
       const result = await response.json()
 
       if (result.success && result.preferenceId) {
-        setPreferenceId(result.preferenceId)
-        
         // Redirect to MercadoPago checkout page
         if (result.initPoint) {
           window.location.href = result.initPoint;
