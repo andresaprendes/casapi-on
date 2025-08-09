@@ -62,28 +62,19 @@ const MercadoPagoPayment = ({
       if (result.success && result.preferenceId) {
         setPreferenceId(result.preferenceId)
         
-        // Initialize MercadoPago checkout
-        const mp = new (window as any).Mercadopago(import.meta.env.VITE_MERCADOPAGO_PUBLIC_KEY || 'TEST-12345678-1234-1234-1234-123456789012')
-        
-        mp.checkout({
-          preference: {
-            id: result.preferenceId
-          },
-          render: {
-            container: '.mercadopago-checkout',
-            label: 'Pagar con MercadoPago'
-          },
-          theme: {
-            elementsColor: '#8B4513',
-            headerColor: '#8B4513'
-          }
-        })
+        // Redirect directly to MercadoPago checkout
+        if (result.initPoint) {
+          window.location.href = result.initPoint;
+        } else {
+          // Fallback URL construction
+          window.location.href = `https://www.mercadopago.com.co/checkout/v1/redirect?pref_id=${result.preferenceId}`;
+        }
 
         setPaymentStatus('success')
         onSuccess({
           preferenceId: result.preferenceId,
           amount: amount,
-          status: 'preference_created'
+          status: 'redirecting_to_payment'
         })
       } else {
         throw new Error(result.error || 'Error al crear la preferencia de pago')
@@ -197,12 +188,7 @@ const MercadoPagoPayment = ({
           )}
         </button>
 
-        {/* MercadoPago Checkout Container */}
-        {preferenceId && (
-          <div className="mercadopago-checkout">
-            {/* MercadoPago will render the checkout button here */}
-          </div>
-        )}
+        {/* MercadoPago will redirect automatically when payment is initiated */}
       </div>
 
       {/* Status Messages */}
