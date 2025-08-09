@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Menu, X, ShoppingCart, Phone, Mail } from 'lucide-react'
+import { Menu, X, ShoppingCart, Phone, Mail, Settings, LogOut } from 'lucide-react'
 import { useCart } from '../store/CartContext'
+import { useAuth } from '../store/AuthContext'
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const { toggleCart, getTotalItems } = useCart()
+  const { isAuthenticated, logout } = useAuth()
 
   const navigation = [
     { name: 'Inicio', href: '/' },
@@ -31,8 +33,39 @@ const Header = () => {
                 <span>casapinon3@gmail.com</span>
               </div>
             </div>
-            <div className="hidden md:block">
-              <span>Lunes a Sábado: 8:00 AM - 5:30 PM</span>
+            <div className="flex items-center space-x-4">
+              <div className="hidden md:block">
+                <span>Lunes a Sábado: 8:00 AM - 5:30 PM</span>
+              </div>
+              {isAuthenticated ? (
+                <div className="flex items-center space-x-3">
+                  <Link
+                    to="/admin/pedidos"
+                    className="flex items-center space-x-1 hover:text-cream-200 transition-colors duration-200"
+                    title="Gestión de Pedidos"
+                  >
+                    <Settings className="w-4 h-4" />
+                    <span className="hidden sm:inline">Admin</span>
+                  </Link>
+                  <button
+                    onClick={logout}
+                    className="flex items-center space-x-1 hover:text-cream-200 transition-colors duration-200"
+                    title="Cerrar Sesión"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span className="hidden md:inline">Salir</span>
+                  </button>
+                </div>
+              ) : (
+                <Link
+                  to="/admin/login"
+                  className="flex items-center space-x-1 hover:text-cream-200 transition-colors duration-200"
+                  title="Acceso Administrativo"
+                >
+                  <Settings className="w-4 h-4" />
+                  <span className="hidden sm:inline">Admin</span>
+                </Link>
+              )}
             </div>
           </div>
         </div>
@@ -155,6 +188,41 @@ const Header = () => {
                     {item.name}
                   </Link>
                 ))}
+                
+                {/* Admin section for mobile */}
+                <div className="border-t border-gray-200 pt-4 mt-6">
+                  {isAuthenticated ? (
+                    <div className="space-y-3">
+                      <Link
+                        to="/admin/pedidos"
+                        className="flex items-center space-x-2 text-brown-600 hover:text-brown-800 transition-colors duration-200 font-medium"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        <Settings className="w-5 h-5" />
+                        <span>Gestión de Pedidos</span>
+                      </Link>
+                      <button
+                        onClick={() => {
+                          logout()
+                          setIsMenuOpen(false)
+                        }}
+                        className="flex items-center space-x-2 text-red-600 hover:text-red-800 transition-colors duration-200 font-medium w-full text-left"
+                      >
+                        <LogOut className="w-5 h-5" />
+                        <span>Cerrar Sesión</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <Link
+                      to="/admin/login"
+                      className="flex items-center space-x-2 text-brown-600 hover:text-brown-800 transition-colors duration-200 font-medium"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <Settings className="w-5 h-5" />
+                      <span>Acceso Admin</span>
+                    </Link>
+                  )}
+                </div>
               </nav>
             </div>
           </motion.div>

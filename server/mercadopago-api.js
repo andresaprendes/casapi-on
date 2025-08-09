@@ -33,8 +33,77 @@ const MERCADOPAGO_ACCESS_TOKEN = process.env.MERCADOPAGO_ACCESS_TOKEN || 'TEST-1
 const WEBHOOK_SECRET = process.env.MERCADOPAGO_WEBHOOK_SECRET || 'your-webhook-secret';
 console.log('Initializing MercadoPago with token:', MERCADOPAGO_ACCESS_TOKEN ? MERCADOPAGO_ACCESS_TOKEN.substring(0, 15) + '...' : 'NONE');
 
-// In-memory payment storage (in production, use a real database)
+// In-memory storage (in production, use a real database)
 const paymentDatabase = new Map();
+const orderDatabase = new Map();
+
+// Order utility functions
+function generateOrderNumber() {
+  const timestamp = Date.now().toString(36);
+  const random = Math.random().toString(36).substr(2, 5);
+  return `CP-${timestamp}-${random}`.toUpperCase();
+}
+
+function calculateEstimatedDelivery(shippingZone) {
+  const baseDate = new Date();
+  let daysToAdd = 7; // Default 7 days
+  
+  switch (shippingZone) {
+    case 'Medellín':
+      daysToAdd = 3;
+      break;
+    case 'Oriente Antioqueño':
+      daysToAdd = 5;
+      break;
+    case 'Resto de Antioquia':
+      daysToAdd = 7;
+      break;
+    default:
+      daysToAdd = 10;
+  }
+  
+  baseDate.setDate(baseDate.getDate() + daysToAdd);
+  return baseDate.toISOString();
+}
+
+function updateOrderPaymentStatus(orderReference, paymentStatus, paymentId) {
+  try {
+    // Find order by external reference (order number)
+    let targetOrder = null;
+    for (const [orderId, order] of orderDatabase.entries()) {
+      if (order.orderNumber === orderReference || order.id === orderReference) {
+        targetOrder = { id: orderId, ...order };
+        break;
+      }
+    }
+    
+    if (targetOrder) {
+      const updatedOrder = {
+        ...targetOrder,
+        paymentStatus: paymentStatus,
+        paymentId: paymentId,
+        updatedAt: new Date().toISOString()
+      };
+      
+      // If payment is approved, also update order status to confirmed
+      if (paymentStatus === 'paid' && targetOrder.status === 'pending') {
+        updatedOrder.status = 'confirmed';
+      }
+      
+      orderDatabase.set(targetOrder.id, updatedOrder);
+      console.log('✅ Order payment status updated:', {
+        orderId: targetOrder.id,
+        orderNumber: orderReference,
+        paymentStatus: paymentStatus,
+        paymentId: paymentId
+      });
+    } else {
+      console.log('⚠️ Order not found for payment update:', orderReference);
+    }
+  } catch (error) {
+    console.error('Error updating order payment status:', error);
+  }
+}
 
 const client = new MercadoPagoConfig({ 
   accessToken: MERCADOPAGO_ACCESS_TOKEN,
@@ -317,7 +386,7 @@ app.post('/api/mercadopago/webhook', express.json(), async (req, res) => {
         paymentDatabase.set(paymentId.toString(), paymentRecord);
         console.log('✅ Payment stored in database:', paymentId);
         
-        // Log important payment events
+        // Log important payment events and update order status
         if (payment.status === 'approved') {
           console.log('🎉 PAYMENT APPROVED:', {
             orderId: payment.external_reference,
@@ -325,12 +394,23 @@ app.post('/api/mercadopago/webhook', express.json(), async (req, res) => {
             paymentId: payment.id,
             email: payment.payer?.email
           });
+          
+          // Update order payment status if external_reference exists
+          if (payment.external_reference) {
+            updateOrderPaymentStatus(payment.external_reference, 'paid', payment.id);
+          }
+          
         } else if (payment.status === 'rejected') {
           console.log('❌ PAYMENT REJECTED:', {
             orderId: payment.external_reference,
             paymentId: payment.id,
             reason: payment.status_detail
           });
+          
+          // Update order payment status if external_reference exists
+          if (payment.external_reference) {
+            updateOrderPaymentStatus(payment.external_reference, 'failed', payment.id);
+          }
         }
         
       } catch (verificationError) {
@@ -375,6 +455,228 @@ app.get('/api/mercadopago/test', (req, res) => {
     message: 'MercadoPago API is working',
     timestamp: new Date().toISOString()
   });
+});
+
+// 6. Order Management Endpoints
+
+// Create a new order
+app.post('/api/orders', express.json(), (req, res) => {
+  try {
+    const { customer, items, subtotal, shipping, tax, total, shippingZone, paymentMethod, notes } = req.body;
+
+    // Validate required fields
+    if (!customer || !items || !total || !shippingZone) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: customer, items, total, shippingZone'
+      });
+    }
+
+    // Generate order
+    const orderId = generateOrderNumber();
+    const now = new Date().toISOString();
+    
+    const order = {
+      id: orderId,
+      orderNumber: orderId,
+      customer,
+      items,
+      subtotal: subtotal || 0,
+      shipping: shipping || 0,
+      tax: tax || 0,
+      total,
+      status: 'pending',
+      paymentStatus: 'pending',
+      paymentMethod: paymentMethod || 'mercadopago',
+      createdAt: now,
+      updatedAt: now,
+      estimatedDelivery: calculateEstimatedDelivery(shippingZone),
+      shippingZone,
+      notes: notes || ''
+    };
+
+    // Store order
+    orderDatabase.set(orderId, order);
+    
+    console.log('✅ Order created:', orderId);
+    
+    res.json({
+      success: true,
+      order
+    });
+  } catch (error) {
+    console.error('Order creation error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Error creating order'
+    });
+  }
+});
+
+// Get all orders with filtering and pagination
+app.get('/api/orders', (req, res) => {
+  try {
+    const { 
+      status, 
+      paymentStatus, 
+      paymentMethod, 
+      dateFrom, 
+      dateTo, 
+      search,
+      page = 1,
+      limit = 20,
+      sortBy = 'createdAt',
+      sortOrder = 'desc'
+    } = req.query;
+
+    let orders = Array.from(orderDatabase.values());
+
+    // Apply filters
+    if (status) {
+      orders = orders.filter(order => order.status === status);
+    }
+    
+    if (paymentStatus) {
+      orders = orders.filter(order => order.paymentStatus === paymentStatus);
+    }
+    
+    if (paymentMethod) {
+      orders = orders.filter(order => order.paymentMethod === paymentMethod);
+    }
+    
+    if (dateFrom) {
+      const fromDate = new Date(dateFrom);
+      orders = orders.filter(order => new Date(order.createdAt) >= fromDate);
+    }
+    
+    if (dateTo) {
+      const toDate = new Date(dateTo);
+      orders = orders.filter(order => new Date(order.createdAt) <= toDate);
+    }
+    
+    if (search) {
+      const searchLower = search.toLowerCase();
+      orders = orders.filter(order => 
+        order.orderNumber.toLowerCase().includes(searchLower) ||
+        order.customer.name.toLowerCase().includes(searchLower) ||
+        order.customer.email.toLowerCase().includes(searchLower) ||
+        (order.customer.phone && order.customer.phone.includes(search))
+      );
+    }
+
+    // Sort orders
+    orders.sort((a, b) => {
+      const aValue = sortBy === 'createdAt' ? new Date(a[sortBy]) : a[sortBy];
+      const bValue = sortBy === 'createdAt' ? new Date(b[sortBy]) : b[sortBy];
+      
+      if (sortOrder === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+
+    // Pagination
+    const startIndex = (parseInt(page) - 1) * parseInt(limit);
+    const endIndex = startIndex + parseInt(limit);
+    const paginatedOrders = orders.slice(startIndex, endIndex);
+
+    // Calculate stats
+    const stats = {
+      totalOrders: orders.length,
+      totalRevenue: orders.filter(o => o.paymentStatus === 'paid').reduce((sum, o) => sum + o.total, 0),
+      pendingOrders: orders.filter(o => o.status === 'pending').length,
+      completedOrders: orders.filter(o => o.status === 'delivered').length,
+      averageOrderValue: orders.length > 0 ? orders.reduce((sum, o) => sum + o.total, 0) / orders.length : 0
+    };
+
+    res.json({
+      success: true,
+      orders: paginatedOrders,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total: orders.length,
+        pages: Math.ceil(orders.length / parseInt(limit))
+      },
+      stats
+    });
+  } catch (error) {
+    console.error('Orders fetch error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Error fetching orders'
+    });
+  }
+});
+
+// Get specific order by ID
+app.get('/api/orders/:orderId', (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const order = orderDatabase.get(orderId);
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        error: 'Order not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      order
+    });
+  } catch (error) {
+    console.error('Order fetch error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Error fetching order'
+    });
+  }
+});
+
+// Update order status
+app.put('/api/orders/:orderId', express.json(), (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const updates = req.body;
+
+    const order = orderDatabase.get(orderId);
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        error: 'Order not found'
+      });
+    }
+
+    // Update order
+    const updatedOrder = {
+      ...order,
+      ...updates,
+      updatedAt: new Date().toISOString()
+    };
+
+    // If status is being set to delivered, set actual delivery date
+    if (updates.status === 'delivered' && !order.actualDelivery) {
+      updatedOrder.actualDelivery = new Date().toISOString();
+    }
+
+    orderDatabase.set(orderId, updatedOrder);
+
+    console.log('✅ Order updated:', orderId, updates);
+
+    res.json({
+      success: true,
+      order: updatedOrder
+    });
+  } catch (error) {
+    console.error('Order update error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Error updating order'
+    });
+  }
 });
 
 const PORT = process.env.PORT || 3001;

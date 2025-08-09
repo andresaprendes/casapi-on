@@ -51,17 +51,42 @@ export interface Customer {
 
 export interface Order {
   id: string
+  orderNumber: string
   customer: Customer
   items: CartItem[]
   subtotal: number
   shipping: number
   tax: number
   total: number
-  status: 'pending' | 'confirmed' | 'in_production' | 'ready' | 'delivered'
-  paymentStatus: 'pending' | 'paid' | 'failed'
+  status: 'pending' | 'confirmed' | 'in_production' | 'ready' | 'delivered' | 'cancelled'
+  paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded'
+  paymentMethod: 'mercadopago' | 'epayco' | 'bank_transfer' | 'cash_delivery'
+  paymentId?: string
   createdAt: Date
+  updatedAt: Date
   estimatedDelivery: Date
+  actualDelivery?: Date
+  shippingZone: string
+  trackingNumber?: string
   notes?: string
+  adminNotes?: string
+}
+
+export interface OrderFilters {
+  status?: Order['status']
+  paymentStatus?: Order['paymentStatus']
+  paymentMethod?: Order['paymentMethod']
+  dateFrom?: Date
+  dateTo?: Date
+  search?: string
+}
+
+export interface OrderStats {
+  totalOrders: number
+  totalRevenue: number
+  pendingOrders: number
+  completedOrders: number
+  averageOrderValue: number
 }
 
 export interface ShippingZone {

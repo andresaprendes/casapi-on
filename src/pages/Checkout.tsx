@@ -85,9 +85,76 @@ const Checkout = () => {
     // Handle error - could show a toast or error message
   }
 
-  const processOrder = () => {
-    const newOrderNumber = `CP-${Date.now()}`
-    setOrderNumber(newOrderNumber)
+  const processOrder = async () => {
+    if (!customerInfo || !items.length) {
+      console.error('Missing customer info or items for order creation')
+      return
+    }
+
+    try {
+      // Create order in database
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+      
+      const orderData = {
+        customer: {
+          name: `${customerInfo.firstName} ${customerInfo.lastName}`,
+          email: customerInfo.email,
+          phone: customerInfo.phone,
+          address: {
+            street: customerInfo.address,
+            city: customerInfo.city,
+            state: customerInfo.state,
+            zipCode: customerInfo.zipCode || '',
+            country: 'Colombia'
+          }
+        },
+        items: items.map(item => ({
+          product: {
+            id: item.product.id,
+            name: item.product.name,
+            price: item.product.price
+          },
+          quantity: item.quantity,
+          customizations: item.customizations
+        })),
+        subtotal,
+        shipping,
+        tax,
+        total,
+        shippingZone: customerInfo.shippingZone,
+        paymentMethod: paymentInfo?.method || 'unknown',
+        notes: customerInfo.notes || ''
+      }
+
+      console.log('Creating order:', orderData)
+      
+      const response = await fetch(`${apiUrl}/api/orders`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData)
+      })
+
+      const result = await response.json()
+      
+      if (result.success && result.order) {
+        setOrderNumber(result.order.orderNumber)
+        console.log('✅ Order created successfully:', result.order.orderNumber)
+      } else {
+        // Fallback to local order number if API fails
+        const fallbackOrderNumber = `CP-${Date.now()}`
+        setOrderNumber(fallbackOrderNumber)
+        console.error('Failed to create order in database, using fallback:', fallbackOrderNumber)
+      }
+      
+    } catch (error) {
+      console.error('Error creating order:', error)
+      // Fallback to local order number
+      const fallbackOrderNumber = `CP-${Date.now()}`
+      setOrderNumber(fallbackOrderNumber)
+    }
+    
     clearCart()
   }
 

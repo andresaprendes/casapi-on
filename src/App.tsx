@@ -12,12 +12,17 @@ import CheckoutSuccess from './pages/CheckoutSuccess'
 import MercadoPagoPayment from './pages/MercadoPagoPayment'
 import About from './pages/About'
 import Contact from './pages/Contact'
+import Orders from './pages/Orders'
+import AdminLogin from './pages/AdminLogin'
+import ProtectedRoute from './components/ProtectedRoute'
 import { CartProvider } from './store/CartContext'
+import { AuthProvider } from './store/AuthContext'
 
 function App() {
   return (
-    <CartProvider>
-      <div className="min-h-screen flex flex-col">
+    <AuthProvider>
+      <CartProvider>
+        <div className="min-h-screen flex flex-col">
         <Helmet>
           <title>Casa Piñón Ebanistería - Muebles de Madera Fina en Medellín y Oriente Antioqueño</title>
           <meta name="description" content="Casa Piñón Ebanistería: Muebles de madera real, puertas, ventanas y piezas personalizadas en Medellín, Rionegro, El Retiro y Oriente Antioqueño. Carpintería fina con precisión artesanal." />
@@ -38,12 +43,19 @@ function App() {
                    <Route path="/mercadopago-payment" element={<MercadoPagoPayment />} />
                    <Route path="/nosotros" element={<About />} />
                    <Route path="/contacto" element={<Contact />} />
+                   <Route path="/admin/login" element={<AdminLogin />} />
+                   <Route path="/admin/pedidos" element={
+                     <ProtectedRoute>
+                       <Orders />
+                     </ProtectedRoute>
+                   } />
           </Routes>
         </main>
         
         <Footer />
-      </div>
-    </CartProvider>
+        </div>
+      </CartProvider>
+    </AuthProvider>
   )
 }
 
