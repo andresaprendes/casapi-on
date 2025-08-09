@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { CreditCard, Building2, DollarSign, Lock, ArrowLeft, Loader2 } from 'lucide-react'
-import { initMercadoPago, Wallet } from '@mercadopago/sdk-react'
+// Removed MercadoPago SDK import - using direct redirect approach
 
 const MercadoPagoPayment = () => {
   const [searchParams] = useSearchParams()
@@ -24,10 +24,7 @@ const MercadoPagoPayment = () => {
   }
 
   useEffect(() => {
-    // Initialize MercadoPago SDK
-    initMercadoPago(import.meta.env.VITE_MERCADOPAGO_PUBLIC_KEY || 'TEST-12345678-1234-1234-1234-123456789012')
-    
-    // Create preference when component mounts
+    // Create preference when component mounts and redirect to MercadoPago
     createPreference()
   }, [])
 
@@ -61,8 +58,16 @@ const MercadoPagoPayment = () => {
       })
 
       const data = await response.json()
-      if (data.preferenceId) {
+      if (data.success && data.preferenceId) {
         setPreferenceId(data.preferenceId)
+        
+        // Redirect directly to MercadoPago checkout
+        if (data.initPoint) {
+          window.location.href = data.initPoint;
+        } else {
+          // Fallback URL construction
+          window.location.href = `https://www.mercadopago.com.co/checkout/v1/redirect?pref_id=${data.preferenceId}`;
+        }
       }
     } catch (error) {
       console.error('Error creating preference:', error)
@@ -145,20 +150,13 @@ const MercadoPagoPayment = () => {
             </div>
           </div>
 
-          {/* MercadoPago Wallet */}
+          {/* MercadoPago Direct Redirect */}
           {preferenceId ? (
-            <div className="space-y-4">
-              <Wallet 
-                initialization={{ preferenceId }}
-                customization={{ 
-                  customStyle: {
-                    buttonBackground: 'default',
-                    borderRadius: '6px'
-                  }
-                }}
-                locale="es-CO"
-              />
-              
+            <div className="text-center py-8">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CreditCard className="w-8 h-8 text-green-600" />
+              </div>
+              <p className="text-brown-700 mb-4">Redirigiendo a MercadoPago...</p>
               <div className="text-center text-sm text-gray-600">
                 <Lock className="w-4 h-4 inline mr-1" />
                 Tus datos están protegidos con encriptación SSL

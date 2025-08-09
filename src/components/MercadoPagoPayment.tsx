@@ -62,7 +62,7 @@ const MercadoPagoPayment = ({
       if (result.success && result.preferenceId) {
         setPreferenceId(result.preferenceId)
         
-        // Redirect directly to MercadoPago checkout
+        // Redirect to MercadoPago checkout page
         if (result.initPoint) {
           window.location.href = result.initPoint;
         } else {
@@ -74,7 +74,7 @@ const MercadoPagoPayment = ({
         onSuccess({
           preferenceId: result.preferenceId,
           amount: amount,
-          status: 'redirecting_to_payment'
+          status: 'redirecting_to_mercadopago'
         })
       } else {
         throw new Error(result.error || 'Error al crear la preferencia de pago')
