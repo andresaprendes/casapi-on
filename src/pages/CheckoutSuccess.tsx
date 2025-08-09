@@ -23,7 +23,6 @@ const CheckoutSuccess: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   const paymentId = searchParams.get('payment_id');
-  const status = searchParams.get('status');
   const externalReference = searchParams.get('external_reference');
 
   useEffect(() => {
