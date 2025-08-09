@@ -26,8 +26,7 @@ console.log('Initializing MercadoPago with token:', MERCADOPAGO_ACCESS_TOKEN ? M
 const client = new MercadoPagoConfig({ 
   accessToken: MERCADOPAGO_ACCESS_TOKEN,
   options: {
-    timeout: 5000,
-    idempotencyKey: 'casa-pinon-' + Date.now()
+    timeout: 10000
   }
 });
 
@@ -54,21 +53,28 @@ app.post('/api/mercadopago/create-preference', async (req, res) => {
       });
     }
 
-    // Create preference - simplified for testing
+    // Create preference for MercadoPago Colombia production
     const preference = {
       items: [
         {
           title: description || `Orden ${orderId} - Casa Piñón Ebanistería`,
           unit_price: Number(amount),
-          quantity: 1
+          quantity: 1,
+          currency_id: 'COP'
         }
       ],
+      payer: {
+        email: customerEmail
+      },
       external_reference: orderId,
       back_urls: {
         success: `${BASE_URL}/checkout/success`,
         failure: `${BASE_URL}/checkout`,
         pending: `${BASE_URL}/checkout`
-      }
+      },
+      auto_return: 'approved',
+      expires: false,
+      marketplace_fee: 0
     };
 
     console.log('Creating MercadoPago preference:', {
@@ -81,6 +87,16 @@ app.post('/api/mercadopago/create-preference', async (req, res) => {
 
     console.log('MercadoPago Access Token:', MERCADOPAGO_ACCESS_TOKEN ? 'SET' : 'NOT SET');
     console.log('Token starts with:', MERCADOPAGO_ACCESS_TOKEN ? MERCADOPAGO_ACCESS_TOKEN.substring(0, 10) + '...' : 'N/A');
+
+    // Test token validity first
+    try {
+      const paymentMethodClient = new PaymentMethod(client);
+      const testMethods = await paymentMethodClient.list();
+      console.log('Token validation successful - can access payment methods');
+    } catch (tokenError) {
+      console.error('Token validation failed:', tokenError.message);
+      throw new Error(`Invalid MercadoPago credentials: ${tokenError.message}`);
+    }
 
     console.log('Preference object:', JSON.stringify(preference, null, 2));
 
