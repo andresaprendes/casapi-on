@@ -68,9 +68,9 @@ app.post('/api/mercadopago/create-preference', async (req, res) => {
       },
       external_reference: orderId,
       back_urls: {
-        success: `${BASE_URL}/checkout/success`,
-        failure: `${BASE_URL}/checkout`,
-        pending: `${BASE_URL}/checkout`
+        success: `${BASE_URL}/checkout/success?payment_id={payment_id}&status={status}&external_reference={external_reference}`,
+        failure: `${BASE_URL}/checkout?payment_status=failure&external_reference={external_reference}`,
+        pending: `${BASE_URL}/checkout?payment_status=pending&external_reference={external_reference}`
       },
       auto_return: 'approved',
       expires: false,
@@ -160,26 +160,77 @@ app.post('/api/mercadopago/create-preference', async (req, res) => {
   }
 });
 
-// 2. Get payment status
+// 2. Get payment status and verify payment
 app.get('/api/mercadopago/payment-status/:paymentId', async (req, res) => {
   try {
     const { paymentId } = req.params;
 
     const paymentClient = new Payment(client);
-    const payment = await paymentClient.get({ paymentId });
+    const payment = await paymentClient.get({ id: paymentId });
+
+    console.log('Payment verification for ID:', paymentId);
+    console.log('Payment status:', payment.status);
+    console.log('Payment details:', {
+      id: payment.id,
+      status: payment.status,
+      status_detail: payment.status_detail,
+      external_reference: payment.external_reference,
+      transaction_amount: payment.transaction_amount,
+      currency_id: payment.currency_id,
+      payment_method_id: payment.payment_method_id,
+      date_created: payment.date_created,
+      date_approved: payment.date_approved
+    });
+
+    const isApproved = payment.status === 'approved';
+    const isPending = payment.status === 'pending';
+    const isRejected = payment.status === 'rejected' || payment.status === 'cancelled';
 
     res.json({
       success: true,
-      payment: payment
+      payment: {
+        id: payment.id,
+        status: payment.status,
+        status_detail: payment.status_detail,
+        external_reference: payment.external_reference,
+        transaction_amount: payment.transaction_amount,
+        currency_id: payment.currency_id,
+        payment_method_id: payment.payment_method_id,
+        date_created: payment.date_created,
+        date_approved: payment.date_approved,
+        payer_email: payment.payer?.email,
+        payment_type_id: payment.payment_type_id
+      },
+      verification: {
+        is_approved: isApproved,
+        is_pending: isPending,
+        is_rejected: isRejected,
+        message: getPaymentStatusMessage(payment.status, payment.status_detail)
+      }
     });
   } catch (error) {
     console.error('MercadoPago payment status error:', error);
     res.status(500).json({
       success: false,
-      error: error.message
+      error: error.message || 'Error retrieving payment status'
     });
   }
 });
+
+// Helper function to get user-friendly payment status messages
+function getPaymentStatusMessage(status, statusDetail) {
+  const messages = {
+    'approved': 'Pago aprobado exitosamente',
+    'pending': 'Pago pendiente de procesamiento',
+    'in_process': 'Pago en proceso de revisión',
+    'rejected': 'Pago rechazado',
+    'cancelled': 'Pago cancelado',
+    'refunded': 'Pago reembolsado',
+    'charged_back': 'Pago revertido'
+  };
+
+  return messages[status] || `Estado del pago: ${status} (${statusDetail})`;
+}
 
 // 3. Webhook for payment notifications
 app.post('/api/mercadopago/webhook', async (req, res) => {
