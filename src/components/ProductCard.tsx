@@ -33,12 +33,28 @@ const ProductCard = ({ product }: ProductCardProps) => {
     >
       {/* Product Image */}
       <div className="relative aspect-square bg-cream-100 rounded-lg overflow-hidden mb-4">
-        <div className="w-full h-full bg-gradient-to-br from-brown-100 to-brown-200 flex items-center justify-center">
+        {product.images && product.images.length > 0 ? (
+          <img
+            src={product.images[0]}
+            alt={product.name}
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            onError={(e) => {
+              // Fallback to placeholder if image fails to load
+              const target = e.target as HTMLImageElement;
+              target.style.display = 'none';
+              const placeholder = target.nextElementSibling as HTMLElement;
+              if (placeholder) placeholder.style.display = 'flex';
+            }}
+          />
+        ) : null}
+        
+        {/* Fallback placeholder */}
+        <div className="w-full h-full bg-gradient-to-br from-brown-100 to-brown-200 flex items-center justify-center" style={{ display: product.images && product.images.length > 0 ? 'none' : 'flex' }}>
           <div className="text-center">
             <div className="w-16 h-16 bg-brown-800 rounded-full flex items-center justify-center mx-auto mb-3">
               <span className="text-cream-50 font-serif font-bold text-lg">CP</span>
             </div>
-            <p className="text-brown-600 text-sm">Imagen del producto</p>
+            <p className="text-brown-600 text-sm">Imagen próximamente</p>
           </div>
         </div>
         
