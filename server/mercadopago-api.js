@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const crypto = require('crypto');
 const { MercadoPagoConfig, Preference, Payment, PaymentMethod } = require('mercadopago');
 require('dotenv').config();
 
@@ -21,7 +22,11 @@ app.use(express.json());
 
 // MercadoPago Configuration
 const MERCADOPAGO_ACCESS_TOKEN = process.env.MERCADOPAGO_ACCESS_TOKEN || 'TEST-12345678-1234-1234-1234-123456789012';
+const WEBHOOK_SECRET = process.env.MERCADOPAGO_WEBHOOK_SECRET || 'your-webhook-secret';
 console.log('Initializing MercadoPago with token:', MERCADOPAGO_ACCESS_TOKEN ? MERCADOPAGO_ACCESS_TOKEN.substring(0, 15) + '...' : 'NONE');
+
+// In-memory payment storage (in production, use a real database)
+const paymentDatabase = new Map();
 
 const client = new MercadoPagoConfig({ 
   accessToken: MERCADOPAGO_ACCESS_TOKEN,
@@ -72,6 +77,7 @@ app.post('/api/mercadopago/create-preference', async (req, res) => {
         failure: `${BASE_URL}/checkout?payment_status=failure&external_reference={external_reference}`,
         pending: `${BASE_URL}/checkout?payment_status=pending&external_reference={external_reference}`
       },
+      notification_url: `${API_URL}/api/mercadopago/webhook`,
       auto_return: 'approved',
       expires: false,
       marketplace_fee: 0
@@ -160,17 +166,49 @@ app.post('/api/mercadopago/create-preference', async (req, res) => {
   }
 });
 
-// 2. Get payment status and verify payment
+// 2. Get payment status and verify payment (secure dual verification)
 app.get('/api/mercadopago/payment-status/:paymentId', async (req, res) => {
   try {
     const { paymentId } = req.params;
 
+    console.log('Payment verification requested for ID:', paymentId);
+
+    // First check our database (webhook verified payments)
+    const storedPayment = paymentDatabase.get(paymentId.toString());
+    if (storedPayment && storedPayment.webhook_verified) {
+      console.log('✅ Payment found in database (webhook verified):', storedPayment.status);
+      
+      const isApproved = storedPayment.status === 'approved';
+      const isPending = storedPayment.status === 'pending';
+      const isRejected = storedPayment.status === 'rejected' || storedPayment.status === 'cancelled';
+
+      return res.json({
+        success: true,
+        payment: storedPayment,
+        verification: {
+          is_approved: isApproved,
+          is_pending: isPending,
+          is_rejected: isRejected,
+          message: getPaymentStatusMessage(storedPayment.status, storedPayment.status_detail),
+          source: 'webhook_verified'
+        }
+      });
+    }
+
+    // Fallback: Verify with MercadoPago API directly
+    console.log('⚠️ Payment not in database, verifying with MercadoPago API...');
     const paymentClient = new Payment(client);
     const payment = await paymentClient.get({ id: paymentId });
 
-    console.log('Payment verification for ID:', paymentId);
-    console.log('Payment status:', payment.status);
-    console.log('Payment details:', {
+    console.log('API Payment verification:', {
+      id: payment.id,
+      status: payment.status,
+      external_reference: payment.external_reference,
+      transaction_amount: payment.transaction_amount
+    });
+
+    // Store in database for future requests
+    const paymentRecord = {
       id: payment.id,
       status: payment.status,
       status_detail: payment.status_detail,
@@ -178,9 +216,14 @@ app.get('/api/mercadopago/payment-status/:paymentId', async (req, res) => {
       transaction_amount: payment.transaction_amount,
       currency_id: payment.currency_id,
       payment_method_id: payment.payment_method_id,
+      payer_email: payment.payer?.email,
       date_created: payment.date_created,
-      date_approved: payment.date_approved
-    });
+      date_approved: payment.date_approved,
+      last_updated: new Date().toISOString(),
+      webhook_verified: false
+    };
+    
+    paymentDatabase.set(paymentId.toString(), paymentRecord);
 
     const isApproved = payment.status === 'approved';
     const isPending = payment.status === 'pending';
@@ -188,24 +231,13 @@ app.get('/api/mercadopago/payment-status/:paymentId', async (req, res) => {
 
     res.json({
       success: true,
-      payment: {
-        id: payment.id,
-        status: payment.status,
-        status_detail: payment.status_detail,
-        external_reference: payment.external_reference,
-        transaction_amount: payment.transaction_amount,
-        currency_id: payment.currency_id,
-        payment_method_id: payment.payment_method_id,
-        date_created: payment.date_created,
-        date_approved: payment.date_approved,
-        payer_email: payment.payer?.email,
-        payment_type_id: payment.payment_type_id
-      },
+      payment: paymentRecord,
       verification: {
         is_approved: isApproved,
         is_pending: isPending,
         is_rejected: isRejected,
-        message: getPaymentStatusMessage(payment.status, payment.status_detail)
+        message: getPaymentStatusMessage(payment.status, payment.status_detail),
+        source: 'api_verified'
       }
     });
   } catch (error) {
@@ -232,36 +264,97 @@ function getPaymentStatusMessage(status, statusDetail) {
   return messages[status] || `Estado del pago: ${status} (${statusDetail})`;
 }
 
-// 3. Webhook for payment notifications
-app.post('/api/mercadopago/webhook', async (req, res) => {
+// 3. Secure webhook for payment notifications
+app.post('/api/mercadopago/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   try {
-    const { type, data } = req.body;
-
-    console.log('MercadoPago webhook received:', { type, data });
-
-    if (type === 'payment') {
-      const paymentId = data.id;
-      const paymentClient = new Payment(client);
-      const payment = await paymentClient.get({ paymentId });
+    const signature = req.headers['x-signature'];
+    const requestId = req.headers['x-request-id'];
+    
+    console.log('Webhook received with signature:', signature ? 'YES' : 'NO');
+    
+    // Verify webhook signature (if configured)
+    if (WEBHOOK_SECRET && WEBHOOK_SECRET !== 'your-webhook-secret') {
+      if (!signature) {
+        console.error('Missing webhook signature');
+        return res.status(401).send('Unauthorized: Missing signature');
+      }
       
-      console.log('Payment details:', {
-        id: payment.id,
-        status: payment.status,
-        external_reference: payment.external_reference,
-        amount: payment.transaction_amount
-      });
-
-      // Here you would typically:
-      // 1. Update your database with payment status
-      // 2. Send confirmation email to customer
-      // 3. Update inventory
-      // 4. Send notification to admin
+      const expectedSignature = crypto
+        .createHmac('sha256', WEBHOOK_SECRET)
+        .update(req.body)
+        .digest('hex');
+      
+      if (signature !== `sha256=${expectedSignature}`) {
+        console.error('Invalid webhook signature');
+        return res.status(401).send('Unauthorized: Invalid signature');
+      }
     }
 
-    res.status(200).json({ received: true });
+    const body = JSON.parse(req.body.toString());
+    const { action, api_version, data, date_created, id, live_mode, type, user_id } = body;
+    
+    console.log('Webhook payload:', { action, type, data, date_created });
+    
+    if (action === 'payment.updated' || action === 'payment.created') {
+      const paymentId = data.id;
+      console.log('Processing payment notification for ID:', paymentId);
+      
+      try {
+        // Verify payment with MercadoPago API
+        const paymentClient = new Payment(client);
+        const payment = await paymentClient.get({ id: paymentId });
+        
+        console.log('Webhook payment verification:', {
+          id: payment.id,
+          status: payment.status,
+          external_reference: payment.external_reference,
+          transaction_amount: payment.transaction_amount
+        });
+        
+        // Store payment in our database
+        const paymentRecord = {
+          id: payment.id,
+          status: payment.status,
+          status_detail: payment.status_detail,
+          external_reference: payment.external_reference,
+          transaction_amount: payment.transaction_amount,
+          currency_id: payment.currency_id,
+          payment_method_id: payment.payment_method_id,
+          payer_email: payment.payer?.email,
+          date_created: payment.date_created,
+          date_approved: payment.date_approved,
+          last_updated: new Date().toISOString(),
+          webhook_verified: true
+        };
+        
+        paymentDatabase.set(paymentId.toString(), paymentRecord);
+        console.log('Payment stored in database:', paymentId);
+        
+        // Log important payment events
+        if (payment.status === 'approved') {
+          console.log('✅ PAYMENT APPROVED:', {
+            orderId: payment.external_reference,
+            amount: payment.transaction_amount,
+            paymentId: payment.id,
+            email: payment.payer?.email
+          });
+        } else if (payment.status === 'rejected') {
+          console.log('❌ PAYMENT REJECTED:', {
+            orderId: payment.external_reference,
+            paymentId: payment.id,
+            reason: payment.status_detail
+          });
+        }
+        
+      } catch (verificationError) {
+        console.error('Error verifying payment in webhook:', verificationError);
+      }
+    }
+    
+    res.status(200).send('OK');
   } catch (error) {
-    console.error('MercadoPago webhook error:', error);
-    res.status(500).json({ error: error.message });
+    console.error('Webhook error:', error);
+    res.status(500).send('Webhook Error');
   }
 });
 
