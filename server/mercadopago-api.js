@@ -112,16 +112,16 @@ app.post('/api/mercadopago/create-preference', async (req, res) => {
     let initPoint = null;
     let sandboxInitPoint = null;
     
-    if (result && result.body && result.body.id) {
+    if (result && result.id) {
+      // Direct response structure (MercadoPago Colombia format)
+      preferenceId = result.id;
+      initPoint = result.init_point;
+      sandboxInitPoint = result.sandbox_init_point;
+    } else if (result && result.body && result.body.id) {
       // Standard response structure
       preferenceId = result.body.id;
       initPoint = result.body.init_point;
       sandboxInitPoint = result.body.sandbox_init_point;
-    } else if (result && result.id) {
-      // Direct response structure
-      preferenceId = result.id;
-      initPoint = result.init_point;
-      sandboxInitPoint = result.sandbox_init_point;
     } else if (result && result.response && result.response.id) {
       // Nested response structure
       preferenceId = result.response.id;
