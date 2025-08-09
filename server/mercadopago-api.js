@@ -51,13 +51,12 @@ app.post('/api/mercadopago/create-preference', async (req, res) => {
       items: [
         {
           title: description || `Orden ${orderId} - Casa Piñón Ebanistería`,
-          unit_price: amount,
+          unit_price: Number(amount),
           quantity: 1,
           currency_id: 'COP'
         }
       ],
       payer: {
-        name: customerName || 'Cliente Casa Piñón',
         email: customerEmail
       },
       external_reference: orderId,
@@ -86,8 +85,12 @@ app.post('/api/mercadopago/create-preference', async (req, res) => {
     console.log('MercadoPago Access Token:', MERCADOPAGO_ACCESS_TOKEN ? 'SET' : 'NOT SET');
     console.log('Token starts with:', MERCADOPAGO_ACCESS_TOKEN ? MERCADOPAGO_ACCESS_TOKEN.substring(0, 10) + '...' : 'N/A');
 
+    console.log('Preference object:', JSON.stringify(preference, null, 2));
+
     const preferenceClient = new Preference(client);
     const result = await preferenceClient.create({ body: preference });
+
+    console.log('MercadoPago API response:', JSON.stringify(result, null, 2));
 
     if (result.body && result.body.id) {
       res.json({
@@ -98,10 +101,11 @@ app.post('/api/mercadopago/create-preference', async (req, res) => {
         message: 'Preference created successfully'
       });
     } else {
-      throw new Error('Failed to create preference');
+      throw new Error('Failed to create preference - no ID returned');
     }
   } catch (error) {
     console.error('MercadoPago preference creation error:', error);
+    console.error('Error details:', error.cause || error.response || 'No additional details');
     res.status(500).json({
       success: false,
       error: error.message || 'Error creating payment preference'
