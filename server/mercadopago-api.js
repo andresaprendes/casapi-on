@@ -83,6 +83,9 @@ app.post('/api/mercadopago/create-preference', async (req, res) => {
       description
     });
 
+    console.log('MercadoPago Access Token:', MERCADOPAGO_ACCESS_TOKEN ? 'SET' : 'NOT SET');
+    console.log('Token starts with:', MERCADOPAGO_ACCESS_TOKEN ? MERCADOPAGO_ACCESS_TOKEN.substring(0, 10) + '...' : 'N/A');
+
     const preferenceClient = new Preference(client);
     const result = await preferenceClient.create({ body: preference });
 
