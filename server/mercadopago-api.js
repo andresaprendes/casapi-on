@@ -104,16 +104,41 @@ app.post('/api/mercadopago/create-preference', async (req, res) => {
     const result = await preferenceClient.create({ body: preference });
 
     console.log('MercadoPago API response:', JSON.stringify(result, null, 2));
-
-    if (result.body && result.body.id) {
+    console.log('Response body:', result.body);
+    console.log('Response keys:', Object.keys(result || {}));
+    
+    // Check different possible response structures
+    let preferenceId = null;
+    let initPoint = null;
+    let sandboxInitPoint = null;
+    
+    if (result && result.body && result.body.id) {
+      // Standard response structure
+      preferenceId = result.body.id;
+      initPoint = result.body.init_point;
+      sandboxInitPoint = result.body.sandbox_init_point;
+    } else if (result && result.id) {
+      // Direct response structure
+      preferenceId = result.id;
+      initPoint = result.init_point;
+      sandboxInitPoint = result.sandbox_init_point;
+    } else if (result && result.response && result.response.id) {
+      // Nested response structure
+      preferenceId = result.response.id;
+      initPoint = result.response.init_point;
+      sandboxInitPoint = result.response.sandbox_init_point;
+    }
+    
+    if (preferenceId) {
       res.json({
         success: true,
-        preferenceId: result.body.id,
-        initPoint: result.body.init_point,
-        sandboxInitPoint: result.body.sandbox_init_point,
+        preferenceId: preferenceId,
+        initPoint: initPoint,
+        sandboxInitPoint: sandboxInitPoint,
         message: 'Preference created successfully'
       });
     } else {
+      console.error('No preference ID found in response structure');
       throw new Error('Failed to create preference - no ID returned');
     }
   } catch (error) {
