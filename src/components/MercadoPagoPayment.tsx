@@ -18,6 +18,7 @@ const MercadoPagoPayment = ({
   onSuccess, 
   onError 
 }: MercadoPagoPaymentProps) => {
+  // Updated: Using redirect approach for reliable payment processing
   const [isProcessing, setIsProcessing] = useState(false)
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle')
   const [errorMessage, setErrorMessage] = useState('')
