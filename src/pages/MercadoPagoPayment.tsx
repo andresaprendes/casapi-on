@@ -34,6 +34,9 @@ const MercadoPagoPayment = () => {
   const createPreference = async () => {
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+      console.log('API URL being used:', apiUrl);
+      console.log('Full endpoint:', `${apiUrl}/api/mercadopago/create-preference`);
+      
       const response = await fetch(`${apiUrl}/api/mercadopago/create-preference`, {
         method: 'POST',
         headers: {
