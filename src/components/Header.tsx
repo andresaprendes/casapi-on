@@ -166,7 +166,7 @@ const Header = () => {
             <div className="p-6">
               <div className="flex items-center justify-between mb-8">
                 <img
-                  src="/logo-light.png"
+                  src="/logo.svg"
                   alt="Casa Piñón Ebanistería"
                   className="h-12 w-auto"
                 />
