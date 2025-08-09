@@ -102,11 +102,20 @@ app.post('/api/mercadopago/create-preference', async (req, res) => {
     }
   } catch (error) {
     console.error('MercadoPago preference creation error:', error);
-    console.error('Error details:', error.cause || error.response || 'No additional details');
-    res.status(500).json({
-      success: false,
-      error: error.message || 'Error creating payment preference'
-    });
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    console.error('Error cause:', error.cause);
+    
+    // Don't let this crash the server
+    try {
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Error creating payment preference',
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      });
+    } catch (responseError) {
+      console.error('Error sending response:', responseError);
+    }
   }
 });
 
@@ -193,6 +202,15 @@ app.get('/api/mercadopago/test', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3001;
+
+// Prevent process from crashing
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
 
 app.listen(PORT, () => {
   console.log(`MercadoPago API server running on port ${PORT}`);
