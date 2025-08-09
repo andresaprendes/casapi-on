@@ -7,7 +7,8 @@ import {
   CreditCard,
   Building2,
   DollarSign,
-  CheckCircle
+  CheckCircle,
+  MessageCircle
 } from 'lucide-react'
 import { useCart } from '../store/CartContext'
 import { shippingZones } from '../data/mockData'
@@ -585,10 +586,11 @@ const Checkout = () => {
                     <button
                       onClick={() => handlePaymentSubmit(paymentInfo!)}
                       disabled={!paymentInfo?.method}
-                      className="w-full btn-primary mt-6 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-full btn-primary mt-6 py-4 text-lg font-semibold flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed hover:bg-brown-900 transition-colors"
                     >
+                      <CreditCard className="w-5 h-5 mr-2" />
                       Finalizar Compra
-                      <ArrowRight className="w-4 h-4 ml-2" />
+                      <ArrowRight className="w-5 h-5 ml-2" />
                     </button>
                   )}
                 </div>
@@ -649,16 +651,18 @@ const Checkout = () => {
                 </div>
               </div>
               
-              <div className="space-y-4">
-                <a href="/" className="btn-primary w-full">
+              <div className="space-y-4 sm:space-y-0 sm:space-x-4 sm:flex sm:flex-col lg:flex-row">
+                <a href="/" className="btn-primary w-full sm:flex-1 py-4 text-lg font-semibold flex items-center justify-center">
+                  <ArrowLeft className="w-5 h-5 mr-2" />
                   Volver al Inicio
                 </a>
                 <a 
                   href="https://wa.me/573100000000?text=Hola,%20tengo%20una%20pregunta%20sobre%20mi%20orden%20${orderNumber}"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="btn-secondary w-full"
+                  className="btn-secondary w-full sm:flex-1 py-4 text-lg font-medium flex items-center justify-center hover:bg-cream-300 transition-colors"
                 >
+                  <MessageCircle className="w-5 h-5 mr-2" />
                   Contactar por WhatsApp
                 </a>
               </div>

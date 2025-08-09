@@ -49,12 +49,16 @@ const ProductCard = ({ product }: ProductCardProps) => {
         ) : null}
         
         {/* Fallback placeholder */}
-        <div className="w-full h-full bg-gradient-to-br from-brown-100 to-brown-200 flex items-center justify-center" style={{ display: product.images && product.images.length > 0 ? 'none' : 'flex' }}>
-          <div className="text-center">
-            <div className="w-16 h-16 bg-brown-800 rounded-full flex items-center justify-center mx-auto mb-3">
-              <span className="text-cream-50 font-serif font-bold text-lg">CP</span>
+        <div className="w-full h-full bg-gradient-to-br from-cream-50 to-brown-50 flex items-center justify-center" style={{ display: product.images && product.images.length > 0 ? 'none' : 'flex' }}>
+          <div className="text-center p-6">
+            <div className="w-20 h-20 bg-gradient-to-br from-brown-600 to-brown-800 rounded-lg flex items-center justify-center mx-auto mb-4 shadow-lg">
+              <span className="text-cream-50 font-serif font-bold text-2xl">CP</span>
             </div>
-            <p className="text-brown-600 text-sm">Imagen próximamente</p>
+            <h4 className="text-brown-800 font-medium text-sm mb-2">{product.name}</h4>
+            <p className="text-brown-600 text-xs">Foto profesional próximamente</p>
+            <div className="mt-3 text-brown-500 text-xs">
+              {product.materials[0]} • {product.category}
+            </div>
           </div>
         </div>
         
