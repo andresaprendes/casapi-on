@@ -21,7 +21,15 @@ app.use(express.json());
 
 // MercadoPago Configuration
 const MERCADOPAGO_ACCESS_TOKEN = process.env.MERCADOPAGO_ACCESS_TOKEN || 'TEST-12345678-1234-1234-1234-123456789012';
-const client = new MercadoPagoConfig({ accessToken: MERCADOPAGO_ACCESS_TOKEN });
+console.log('Initializing MercadoPago with token:', MERCADOPAGO_ACCESS_TOKEN ? MERCADOPAGO_ACCESS_TOKEN.substring(0, 15) + '...' : 'NONE');
+
+const client = new MercadoPagoConfig({ 
+  accessToken: MERCADOPAGO_ACCESS_TOKEN,
+  options: {
+    timeout: 5000,
+    idempotencyKey: 'casa-pinon-' + Date.now()
+  }
+});
 
 // Environment variables for URLs
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
@@ -46,32 +54,21 @@ app.post('/api/mercadopago/create-preference', async (req, res) => {
       });
     }
 
-    // Create preference
+    // Create preference - simplified for testing
     const preference = {
       items: [
         {
           title: description || `Orden ${orderId} - Casa Piñón Ebanistería`,
           unit_price: Number(amount),
-          quantity: 1,
-          currency_id: 'COP'
+          quantity: 1
         }
       ],
-      payer: {
-        email: customerEmail
-      },
       external_reference: orderId,
-      notification_url: `${API_URL}/api/mercadopago/webhook`,
       back_urls: {
         success: `${BASE_URL}/checkout/success`,
-        failure: `${BASE_URL}/checkout?step=payment`,
-        pending: `${BASE_URL}/checkout?step=payment`
-      },
-      auto_return: 'approved',
-      payment_methods: {
-        excluded_payment_types: [],
-        installments: 12
-      },
-      statement_descriptor: 'CASA PINON'
+        failure: `${BASE_URL}/checkout`,
+        pending: `${BASE_URL}/checkout`
+      }
     };
 
     console.log('Creating MercadoPago preference:', {
