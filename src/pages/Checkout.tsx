@@ -216,7 +216,7 @@ const Checkout = () => {
       <div className="container-custom">
         {/* Progress Steps */}
         <div className="mb-8">
-          <div className="flex items-center justify-center space-x-4">
+          <div className="flex items-center justify-center space-x-2 sm:space-x-4 overflow-x-auto px-4">
             {['cart', 'shipping', 'payment', 'confirmation'].map((step, index) => (
               <div key={step} className="flex items-center">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
