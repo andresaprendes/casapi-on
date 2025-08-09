@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Search, Filter, Calendar, Package, CreditCard, Eye, Edit3, Truck, LogOut } from 'lucide-react'
+import { Search, Calendar, Package, CreditCard, Eye, Edit3, Truck, LogOut } from 'lucide-react'
 import { Order, OrderFilters, OrderStats } from '../types'
 import { useAuth } from '../store/AuthContext'
 
@@ -22,8 +22,9 @@ const Orders = () => {
     }).format(amount)
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('es-CO', {
+  const formatDate = (date: string | Date) => {
+    const dateObj = typeof date === 'string' ? new Date(date) : date
+    return dateObj.toLocaleDateString('es-CO', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',

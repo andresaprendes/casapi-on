@@ -21,8 +21,10 @@ interface CustomerInfo {
   phone: string
   address: string
   city: string
+  state: string
   zipCode: string
   shippingZone: string
+  notes?: string
 }
 
 interface PaymentInfo {
