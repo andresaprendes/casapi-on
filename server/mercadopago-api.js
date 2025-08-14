@@ -385,7 +385,7 @@ app.post('/api/mercadopago/create-preference', async (req, res) => {
         failure: `${BASE_URL}/checkout/success?payment_id={payment_id}&status={status}&external_reference={external_reference}`,
         pending: `${BASE_URL}/checkout/success?payment_id={payment_id}&status={status}&external_reference={external_reference}`
       },
-      auto_return: 'approved'
+      auto_return: 'all'
     };
 
     console.log('Creating MercadoPago preference:', {

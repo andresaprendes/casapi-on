@@ -23,6 +23,7 @@ const CheckoutSuccess: React.FC = () => {
     isRejected: false
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [webhookReceived, setWebhookReceived] = useState(false);
 
   const paymentId = searchParams.get('payment_id');
   const externalReference = searchParams.get('external_reference');
@@ -37,78 +38,110 @@ const CheckoutSuccess: React.FC = () => {
     fullUrl: window.location.href
   });
 
+  // Listen for webhook notifications (if implemented)
   useEffect(() => {
-    const verifyPayment = async () => {
-      // Always verify payment with MercadoPago API for security
-      if (!paymentId) {
-        setVerification({
-          isVerified: false,
-          isApproved: false,
-          isPending: false,
-          isRejected: true,
-          error: 'No se encontró información del pago'
-        });
-        setIsLoading(false);
-        return;
-      }
-
-
-
-      try {
-        const apiUrl = import.meta.env.VITE_API_URL || 'https://casa-pinon-backend-production.up.railway.app';
-        console.log('🔍 Calling payment verification API:', `${apiUrl}/api/mercadopago/payment-status/${paymentId}`);
-        
-        const response = await fetch(`${apiUrl}/api/mercadopago/payment-status/${paymentId}`);
-        const result = await response.json();
-        
-        console.log('🔍 Payment verification result:', result);
-
-        if (result.success) {
-          console.log('✅ Payment verification successful:', {
-            is_approved: result.verification.is_approved,
-            is_pending: result.verification.is_pending,
-            is_rejected: result.verification.is_rejected,
-            message: result.verification.message
-          });
-          
-          setVerification({
-            isVerified: true,
-            isApproved: result.verification.is_approved,
-            isPending: result.verification.is_pending,
-            isRejected: result.verification.is_rejected,
-            paymentDetails: result.payment,
-            message: result.verification.message
-          });
-          
-          // Order is already created before payment, just clear cart if approved
-          if (result.verification.is_approved) {
-            clearCart();
-            localStorage.removeItem('checkout_customer_info');
-          }
-        } else {
-          setVerification({
-            isVerified: false,
-            isApproved: false,
-            isPending: false,
-            isRejected: true,
-            error: result.error || 'Error al verificar el pago'
-          });
+    if (paymentId) {
+      // Set up EventSource for real-time webhook notifications
+      const eventSource = new EventSource(`/api/mercadopago/payment-events/${paymentId}`);
+      
+      eventSource.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.paymentId === paymentId) {
+          console.log('🔔 Webhook notification received:', data);
+          setWebhookReceived(true);
+          // Re-verify payment immediately
+          verifyPayment(0);
         }
-      } catch (error) {
-        console.error('Error verifying payment:', error);
+      };
+      
+      eventSource.onerror = (error) => {
+        console.log('EventSource error:', error);
+        eventSource.close();
+      };
+      
+      return () => {
+        eventSource.close();
+      };
+    }
+  }, [paymentId]);
+
+  const verifyPayment = async (retryCount = 0) => {
+    // Always verify payment with MercadoPago API for security
+    if (!paymentId) {
+      setVerification({
+        isVerified: false,
+        isApproved: false,
+        isPending: false,
+        isRejected: true,
+        error: 'No se encontró información del pago'
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'https://casa-pinon-backend-production.up.railway.app';
+      console.log('🔍 Calling payment verification API:', `${apiUrl}/api/mercadopago/payment-status/${paymentId}`);
+      
+      const response = await fetch(`${apiUrl}/api/mercadopago/payment-status/${paymentId}`);
+      const result = await response.json();
+      
+      console.log('🔍 Payment verification result:', result);
+
+      if (result.success) {
+        console.log('✅ Payment verification successful:', {
+          is_approved: result.verification.is_approved,
+          is_pending: result.verification.is_pending,
+          is_rejected: result.verification.is_rejected,
+          message: result.verification.message
+        });
+        
+        setVerification({
+          isVerified: true,
+          isApproved: result.verification.is_approved,
+          isPending: result.verification.is_pending,
+          isRejected: result.verification.is_rejected,
+          paymentDetails: result.payment,
+          message: result.verification.message
+        });
+        
+        // Order is already created before payment, just clear cart if approved
+        if (result.verification.is_approved) {
+          clearCart();
+          localStorage.removeItem('checkout_customer_info');
+        }
+      } else {
+        // If payment not found and we haven't exceeded retries, try again
+        if (retryCount < 3 && result.error?.includes('not found')) {
+          console.log(`🔄 Payment not found, retrying in 2 seconds... (attempt ${retryCount + 1}/3)`);
+          setTimeout(() => verifyPayment(retryCount + 1), 2000);
+          return;
+        }
+        
         setVerification({
           isVerified: false,
           isApproved: false,
           isPending: false,
           isRejected: true,
-          error: 'Error de conexión al verificar el pago'
+          error: result.error || 'Error al verificar el pago'
         });
-      } finally {
-        setIsLoading(false);
       }
-    };
+    } catch (error) {
+      console.error('Error verifying payment:', error);
+      setVerification({
+        isVerified: false,
+        isApproved: false,
+        isPending: false,
+        isRejected: true,
+        error: 'Error de conexión al verificar el pago'
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    verifyPayment();
+  useEffect(() => {
+    verifyPayment(0);
   }, [paymentId]);
 
   const formatPrice = (price: number) => {
