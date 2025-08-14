@@ -9,6 +9,7 @@ import ProductDetail from './pages/ProductDetail'
 import Cart from './pages/Cart'
 import Checkout from './pages/Checkout'
 import CheckoutSuccess from './pages/CheckoutSuccess'
+import PaymentStatus from './pages/PaymentStatus'
 import MercadoPagoPayment from './pages/MercadoPagoPayment'
 import About from './pages/About'
 import Contact from './pages/Contact'
@@ -42,6 +43,7 @@ function App() {
                                <Route path="/carrito" element={<Cart />} />
                    <Route path="/checkout" element={<Checkout />} />
                    <Route path="/checkout/success" element={<CheckoutSuccess />} />
+                   <Route path="/payment-status" element={<PaymentStatus />} />
                    <Route path="/mercadopago-payment" element={<MercadoPagoPayment />} />
                    <Route path="/nosotros" element={<About />} />
                    <Route path="/contacto" element={<Contact />} />

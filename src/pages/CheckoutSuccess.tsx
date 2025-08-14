@@ -105,11 +105,22 @@ const CheckoutSuccess: React.FC = () => {
           message: result.verification.message
         });
         
-        // Order is already created before payment, just clear cart if approved
-        if (result.verification.is_approved) {
-          clearCart();
-          localStorage.removeItem('checkout_customer_info');
-        }
+                  // Order is already created before payment, just clear cart if approved
+          if (result.verification.is_approved) {
+            clearCart();
+            localStorage.removeItem('checkout_customer_info');
+          }
+          
+          // Save payment info to localStorage for later checking
+          if (paymentId && externalReference) {
+            localStorage.setItem('last_payment_info', JSON.stringify({
+              paymentId,
+              externalReference,
+              timestamp: new Date().toISOString(),
+              status: result.verification.is_approved ? 'approved' : 
+                     result.verification.is_pending ? 'pending' : 'rejected'
+            }));
+          }
               } else {
           // If payment not found and we haven't exceeded retries, try again
           // For PSE payments, retry more times with longer intervals
@@ -285,6 +296,35 @@ const CheckoutSuccess: React.FC = () => {
           >
             Ver Más Productos
           </Link>
+          
+          {/* Payment Status Checker */}
+          {paymentId && (
+            <div className="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+              <h4 className="text-sm font-medium text-gray-800 mb-2">¿Necesitas verificar tu pago más tarde?</h4>
+              <p className="text-xs text-gray-600 mb-3">
+                Guarda este enlace o usa el verificador de pagos:
+              </p>
+              <div className="bg-white border border-gray-300 rounded p-2 mb-3">
+                <code className="text-xs text-gray-700 break-all">
+                  {window.location.href}
+                </code>
+              </div>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => navigator.clipboard.writeText(window.location.href)}
+                  className="text-xs bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition-colors"
+                >
+                  Copiar Enlace
+                </button>
+                <Link
+                  to={`/payment-status?payment_id=${paymentId}`}
+                  className="text-xs bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 transition-colors"
+                >
+                  Verificar Estado
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
