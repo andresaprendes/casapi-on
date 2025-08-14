@@ -77,6 +77,28 @@ const productDatabase = new Map();
 // Initialize products with default data
 const defaultProducts = [
   {
+    id: 'test-1000',
+    name: 'Producto de Prueba - 1000 COP',
+    description: 'Este es un producto de prueba muy económico para probar el sistema de pagos. Perfecto para realizar transacciones de prueba con un valor mínimo.',
+    price: 1000,
+    category: 'test',
+    subcategory: 'prueba',
+    images: ['/logo.png'],
+    materials: ['Madera de prueba', 'Acabado básico'],
+    dimensions: { length: 10, width: 10, height: 5 },
+    weight: 0.1,
+    inStock: true,
+    isCustom: false,
+    estimatedDelivery: '1-2 días',
+    features: ['Producto de prueba', 'Precio mínimo', 'Entrega rápida'],
+    specifications: {
+      'Tipo': 'Producto de prueba',
+      'Material': 'Madera de prueba',
+      'Peso': '100g',
+      'Garantía': 'Sin garantía'
+    }
+  },
+  {
     id: '1',
     name: 'Mesa de Comedor de Piñón',
     description: 'Mesa de comedor elegante fabricada en madera de piñón maciza, perfecta para 6 personas. Acabados de primera calidad con barniz natural que resalta la belleza única del piñón.',

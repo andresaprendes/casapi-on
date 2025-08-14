@@ -46,12 +46,9 @@ const Checkout = () => {
 
   const { register, handleSubmit, formState: { errors } } = useForm<CustomerInfo>()
 
-  // Calculate totals
+  // Calculate totals - IVA and shipping included in product prices
   const subtotal = items.reduce((sum: number, item: any) => sum + (item.product.price * item.quantity), 0)
-  const shipping = customerInfo?.shippingZone ? 
-    shippingZones.find(zone => zone.name === customerInfo.shippingZone)?.basePrice || 0 : 0
-  const tax = subtotal * 0.19 // 19% IVA
-  const total = subtotal + shipping + tax
+  const total = subtotal // No additional taxes or shipping
 
   const handleCustomerSubmit = (data: CustomerInfo) => {
     setCustomerInfo(data)
@@ -121,8 +118,8 @@ const Checkout = () => {
           customizations: item.customizations
         })),
         subtotal,
-        shipping,
-        tax,
+        shipping: 0, // No shipping cost
+        tax: 0, // IVA included in product prices
         total,
         shippingZone: customerInfo.shippingZone,
         paymentMethod: paymentInfo?.method || 'unknown',
@@ -287,22 +284,9 @@ const Checkout = () => {
                 <div className="bg-white rounded-lg shadow-md p-6 sticky top-4">
                   <h2 className="text-xl font-semibold text-brown-900 mb-4">Resumen del Pedido</h2>
                   <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-brown-600">Subtotal:</span>
-                      <span className="font-medium">${subtotal.toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-brown-600">IVA (19%):</span>
-                      <span className="font-medium">${tax.toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-brown-600">Envío:</span>
-                      <span className="font-medium">Por calcular</span>
-                    </div>
-                    <hr className="border-brown-200" />
                     <div className="flex justify-between text-lg font-semibold">
                       <span>Total:</span>
-                      <span>${(subtotal + tax).toLocaleString()}</span>
+                      <span>${total.toLocaleString()}</span>
                     </div>
                   </div>
                   
@@ -310,7 +294,7 @@ const Checkout = () => {
                     onClick={() => setCurrentStep('shipping')}
                     className="w-full btn-primary mt-6"
                   >
-                    Continuar con Envío
+                    Continuar con Información
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </button>
                 </div>
@@ -333,7 +317,7 @@ const Checkout = () => {
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Volver
               </button>
-              <h1 className="text-3xl font-bold text-brown-900">Información de Envío</h1>
+              <h1 className="text-3xl font-bold text-brown-900">Información del Cliente</h1>
             </div>
 
             <form onSubmit={handleSubmit(handleCustomerSubmit)} className="space-y-6">
@@ -601,19 +585,6 @@ const Checkout = () => {
                 <div className="bg-white rounded-lg shadow-md p-6 sticky top-4">
                   <h2 className="text-xl font-semibold text-brown-900 mb-4">Resumen del Pedido</h2>
                   <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-brown-600">Subtotal:</span>
-                      <span className="font-medium">${subtotal.toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-brown-600">IVA (19%):</span>
-                      <span className="font-medium">${tax.toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-brown-600">Envío:</span>
-                      <span className="font-medium">${shipping.toLocaleString()}</span>
-                    </div>
-                    <hr className="border-brown-200" />
                     <div className="flex justify-between text-lg font-semibold">
                       <span>Total:</span>
                       <span>${total.toLocaleString()}</span>
