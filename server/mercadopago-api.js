@@ -843,17 +843,9 @@ app.post('/api/orders', express.json(), async (req, res) => {
     
     console.log('✅ Order created:', orderId);
     
-    // Transform database response to match frontend expectations
-    const orderResponse = {
-      ...createdOrder,
-      orderNumber: createdOrder.order_number || createdOrder.orderNumber,
-      customerInfo: createdOrder.customer || createdOrder.customer_info,
-      createdAt: createdOrder.created_at || createdOrder.createdAt
-    };
-    
     res.json({
       success: true,
-      order: orderResponse
+      order: createdOrder
     });
   } catch (error) {
     console.error('Order creation error:', error);
