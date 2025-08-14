@@ -67,9 +67,10 @@ const CheckoutSuccess: React.FC = () => {
             message: result.verification.message
           });
           
-          // Process order if payment is approved
+          // Order is already created before payment, just clear cart if approved
           if (result.verification.is_approved) {
-            processOrder();
+            clearCart();
+            localStorage.removeItem('checkout_customer_info');
           }
         } else {
           setVerification({
@@ -106,74 +107,7 @@ const CheckoutSuccess: React.FC = () => {
     }).format(price);
   };
 
-  // Process order after successful payment verification
-  const processOrder = async () => {
-    if (!state.items.length) {
-      console.log('No items in cart to process order');
-      return;
-    }
 
-    try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'https://casa-pinon-backend-production.up.railway.app';
-      
-      // Get customer info from localStorage or create default
-      const customerInfo = JSON.parse(localStorage.getItem('checkout_customer_info') || '{}');
-      
-      const orderData = {
-        customer: {
-          name: customerInfo.name || 'Cliente Casa Piñón',
-          email: customerInfo.email || 'cliente@example.com',
-          phone: customerInfo.phone || '',
-          address: {
-            street: customerInfo.address || '',
-            city: customerInfo.city || '',
-            state: customerInfo.state || '',
-            zipCode: customerInfo.zipCode || '',
-            country: 'Colombia'
-          }
-        },
-        items: state.items.map(item => ({
-          product: {
-            id: item.product.id,
-            name: item.product.name,
-            price: item.product.price
-          },
-          quantity: item.quantity,
-          customizations: item.customizations
-        })),
-        subtotal: state.items.reduce((sum, item) => sum + (item.product.price * item.quantity), 0),
-        shipping: 0,
-        tax: 0,
-        total: state.items.reduce((sum, item) => sum + (item.product.price * item.quantity), 0),
-        shippingZone: customerInfo.shippingZone || 'Medellín',
-        paymentMethod: 'mercadopago',
-        notes: customerInfo.notes || ''
-      }
-
-      console.log('Creating order after payment verification:', orderData);
-      
-      const response = await fetch(`${apiUrl}/api/orders`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(orderData)
-      });
-
-      const result = await response.json();
-      
-      if (result.success && result.order) {
-        console.log('✅ Order created successfully after payment:', result.order.orderNumber);
-        clearCart();
-        localStorage.removeItem('checkout_customer_info');
-      } else {
-        console.error('Failed to create order after payment verification');
-      }
-      
-    } catch (error) {
-      console.error('Error creating order after payment:', error);
-    }
-  };
 
   if (isLoading) {
     return (

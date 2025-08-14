@@ -67,10 +67,16 @@ const Checkout = () => {
     setCurrentStep('payment')
   }
 
-  const handlePaymentSubmit = (data: PaymentInfo) => {
+  const handlePaymentSubmit = async (data: PaymentInfo) => {
     setPaymentInfo(data)
-    if (data.method === 'epayco' || data.method === 'mercadopago') {
-      // For ePayco and MercadoPago, we'll handle the payment in the component
+    if (data.method === 'mercadopago') {
+      // For MercadoPago, create order BEFORE redirecting to payment
+      // This ensures the order exists when the webhook arrives
+      await processOrder()
+      return
+    }
+    if (data.method === 'epayco') {
+      // For ePayco, we'll handle the payment in the component
       // Order will be processed after payment verification
       return
     }
