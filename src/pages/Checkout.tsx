@@ -45,7 +45,7 @@ const Checkout = () => {
   const subtotal = items.reduce((sum: number, item: any) => sum + (item.product.price * item.quantity), 0)
   const total = subtotal // No additional taxes or shipping
 
-  const handleCustomerSubmit = async (data: CustomerInfo) => {
+  const handleCustomerSubmit = (data: CustomerInfo) => {
     setCustomerInfo(data)
     // Save customer info to localStorage for use in success page
     localStorage.setItem('checkout_customer_info', JSON.stringify({
@@ -59,9 +59,21 @@ const Checkout = () => {
       shippingZone: data.shippingZone,
       notes: data.notes
     }))
-    
-    // Create order immediately when customer info is submitted
-    console.log('🔍 Creating order after customer info submission...')
+    setCurrentStep('payment')
+  }
+
+  const handlePaymentMethodSelect = (method: 'mercadopago') => {
+    setPaymentInfo({ method })
+    console.log('✅ Payment method selected:', method)
+  }
+
+  const handleFinalizarCompra = async () => {
+    if (!paymentInfo?.method || !customerInfo) {
+      alert('Por favor selecciona un método de pago')
+      return
+    }
+
+    console.log('🔍 Creating order before MercadoPago redirect...')
     setIsCreatingOrder(true)
     
     try {
@@ -72,9 +84,10 @@ const Checkout = () => {
         console.log('✅ Order created successfully:', orderResult.orderNumber)
         setOrderNumber(orderResult.orderNumber)
         setIsCreatingOrder(false)
+        // Force re-render to show MercadoPago component
         setCurrentStep('payment')
       } else {
-        console.error('❌ Order creation failed')
+        console.error('❌ Order creation failed or orderNumber not set')
         setIsCreatingOrder(false)
         alert('Error al crear la orden. Por favor intenta de nuevo.')
         return
@@ -85,11 +98,6 @@ const Checkout = () => {
       alert('Error al crear la orden. Por favor intenta de nuevo.')
       return
     }
-  }
-
-  const handlePaymentMethodSelect = (method: 'mercadopago') => {
-    setPaymentInfo({ method })
-    console.log('✅ Payment method selected:', method)
   }
 
   const handleMercadoPagoError = (error: any) => {
@@ -566,13 +574,35 @@ const Checkout = () => {
                     />
                   )}
 
-                  {!isCreatingOrder && !orderNumber && (
-                    <div className="mt-6 p-6 bg-red-50 border border-red-200 rounded-lg">
-                      <div className="text-center">
-                        <p className="text-red-800 font-medium">Error: No se pudo crear la orden</p>
-                        <p className="text-red-600 text-sm mt-2">Por favor, regresa al paso anterior e intenta de nuevo.</p>
+                  {!isCreatingOrder && !orderNumber && paymentInfo?.method === 'mercadopago' && customerInfo && (
+                    <div className="mt-6 p-6 bg-yellow-50 border border-yellow-200 rounded-lg">
+                      <h3 className="text-lg font-semibold text-yellow-900 mb-4">MercadoPago</h3>
+                      <div className="space-y-3 text-yellow-800">
+                        <p><strong>Monto a pagar:</strong> ${total.toLocaleString()}</p>
+                        <p>Haz clic en "Finalizar Compra" para proceder con el pago seguro a través de MercadoPago.</p>
                       </div>
                     </div>
+                  )}
+
+                  {!isCreatingOrder && !orderNumber && paymentInfo?.method === 'mercadopago' && (
+                    <button
+                      onClick={handleFinalizarCompra}
+                      disabled={!paymentInfo?.method || isCreatingOrder}
+                      className="w-full btn-primary mt-6 py-4 text-lg font-semibold flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed hover:bg-brown-900 transition-colors"
+                    >
+                      {isCreatingOrder ? (
+                        <>
+                          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                          Creando Orden...
+                        </>
+                      ) : (
+                        <>
+                          <CreditCard className="w-5 h-5 mr-2" />
+                          Finalizar Compra
+                          <ArrowRight className="w-5 h-5 ml-2" />
+                        </>
+                      )}
+                    </button>
                   )}
                 </div>
               </div>
