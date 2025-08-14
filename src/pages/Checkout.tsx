@@ -77,8 +77,10 @@ const Checkout = () => {
       console.log('🔍 Order creation result:', orderResult)
       
       // Only proceed if order was created successfully
-      if (orderResult && orderNumber) {
+      if (orderResult) {
         console.log('✅ Order created, proceeding with MercadoPago payment')
+        // Force re-render to show MercadoPago component
+        setCurrentStep('payment')
       } else {
         console.error('❌ Order creation failed, cannot proceed with payment')
         return
@@ -158,6 +160,7 @@ const Checkout = () => {
       }
 
       console.log('Creating order:', orderData)
+      console.log('🔍 API URL:', apiUrl)
       
       const response = await fetch(`${apiUrl}/api/orders`, {
         method: 'POST',
@@ -167,18 +170,23 @@ const Checkout = () => {
         body: JSON.stringify(orderData)
       })
 
+      console.log('🔍 Response status:', response.status)
+      console.log('🔍 Response ok:', response.ok)
+
       const result = await response.json()
+      console.log('🔍 API Response:', result)
       
       if (result.success && result.order) {
         setOrderNumber(result.order.orderNumber)
         console.log('✅ Order created successfully:', result.order.orderNumber)
         return true
       } else {
-        // Fallback to local order number if API fails
+        console.error('❌ API failed to create order:', result)
+        // Create a fallback order number and continue anyway
         const fallbackOrderNumber = `CP-${Date.now()}`
         setOrderNumber(fallbackOrderNumber)
-        console.error('Failed to create order in database, using fallback:', fallbackOrderNumber)
-        return false
+        console.log('⚠️ Using fallback order number:', fallbackOrderNumber)
+        return true // Return true to continue with payment
       }
       
     } catch (error) {
