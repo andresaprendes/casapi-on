@@ -1061,6 +1061,29 @@ app.delete('/api/products/:id', (req, res) => {
   }
 });
 
+// SYNC DATABASE - Reset to default products (for Railway sync)
+app.post('/api/products/sync', (req, res) => {
+  try {
+    // Clear current database
+    productDatabase.clear();
+    
+    // Re-initialize with default products
+    defaultProducts.forEach(product => {
+      productDatabase.set(product.id, product);
+    });
+    
+    console.log('✅ Database synced with default products');
+    res.json({ 
+      success: true, 
+      message: 'Database synced successfully',
+      productsCount: productDatabase.size
+    });
+  } catch (error) {
+    console.error('Error syncing database:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 const PORT = process.env.PORT || 3001;
 
 // Prevent process from crashing
@@ -1086,6 +1109,7 @@ app.listen(PORT, () => {
   console.log(`- POST /api/products`);
   console.log(`- PUT  /api/products/:id`);
   console.log(`- DELETE /api/products/:id`);
+  console.log(`- POST /api/products/sync`);
 });
 
 module.exports = app;
