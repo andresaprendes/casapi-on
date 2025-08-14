@@ -264,53 +264,64 @@ const paymentOperations = {
 const productOperations = {
   // Create a new product
   async create(productData) {
-    const {
-      id,
-      name,
-      description,
-      price,
-      category,
-      subcategory,
-      images,
-      materials,
-      dimensions,
-      weight,
-      inStock,
-      isCustom,
-      estimatedDelivery,
-      features,
-      specifications
-    } = productData;
+    try {
+      const {
+        id,
+        name,
+        description,
+        price,
+        category,
+        subcategory,
+        images,
+        materials,
+        dimensions,
+        weight,
+        inStock,
+        isCustom,
+        estimatedDelivery,
+        features,
+        specifications
+      } = productData;
 
-    const query = `
-      INSERT INTO products (
-        id, name, description, price, category, subcategory,
-        images, materials, dimensions, weight, in_stock, is_custom,
-        estimated_delivery, features, specifications
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
-      RETURNING *
-    `;
+      console.log(`🔍 Creating product with ID: ${id}`);
+      console.log(`🔍 Product name: ${name}`);
 
-    const values = [
-      id,
-      name,
-      description,
-      price,
-      category,
-      subcategory,
-      JSON.stringify(images),
-      JSON.stringify(materials),
-      JSON.stringify(dimensions),
-      weight,
-      inStock,
-      isCustom,
-      estimatedDelivery,
-      JSON.stringify(features),
-      JSON.stringify(specifications)
-    ];
+      const query = `
+        INSERT INTO products (
+          id, name, description, price, category, subcategory,
+          images, materials, dimensions, weight, in_stock, is_custom,
+          estimated_delivery, features, specifications
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+        RETURNING *
+      `;
 
-    const result = await pool.query(query, values);
-    return result.rows[0];
+      const values = [
+        id,
+        name,
+        description,
+        price,
+        category,
+        subcategory,
+        JSON.stringify(images),
+        JSON.stringify(materials),
+        JSON.stringify(dimensions),
+        weight,
+        inStock,
+        isCustom,
+        estimatedDelivery,
+        JSON.stringify(features),
+        JSON.stringify(specifications)
+      ];
+
+      console.log(`🔍 Executing query with ${values.length} parameters`);
+      const result = await pool.query(query, values);
+      console.log(`✅ Product created successfully: ${result.rows[0].name}`);
+      return result.rows[0];
+    } catch (error) {
+      console.error(`❌ Error in product creation:`, error);
+      console.error(`❌ Product data:`, JSON.stringify(productData, null, 2));
+      throw error;
+    }
   },
 
   // Get all products
@@ -361,15 +372,25 @@ const productOperations = {
 
   // Initialize with default products
   async initializeWithDefaults(defaultProducts) {
+    console.log('🔄 Starting product initialization...');
+    console.log('📊 Products to create:', defaultProducts.length);
+    
     for (const product of defaultProducts) {
       try {
-        await this.create(product);
+        console.log(`📦 Creating product: ${product.name} (ID: ${product.id})`);
+        const createdProduct = await this.create(product);
+        console.log(`✅ Created product: ${createdProduct.name}`);
       } catch (error) {
-        if (error.code !== '23505') { // Ignore duplicate key errors
-          console.error('Error creating default product:', error);
+        if (error.code === '23505') { // Duplicate key error
+          console.log(`⚠️  Product already exists: ${product.name}`);
+        } else {
+          console.error(`❌ Error creating product ${product.name}:`, error);
+          console.error('Product data:', JSON.stringify(product, null, 2));
         }
       }
     }
+    
+    console.log('✅ Product initialization completed');
   }
 };
 
