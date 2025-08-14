@@ -364,12 +364,10 @@ app.post('/api/mercadopago/create-preference', async (req, res) => {
       payer: {
         email: customerEmail,
         name: customerName || 'Cliente Casa Piñón'
-            },
+      },
       
       // Seller information to distinguish from buyer
       application_id: 'CASA_PINON_EBANISTERIA',
-      expires: false,
-      marketplace_fee: 0,
       statement_descriptor: 'CASA PINON',
 
       external_reference: orderId,
@@ -379,8 +377,7 @@ app.post('/api/mercadopago/create-preference', async (req, res) => {
         pending: `${BASE_URL}/checkout/success?payment_id={payment_id}&status=pending&external_reference={external_reference}`
       },
       notification_url: `${API_URL}/api/mercadopago/webhook`,
-      auto_return: 'approved',
-      expires: false
+      auto_return: 'approved'
     };
 
     console.log('Creating MercadoPago preference:', {
@@ -409,8 +406,19 @@ app.post('/api/mercadopago/create-preference', async (req, res) => {
 
     console.log('Preference object:', JSON.stringify(preference, null, 2));
 
-    const preferenceClient = new Preference(client);
-    const result = await preferenceClient.create({ body: preference });
+    try {
+      const preferenceClient = new Preference(client);
+      console.log('Preference client created successfully');
+      
+      const result = await preferenceClient.create({ body: preference });
+      console.log('Preference creation successful');
+      
+    } catch (preferenceError) {
+      console.error('Preference creation failed:', preferenceError);
+      console.error('Preference error message:', preferenceError.message);
+      console.error('Preference error stack:', preferenceError.stack);
+      throw preferenceError;
+    }
 
     console.log('MercadoPago API response:', JSON.stringify(result, null, 2));
     console.log('Response body:', result.body);
