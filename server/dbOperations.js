@@ -54,14 +54,38 @@ const orderOperations = {
   async getById(orderId) {
     const query = 'SELECT * FROM orders WHERE id = $1';
     const result = await pool.query(query, [orderId]);
-    return result.rows[0];
+    if (result.rows[0]) {
+      const row = result.rows[0];
+      return {
+        ...row,
+        customer: {
+          name: row.customer_name,
+          email: row.customer_email,
+          phone: row.customer_phone,
+          address: row.customer_address
+        }
+      };
+    }
+    return null;
   },
 
   // Get order by order number
   async getByOrderNumber(orderNumber) {
     const query = 'SELECT * FROM orders WHERE order_number = $1';
     const result = await pool.query(query, [orderNumber]);
-    return result.rows[0];
+    if (result.rows[0]) {
+      const row = result.rows[0];
+      return {
+        ...row,
+        customer: {
+          name: row.customer_name,
+          email: row.customer_email,
+          phone: row.customer_phone,
+          address: row.customer_address
+        }
+      };
+    }
+    return null;
   },
 
   // Get all orders with filtering
@@ -121,7 +145,17 @@ const orderOperations = {
     }
 
     const result = await pool.query(query, values);
-    return result.rows;
+    
+    // Transform database rows to include customer object
+    return result.rows.map(row => ({
+      ...row,
+      customer: {
+        name: row.customer_name,
+        email: row.customer_email,
+        phone: row.customer_phone,
+        address: row.customer_address
+      }
+    }));
   },
 
   // Update order
@@ -145,7 +179,19 @@ const orderOperations = {
 
     const query = `UPDATE orders SET ${setClause.join(', ')} WHERE id = $${valueIndex} RETURNING *`;
     const result = await pool.query(query, values);
-    return result.rows[0];
+    if (result.rows[0]) {
+      const row = result.rows[0];
+      return {
+        ...row,
+        customer: {
+          name: row.customer_name,
+          email: row.customer_email,
+          phone: row.customer_phone,
+          address: row.customer_address
+        }
+      };
+    }
+    return null;
   },
 
   // Delete order

@@ -914,9 +914,9 @@ app.get('/api/orders', async (req, res) => {
       const searchLower = search.toLowerCase();
       orders = orders.filter(order => 
         (order.orderNumber || order.order_number || '').toLowerCase().includes(searchLower) ||
-        (order.customerName || order.customer_name || '').toLowerCase().includes(searchLower) ||
-        (order.customerEmail || order.customer_email || '').toLowerCase().includes(searchLower) ||
-        (order.customerPhone || order.customer_phone || '').includes(search)
+        (order.customer?.name || order.customerName || order.customer_name || '').toLowerCase().includes(searchLower) ||
+        (order.customer?.email || order.customerEmail || order.customer_email || '').toLowerCase().includes(searchLower) ||
+        (order.customer?.phone || order.customerPhone || order.customer_phone || '').includes(search)
       );
     }
 
@@ -946,26 +946,9 @@ app.get('/api/orders', async (req, res) => {
       averageOrderValue: orders.length > 0 ? orders.reduce((sum, o) => sum + parseFloat(o.total || 0), 0) / orders.length : 0
     };
 
-    // Transform database fields to match frontend expectations
-    const transformedOrders = paginatedOrders.map(order => ({
-      ...order,
-      orderNumber: order.order_number || order.orderNumber,
-      customerName: order.customer_name || order.customerName,
-      customerEmail: order.customer_email || order.customerEmail,
-      customerPhone: order.customer_phone || order.customerPhone,
-      customerAddress: order.customer_address || order.customerAddress,
-      paymentStatus: order.payment_status || order.paymentStatus,
-      paymentMethod: order.payment_method || order.paymentMethod,
-      paymentId: order.payment_id || order.paymentId,
-      shippingZone: order.shipping_zone || order.shippingZone,
-      estimatedDelivery: order.estimated_delivery || order.estimatedDelivery,
-      createdAt: order.created_at || order.createdAt,
-      updatedAt: order.updated_at || order.updatedAt
-    }));
-    
     res.json({
       success: true,
-      orders: transformedOrders,
+      orders: paginatedOrders,
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
