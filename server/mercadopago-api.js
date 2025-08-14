@@ -313,8 +313,8 @@ const client = new MercadoPagoConfig({
 });
 
 // Environment variables for URLs
-const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
-const API_URL = process.env.API_URL || 'http://localhost:3001';
+const BASE_URL = process.env.BASE_URL || 'https://casapi-on-production.up.railway.app';
+const API_URL = process.env.API_URL || 'https://casa-pinon-backend-production.up.railway.app';
 
 // 1. Create payment preference
 app.post('/api/mercadopago/create-preference', async (req, res) => {
@@ -372,7 +372,9 @@ app.post('/api/mercadopago/create-preference', async (req, res) => {
       orderId,
       customerEmail,
       customerName,
-      description
+      description,
+      BASE_URL,
+      API_URL
     });
 
     console.log('MercadoPago Access Token:', MERCADOPAGO_ACCESS_TOKEN ? 'SET' : 'NOT SET');
@@ -456,9 +458,11 @@ app.get('/api/mercadopago/payment-status/:paymentId', async (req, res) => {
     const { paymentId } = req.params;
 
     console.log('Payment verification requested for ID:', paymentId);
+    console.log('Checking payment database first...');
 
     // First check our database (webhook verified payments)
     const storedPayment = paymentDatabase.get(paymentId.toString());
+    console.log('Database check result:', storedPayment ? 'Found' : 'Not found');
     if (storedPayment && storedPayment.webhook_verified) {
       console.log('✅ Payment found in database (webhook verified):', storedPayment.status);
       
