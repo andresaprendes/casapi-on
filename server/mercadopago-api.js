@@ -745,6 +745,50 @@ app.get('/api/mercadopago/test', (req, res) => {
   });
 });
 
+// 5.1. Email test endpoint
+app.get('/api/test-email', async (req, res) => {
+  try {
+    const testOrder = {
+      orderNumber: 'TEST-123',
+      createdAt: new Date().toISOString(),
+      total: 50000,
+      items: [{ name: 'Test Product', price: 50000 }],
+      shippingZone: 'Bogotá',
+      estimatedDelivery: '2-3 días'
+    };
+    
+    const testCustomer = {
+      name: 'Test User',
+      email: process.env.EMAIL_USER, // Send to yourself for testing
+      phone: '3001234567',
+      address: 'Test Address'
+    };
+    
+    const testPayment = {
+      id: 'TEST-PAYMENT-123',
+      payment_method_id: 'test',
+      transaction_amount: 50000,
+      date_created: new Date().toISOString()
+    };
+    
+    const emailResult = await sendPaymentStatusEmail(testOrder, testCustomer, testPayment, 'pending');
+    
+    res.json({
+      success: true,
+      emailResult,
+      message: 'Test email sent',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Test email error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // 6. Webhook test endpoint
 app.get('/api/mercadopago/webhook-test', (req, res) => {
   res.json({
