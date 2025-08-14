@@ -350,24 +350,21 @@ app.post('/api/mercadopago/create-preference', async (req, res) => {
       });
     }
 
-    // Create preference for MercadoPago Colombia production
+    // Simple MercadoPago preference - exactly what they need
     const preference = {
       items: [
         {
-          title: description || `Orden ${orderId} - Casa Piñón Ebanistería`,
+          title: `Orden ${orderId}`,
           unit_price: Number(amount),
-          quantity: 1,
-          currency_id: 'COP',
-          description: `Compra en Casa Piñón Ebanistería - ${description || 'Productos de madera fina'}`
+          quantity: 1
         }
       ],
       external_reference: orderId,
       back_urls: {
-        success: `${BASE_URL}/checkout/success?payment_id={payment_id}&status={status}&external_reference={external_reference}`,
-        failure: `${BASE_URL}/checkout/success?payment_id={payment_id}&status=failure&external_reference={external_reference}`,
-        pending: `${BASE_URL}/checkout/success?payment_id={payment_id}&status=pending&external_reference={external_reference}`
+        success: `${BASE_URL}/checkout/success`,
+        failure: `${BASE_URL}/checkout/success`,
+        pending: `${BASE_URL}/checkout/success`
       },
-      notification_url: `${API_URL}/api/mercadopago/webhook`,
       auto_return: 'approved'
     };
 
@@ -572,94 +569,49 @@ function getPaymentStatusMessage(status, statusDetail) {
   return messages[status] || `Estado del pago: ${status} (${statusDetail})`;
 }
 
-// 3. Secure webhook for payment notifications
+// 3. Simple webhook for payment notifications
 app.post('/api/mercadopago/webhook', express.json(), async (req, res) => {
   try {
-    console.log('🔔 WEBHOOK RECEIVED - TIMESTAMP:', new Date().toISOString());
-    console.log('🔔 Webhook received:', JSON.stringify(req.body, null, 2));
-    console.log('📋 Headers:', JSON.stringify(req.headers, null, 2));
-    console.log('🔔 Webhook URL called:', req.url);
-    console.log('🔔 Webhook method:', req.method);
+    console.log('🔔 WEBHOOK RECEIVED:', new Date().toISOString());
+    console.log('🔔 Webhook body:', JSON.stringify(req.body, null, 2));
     
-    const { action, api_version, data, date_created, id, live_mode, type, user_id } = req.body;
-    
-    console.log('Webhook payload:', { action, type, data, date_created });
+    const { action, data } = req.body;
     
     if (action === 'payment.updated' || action === 'payment.created') {
       const paymentId = data.id;
-      console.log('Processing payment notification for ID:', paymentId);
+      console.log('Processing payment:', paymentId);
       
       try {
-        // Verify payment with MercadoPago API
         const paymentClient = new Payment(client);
         const payment = await paymentClient.get({ id: paymentId });
         
-        console.log('Webhook payment verification:', {
-          id: payment.id,
-          status: payment.status,
-          external_reference: payment.external_reference,
-          transaction_amount: payment.transaction_amount
-        });
+        console.log('Payment status:', payment.status);
         
-        // Store payment in our database
-        const paymentRecord = {
+        // Store payment
+        paymentDatabase.set(paymentId.toString(), {
           id: payment.id,
           status: payment.status,
-          status_detail: payment.status_detail,
           external_reference: payment.external_reference,
           transaction_amount: payment.transaction_amount,
-          currency_id: payment.currency_id,
-          payment_method_id: payment.payment_method_id,
-          payer_email: payment.payer?.email,
-          date_created: payment.date_created,
-          date_approved: payment.date_approved,
-          last_updated: new Date().toISOString(),
           webhook_verified: true
-        };
+        });
         
-        paymentDatabase.set(paymentId.toString(), paymentRecord);
-        console.log('✅ Payment stored in database:', paymentId);
-        
-        // Log important payment events and update order status
-        if (payment.status === 'approved') {
-          console.log('🎉 PAYMENT APPROVED:', {
-            orderId: payment.external_reference,
-            amount: payment.transaction_amount,
-            paymentId: payment.id,
-            email: payment.payer?.email
-          });
-          
-          // Update order payment status if external_reference exists
-          if (payment.external_reference) {
-            updateOrderPaymentStatus(payment.external_reference, 'paid', payment.id);
-          }
-          
-        } else if (payment.status === 'rejected') {
-          console.log('❌ PAYMENT REJECTED:', {
-            orderId: payment.external_reference,
-            paymentId: payment.id,
-            reason: payment.status_detail
-          });
-          
-          // Update order payment status if external_reference exists
-          if (payment.external_reference) {
-            updateOrderPaymentStatus(payment.external_reference, 'failed', payment.id);
-          }
+        // Update order if approved
+        if (payment.status === 'approved' && payment.external_reference) {
+          updateOrderPaymentStatus(payment.external_reference, 'paid', payment.id);
+          console.log('✅ Order updated:', payment.external_reference);
         }
         
-      } catch (verificationError) {
-        console.error('Error verifying payment in webhook:', verificationError);
-        // Still return success to MercadoPago to avoid retries
+      } catch (error) {
+        console.error('Webhook error:', error.message);
       }
     }
     
-    console.log('✅ Webhook processed successfully');
     res.status(200).json({ received: true });
     
   } catch (error) {
-    console.error('❌ Webhook error:', error);
-    console.error('Error stack:', error.stack);
-    res.status(200).json({ received: true, error: error.message });
+    console.error('Webhook error:', error);
+    res.status(200).json({ received: true });
   }
 });
 
