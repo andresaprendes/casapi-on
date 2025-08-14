@@ -379,7 +379,8 @@ app.post('/api/mercadopago/create-preference', async (req, res) => {
         pending: `${BASE_URL}/checkout?payment_status=pending&external_reference={external_reference}`
       },
       notification_url: `${API_URL}/api/mercadopago/webhook`,
-      auto_return: 'approved'
+      auto_return: 'approved',
+      expires: false
     };
 
     console.log('Creating MercadoPago preference:', {
@@ -389,7 +390,8 @@ app.post('/api/mercadopago/create-preference', async (req, res) => {
       customerName,
       description,
       BASE_URL,
-      API_URL
+      API_URL,
+      success_url: `${BASE_URL}/checkout/success?payment_id={payment_id}&status={status}&external_reference={external_reference}`
     });
 
     console.log('MercadoPago Access Token:', MERCADOPAGO_ACCESS_TOKEN ? 'SET' : 'NOT SET');
