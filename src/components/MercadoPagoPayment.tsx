@@ -68,12 +68,9 @@ const MercadoPagoPayment = ({
           window.location.href = `https://www.mercadopago.com.co/checkout/v1/redirect?pref_id=${result.preferenceId}`;
         }
 
+        // Don't call onSuccess here - let the redirect handle it
+        // The order will be processed after payment verification
         setPaymentStatus('success')
-        onSuccess({
-          preferenceId: result.preferenceId,
-          amount: amount,
-          status: 'redirecting_to_mercadopago'
-        })
       } else {
         throw new Error(result.error || 'Error al crear la preferencia de pago')
       }
@@ -191,12 +188,12 @@ const MercadoPagoPayment = ({
 
       {/* Status Messages */}
       {paymentStatus === 'success' && (
-        <div className="p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
+        <div className="p-4 bg-blue-100 border border-blue-400 text-blue-700 rounded-lg">
           <div className="flex items-center space-x-2">
             <CheckCircle className="w-5 h-5" />
-            <span className="font-medium">¡Preferencia de pago creada!</span>
+            <span className="font-medium">¡Redirigiendo a MercadoPago!</span>
           </div>
-          <p className="text-sm mt-1">Haz clic en el botón de MercadoPago para completar tu pago.</p>
+          <p className="text-sm mt-1">Serás redirigido automáticamente a MercadoPago para completar tu pago.</p>
         </div>
       )}
 

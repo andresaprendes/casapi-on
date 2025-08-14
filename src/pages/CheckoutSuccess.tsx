@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { CheckCircle, XCircle, Clock, Loader2 } from 'lucide-react';
+import { useCart } from '../store/CartContext';
 
 interface PaymentVerification {
   isVerified: boolean;
@@ -14,6 +15,8 @@ interface PaymentVerification {
 
 const CheckoutSuccess: React.FC = () => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const { state, clearCart } = useCart();
   const [verification, setVerification] = useState<PaymentVerification>({
     isVerified: false,
     isApproved: false,
@@ -21,6 +24,7 @@ const CheckoutSuccess: React.FC = () => {
     isRejected: false
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [orderNumber, setOrderNumber] = useState<string>('');
 
   const paymentId = searchParams.get('payment_id');
   const externalReference = searchParams.get('external_reference');
@@ -53,6 +57,11 @@ const CheckoutSuccess: React.FC = () => {
             paymentDetails: result.payment,
             message: result.verification.message
           });
+          
+          // Process order if payment is approved
+          if (result.verification.is_approved) {
+            processOrder();
+          }
         } else {
           setVerification({
             isVerified: false,
@@ -88,6 +97,76 @@ const CheckoutSuccess: React.FC = () => {
     }).format(price);
   };
 
+  // Process order after successful payment verification
+  const processOrder = async () => {
+    if (!state.items.length) {
+      console.log('No items in cart to process order');
+      return;
+    }
+
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+      
+      // Get customer info from localStorage or create default
+      const customerInfo = JSON.parse(localStorage.getItem('checkout_customer_info') || '{}');
+      
+      const orderData = {
+        customer: {
+          name: customerInfo.name || 'Cliente Casa Piñón',
+          email: customerInfo.email || 'cliente@example.com',
+          phone: customerInfo.phone || '',
+          address: {
+            street: customerInfo.address || '',
+            city: customerInfo.city || '',
+            state: customerInfo.state || '',
+            zipCode: customerInfo.zipCode || '',
+            country: 'Colombia'
+          }
+        },
+        items: state.items.map(item => ({
+          product: {
+            id: item.product.id,
+            name: item.product.name,
+            price: item.product.price
+          },
+          quantity: item.quantity,
+          customizations: item.customizations
+        })),
+        subtotal: state.items.reduce((sum, item) => sum + (item.product.price * item.quantity), 0),
+        shipping: 0,
+        tax: 0,
+        total: state.items.reduce((sum, item) => sum + (item.product.price * item.quantity), 0),
+        shippingZone: customerInfo.shippingZone || 'Medellín',
+        paymentMethod: 'mercadopago',
+        notes: customerInfo.notes || ''
+      }
+
+      console.log('Creating order after payment verification:', orderData);
+      
+      const response = await fetch(`${apiUrl}/api/orders`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData)
+      });
+
+      const result = await response.json();
+      
+      if (result.success && result.order) {
+        setOrderNumber(result.order.orderNumber);
+        console.log('✅ Order created successfully after payment:', result.order.orderNumber);
+        clearCart();
+        localStorage.removeItem('checkout_customer_info');
+      } else {
+        console.error('Failed to create order after payment verification');
+      }
+      
+    } catch (error) {
+      console.error('Error creating order after payment:', error);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-cream-50 flex items-center justify-center px-4">
@@ -112,10 +191,10 @@ const CheckoutSuccess: React.FC = () => {
             <>
               <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
               <h1 className="text-2xl font-bold text-brown-900 mb-2">
-                ¡Pago Exitoso!
+                ¡Orden Confirmada!
               </h1>
               <p className="text-brown-800 mb-4">
-                {verification.message}
+                Tu pago ha sido procesado exitosamente y tu orden ha sido confirmada.
               </p>
               {verification.paymentDetails && (
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
@@ -152,13 +231,13 @@ const CheckoutSuccess: React.FC = () => {
             <>
               <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
               <h1 className="text-2xl font-bold text-brown-900 mb-2">
-                Pago No Completado
+                Orden No Completada
               </h1>
               <p className="text-brown-800 mb-4">
-                {verification.error || verification.message || 'El pago no pudo ser procesado'}
+                {verification.error || verification.message || 'El pago no pudo ser procesado y tu orden no ha sido confirmada.'}
               </p>
               <p className="text-sm text-brown-600">
-                Puedes intentar realizar el pago nuevamente.
+                Puedes intentar realizar el pago nuevamente desde tu carrito.
               </p>
             </>
           )}

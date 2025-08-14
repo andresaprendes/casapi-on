@@ -52,6 +52,18 @@ const Checkout = () => {
 
   const handleCustomerSubmit = (data: CustomerInfo) => {
     setCustomerInfo(data)
+    // Save customer info to localStorage for use in success page
+    localStorage.setItem('checkout_customer_info', JSON.stringify({
+      name: `${data.firstName} ${data.lastName}`,
+      email: data.email,
+      phone: data.phone,
+      address: data.address,
+      city: data.city,
+      state: data.state,
+      zipCode: data.zipCode,
+      shippingZone: data.shippingZone,
+      notes: data.notes
+    }))
     setCurrentStep('payment')
   }
 
@@ -59,8 +71,10 @@ const Checkout = () => {
     setPaymentInfo(data)
     if (data.method === 'epayco' || data.method === 'mercadopago') {
       // For ePayco and MercadoPago, we'll handle the payment in the component
+      // Order will be processed after payment verification
       return
     }
+    // For other payment methods, process order immediately
     setCurrentStep('confirmation')
     processOrder()
   }
