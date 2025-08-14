@@ -26,6 +26,13 @@ const CheckoutSuccess: React.FC = () => {
 
   const paymentId = searchParams.get('payment_id');
   const externalReference = searchParams.get('external_reference');
+  
+  // Debug logging
+  console.log('🔍 CheckoutSuccess Debug:', {
+    paymentId,
+    externalReference,
+    searchParams: Object.fromEntries(searchParams.entries())
+  });
 
   useEffect(() => {
     const verifyPayment = async () => {
@@ -43,8 +50,12 @@ const CheckoutSuccess: React.FC = () => {
 
       try {
         const apiUrl = import.meta.env.VITE_API_URL || 'https://casa-pinon-backend-production.up.railway.app';
+        console.log('🔍 Calling payment verification API:', `${apiUrl}/api/mercadopago/payment-status/${paymentId}`);
+        
         const response = await fetch(`${apiUrl}/api/mercadopago/payment-status/${paymentId}`);
         const result = await response.json();
+        
+        console.log('🔍 Payment verification result:', result);
 
         if (result.success) {
           setVerification({
