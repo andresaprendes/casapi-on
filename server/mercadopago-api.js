@@ -316,6 +316,21 @@ const client = new MercadoPagoConfig({
 const BASE_URL = process.env.BASE_URL || 'https://casapi-on-production.up.railway.app';
 const API_URL = process.env.API_URL || 'https://casa-pinon-backend-production.up.railway.app';
 
+// Root endpoint to test if server is running
+app.get('/', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Casa Piñón Backend API is running',
+    timestamp: new Date().toISOString(),
+    endpoints: [
+      '/api/mercadopago/test',
+      '/api/mercadopago/webhook-test',
+      '/api/products',
+      '/api/orders'
+    ]
+  });
+});
+
 // 1. Create payment preference
 app.post('/api/mercadopago/create-preference', async (req, res) => {
   try {
@@ -1114,6 +1129,7 @@ app.listen(PORT, () => {
   console.log(`- POST /api/mercadopago/webhook`);
   console.log(`- GET  /api/mercadopago/payment-methods`);
   console.log(`- GET  /api/mercadopago/test`);
+  console.log(`- GET  /api/mercadopago/webhook-test`);
   console.log(`- POST /api/upload/image`);
   console.log(`- GET  /api/products`);
   console.log(`- GET  /api/products/:id`);
