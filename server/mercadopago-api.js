@@ -1289,6 +1289,7 @@ app.post('/api/products/initialize', async (req, res) => {
   try {
     console.log('🚀 Manual product initialization...');
     console.log('📊 Default products count:', defaultProducts.length);
+    console.log('🔍 DATABASE_URL exists:', !!process.env.DATABASE_URL);
     
     if (process.env.DATABASE_URL) {
       console.log('🗄️  Using PostgreSQL database');
@@ -1310,6 +1311,58 @@ app.post('/api/products/initialize', async (req, res) => {
   } catch (error) {
     console.error('Error initializing products:', error);
     res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// TEST ENDPOINT - Check database connection and products
+app.get('/api/products/test', async (req, res) => {
+  try {
+    console.log('🧪 Testing products endpoint...');
+    
+    if (process.env.DATABASE_URL) {
+      console.log('🗄️  Testing PostgreSQL connection...');
+      
+      // Test database connection
+      const testQuery = await pool.query('SELECT NOW() as current_time');
+      console.log('✅ Database connection test:', testQuery.rows[0]);
+      
+      // Check if products table exists
+      const tableCheck = await pool.query(`
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_name = 'products'
+        ) as table_exists
+      `);
+      console.log('📋 Products table exists:', tableCheck.rows[0].table_exists);
+      
+      // Count products
+      const productCount = await pool.query('SELECT COUNT(*) as count FROM products');
+      console.log('📊 Current product count:', productCount.rows[0].count);
+      
+      res.json({
+        success: true,
+        databaseConnected: true,
+        tableExists: tableCheck.rows[0].table_exists,
+        productCount: parseInt(productCount.rows[0].count),
+        defaultProductsCount: defaultProducts.length
+      });
+    } else {
+      console.log('💾 Testing in-memory storage...');
+      res.json({
+        success: true,
+        databaseConnected: false,
+        tableExists: false,
+        productCount: productDatabase.size,
+        defaultProductsCount: defaultProducts.length
+      });
+    }
+  } catch (error) {
+    console.error('❌ Test endpoint error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      stack: error.stack
+    });
   }
 });
 
