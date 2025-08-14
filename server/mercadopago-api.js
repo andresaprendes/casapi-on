@@ -7,6 +7,7 @@ const fs = require('fs');
 const { MercadoPagoConfig, Preference, Payment, PaymentMethod } = require('mercadopago');
 const { initializeDatabase } = require('./database');
 const { orderOperations, paymentOperations, productOperations } = require('./dbOperations');
+const { sendOrderConfirmation, sendPaymentStatusEmail } = require('./emailService');
 require('dotenv').config();
 
 // In-memory storage as fallback (when DATABASE_URL is not available)
@@ -548,17 +549,44 @@ app.get('/api/mercadopago/payment-status/:paymentId', async (req, res) => {
       webhookVerified: false
     });
 
-    // Update order status based on payment status
+    // Update order status based on payment status and send email notification
     if (payment.external_reference) {
+      let orderStatus = 'pending';
+      
       if (payment.status === 'approved') {
+        orderStatus = 'paid';
         updateOrderPaymentStatus(payment.external_reference, 'paid', payment.id);
         console.log('✅ Order updated to paid via API verification:', payment.external_reference);
       } else if (payment.status === 'rejected' || payment.status === 'cancelled') {
+        orderStatus = 'failed';
         updateOrderPaymentStatus(payment.external_reference, 'failed', payment.id);
         console.log('❌ Order updated to failed via API verification:', payment.external_reference);
       } else if (payment.status === 'pending') {
+        orderStatus = 'pending';
         updateOrderPaymentStatus(payment.external_reference, 'pending', payment.id);
         console.log('⏳ Order updated to pending via API verification:', payment.external_reference);
+      }
+      
+      // Send payment status email for all status changes
+      try {
+        const order = await orderOperations.getByOrderNumber(payment.external_reference);
+        if (order) {
+          const customerInfo = order.customer || {
+            name: order.customer_name,
+            email: order.customer_email,
+            phone: order.customer_phone,
+            address: order.customer_address
+          };
+          
+          const emailResult = await sendPaymentStatusEmail(order, customerInfo, payment, payment.status);
+          if (emailResult.success) {
+            console.log(`✅ Payment ${payment.status} email sent for order:`, payment.external_reference);
+          } else {
+            console.log(`⚠️ Failed to send payment ${payment.status} email:`, emailResult.error);
+          }
+        }
+      } catch (emailError) {
+        console.log(`⚠️ Error sending payment ${payment.status} email:`, emailError.message);
       }
     }
 
@@ -635,17 +663,44 @@ app.post('/api/mercadopago/webhook', express.json(), async (req, res) => {
           webhookVerified: true
         });
         
-        // Update order based on payment status
+        // Update order based on payment status and send email notification
         if (payment.external_reference) {
+          let orderStatus = 'pending';
+          
           if (payment.status === 'approved') {
+            orderStatus = 'paid';
             updateOrderPaymentStatus(payment.external_reference, 'paid', payment.id);
             console.log('✅ Order updated to paid:', payment.external_reference);
-          } else if (payment.status === 'rejected') {
+          } else if (payment.status === 'rejected' || payment.status === 'cancelled') {
+            orderStatus = 'failed';
             updateOrderPaymentStatus(payment.external_reference, 'failed', payment.id);
             console.log('❌ Order updated to failed:', payment.external_reference);
           } else if (payment.status === 'pending') {
+            orderStatus = 'pending';
             updateOrderPaymentStatus(payment.external_reference, 'pending', payment.id);
             console.log('⏳ Order updated to pending:', payment.external_reference);
+          }
+          
+          // Send payment status email for all status changes
+          try {
+            const order = await orderOperations.getByOrderNumber(payment.external_reference);
+            if (order) {
+              const customerInfo = order.customer || {
+                name: order.customer_name,
+                email: order.customer_email,
+                phone: order.customer_phone,
+                address: order.customer_address
+              };
+              
+              const emailResult = await sendPaymentStatusEmail(order, customerInfo, payment, payment.status);
+              if (emailResult.success) {
+                console.log(`✅ Payment ${payment.status} email sent for order:`, payment.external_reference);
+              } else {
+                console.log(`⚠️ Failed to send payment ${payment.status} email:`, emailResult.error);
+              }
+            }
+          } catch (emailError) {
+            console.log(`⚠️ Error sending payment ${payment.status} email:`, emailError.message);
           }
         }
         
