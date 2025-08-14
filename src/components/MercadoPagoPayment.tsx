@@ -185,6 +185,17 @@ const MercadoPagoPayment = ({
             <span>Bancolombia</span>
           </div>
         </div>
+        
+        {/* PSE Instructions */}
+        <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <h5 className="text-sm font-medium text-yellow-800 mb-2">⚠️ Importante para pagos PSE:</h5>
+          <ul className="text-xs text-yellow-700 space-y-1">
+            <li>• El proceso puede tomar 5-15 minutos</li>
+            <li>• No cierres esta ventana hasta completar el pago</li>
+            <li>• Serás redirigido a tu banco para confirmar</li>
+            <li>• Recibirás confirmación por email</li>
+          </ul>
+        </div>
       </div>
 
       {/* Security Notice */}

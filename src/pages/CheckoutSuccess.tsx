@@ -112,9 +112,13 @@ const CheckoutSuccess: React.FC = () => {
         }
       } else {
         // If payment not found and we haven't exceeded retries, try again
-        if (retryCount < 3 && result.error?.includes('not found')) {
-          console.log(`🔄 Payment not found, retrying in 2 seconds... (attempt ${retryCount + 1}/3)`);
-          setTimeout(() => verifyPayment(retryCount + 1), 2000);
+        // For PSE payments, retry more times with longer intervals
+        const maxRetries = verification.paymentDetails?.payment_method_id === 'pse' ? 10 : 3;
+        const retryDelay = verification.paymentDetails?.payment_method_id === 'pse' ? 5000 : 2000;
+        
+        if (retryCount < maxRetries && result.error?.includes('not found')) {
+          console.log(`🔄 Payment not found, retrying in ${retryDelay/1000} seconds... (attempt ${retryCount + 1}/${maxRetries})`);
+          setTimeout(() => verifyPayment(retryCount + 1), retryDelay);
           return;
         }
         
@@ -209,6 +213,20 @@ const CheckoutSuccess: React.FC = () => {
               <p className="text-brown-800 mb-4">
                 {verification.message}
               </p>
+              
+              {/* PSE Specific Instructions */}
+              {verification.paymentDetails?.payment_method_id === 'pse' && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                  <h4 className="text-sm font-medium text-yellow-800 mb-2">Pago PSE en Proceso</h4>
+                  <ul className="text-sm text-yellow-700 space-y-1">
+                    <li>• Tu banco está procesando el pago</li>
+                    <li>• El proceso puede tomar hasta 15 minutos</li>
+                    <li>• Recibirás confirmación por email</li>
+                    <li>• Puedes cerrar esta ventana</li>
+                  </ul>
+                </div>
+              )}
+              
               <p className="text-sm text-brown-600">
                 Tu pago está siendo procesado. Te notificaremos cuando se confirme.
               </p>
