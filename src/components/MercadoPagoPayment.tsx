@@ -6,7 +6,6 @@ interface MercadoPagoPaymentProps {
   orderId: string
   customerEmail: string
   customerName: string
-  onSuccess: (response: any) => void
   onError: (error: any) => void
 }
 
@@ -15,7 +14,6 @@ const MercadoPagoPayment = ({
   orderId, 
   customerEmail, 
   customerName, 
-  onSuccess, 
   onError 
 }: MercadoPagoPaymentProps) => {
   // Updated: Using redirect approach for reliable payment processing

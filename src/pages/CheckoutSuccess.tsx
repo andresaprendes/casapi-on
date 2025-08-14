@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useSearchParams, useNavigate } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { CheckCircle, XCircle, Clock, Loader2 } from 'lucide-react';
 import { useCart } from '../store/CartContext';
 
@@ -15,7 +15,6 @@ interface PaymentVerification {
 
 const CheckoutSuccess: React.FC = () => {
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
   const { state, clearCart } = useCart();
   const [verification, setVerification] = useState<PaymentVerification>({
     isVerified: false,
@@ -24,7 +23,6 @@ const CheckoutSuccess: React.FC = () => {
     isRejected: false
   });
   const [isLoading, setIsLoading] = useState(true);
-  const [orderNumber, setOrderNumber] = useState<string>('');
 
   const paymentId = searchParams.get('payment_id');
   const externalReference = searchParams.get('external_reference');
@@ -154,7 +152,6 @@ const CheckoutSuccess: React.FC = () => {
       const result = await response.json();
       
       if (result.success && result.order) {
-        setOrderNumber(result.order.orderNumber);
         console.log('✅ Order created successfully after payment:', result.order.orderNumber);
         clearCart();
         localStorage.removeItem('checkout_customer_info');
