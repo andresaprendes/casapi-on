@@ -23,7 +23,7 @@ const CheckoutSuccess: React.FC = () => {
     isRejected: false
   });
   const [isLoading, setIsLoading] = useState(true);
-  const [webhookReceived, setWebhookReceived] = useState(false);
+
 
   const paymentId = searchParams.get('payment_id');
   const externalReference = searchParams.get('external_reference');
@@ -48,7 +48,6 @@ const CheckoutSuccess: React.FC = () => {
         const data = JSON.parse(event.data);
         if (data.paymentId === paymentId) {
           console.log('🔔 Webhook notification received:', data);
-          setWebhookReceived(true);
           // Re-verify payment immediately
           verifyPayment(0);
         }

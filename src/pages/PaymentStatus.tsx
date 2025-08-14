@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { CheckCircle, XCircle, Clock, Loader2, Search, Copy } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, Loader2, Search } from 'lucide-react';
 
 interface PaymentVerification {
   isVerified: boolean;
@@ -131,9 +131,7 @@ const PaymentStatus: React.FC = () => {
     verifyPayment(0);
   };
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-  };
+
 
   return (
     <div className="min-h-screen bg-cream-50 flex items-center justify-center px-4">
