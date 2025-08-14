@@ -4,30 +4,42 @@
 const mapOrderFields = (dbOrder) => {
   if (!dbOrder) return null;
   
+  // Helper function to safely parse JSON
+  const safeJsonParse = (value) => {
+    if (!value) return null;
+    if (typeof value === 'object') return value;
+    try {
+      return JSON.parse(value);
+    } catch (error) {
+      console.warn('Failed to parse JSON:', value);
+      return null;
+    }
+  };
+  
   return {
     id: dbOrder.id,
-    orderNumber: dbOrder.order_number,
-    customerName: dbOrder.customer_name,
-    customerEmail: dbOrder.customer_email,
-    customerPhone: dbOrder.customer_phone,
-    customerAddress: dbOrder.customer_address ? JSON.parse(dbOrder.customer_address) : null,
-    items: dbOrder.items ? JSON.parse(dbOrder.items) : [],
+    orderNumber: dbOrder.order_number || dbOrder.orderNumber,
+    customerName: dbOrder.customer_name || dbOrder.customerName,
+    customerEmail: dbOrder.customer_email || dbOrder.customerEmail,
+    customerPhone: dbOrder.customer_phone || dbOrder.customerPhone,
+    customerAddress: safeJsonParse(dbOrder.customer_address || dbOrder.customerAddress),
+    items: safeJsonParse(dbOrder.items) || [],
     subtotal: parseFloat(dbOrder.subtotal) || 0,
     shipping: parseFloat(dbOrder.shipping) || 0,
     tax: parseFloat(dbOrder.tax) || 0,
     total: parseFloat(dbOrder.total) || 0,
     status: dbOrder.status,
-    paymentStatus: dbOrder.payment_status,
-    paymentMethod: dbOrder.payment_method,
-    paymentId: dbOrder.payment_id,
-    shippingZone: dbOrder.shipping_zone,
+    paymentStatus: dbOrder.payment_status || dbOrder.paymentStatus,
+    paymentMethod: dbOrder.payment_method || dbOrder.paymentMethod,
+    paymentId: dbOrder.payment_id || dbOrder.paymentId,
+    shippingZone: dbOrder.shipping_zone || dbOrder.shippingZone,
     notes: dbOrder.notes,
-    estimatedDelivery: dbOrder.estimated_delivery,
-    abandonedAt: dbOrder.abandoned_at,
+    estimatedDelivery: dbOrder.estimated_delivery || dbOrder.estimatedDelivery,
+    abandonedAt: dbOrder.abandoned_at || dbOrder.abandonedAt,
     retryCount: parseInt(dbOrder.retry_count) || 0,
-    lastPaymentAttempt: dbOrder.last_payment_attempt,
-    createdAt: dbOrder.created_at,
-    updatedAt: dbOrder.updated_at
+    lastPaymentAttempt: dbOrder.last_payment_attempt || dbOrder.lastPaymentAttempt,
+    createdAt: dbOrder.created_at || dbOrder.createdAt,
+    updatedAt: dbOrder.updated_at || dbOrder.updatedAt
   };
 };
 
@@ -55,6 +67,18 @@ const mapPaymentFields = (dbPayment) => {
 const mapProductFields = (dbProduct) => {
   if (!dbProduct) return null;
   
+  // Helper function to safely parse JSON
+  const safeJsonParse = (value) => {
+    if (!value) return null;
+    if (typeof value === 'object') return value;
+    try {
+      return JSON.parse(value);
+    } catch (error) {
+      console.warn('Failed to parse JSON:', value);
+      return null;
+    }
+  };
+  
   return {
     id: dbProduct.id,
     name: dbProduct.name,
@@ -62,18 +86,18 @@ const mapProductFields = (dbProduct) => {
     price: parseFloat(dbProduct.price) || 0,
     category: dbProduct.category,
     subcategory: dbProduct.subcategory,
-    images: dbProduct.images ? JSON.parse(dbProduct.images) : [],
-    materials: dbProduct.materials ? JSON.parse(dbProduct.materials) : [],
-    dimensions: dbProduct.dimensions ? JSON.parse(dbProduct.dimensions) : {},
+    images: safeJsonParse(dbProduct.images) || [],
+    materials: safeJsonParse(dbProduct.materials) || [],
+    dimensions: safeJsonParse(dbProduct.dimensions) || {},
     weight: parseFloat(dbProduct.weight) || 0,
-    inStock: dbProduct.in_stock,
-    isCustom: dbProduct.is_custom,
-    estimatedDelivery: dbProduct.estimated_delivery,
-    features: dbProduct.features ? JSON.parse(dbProduct.features) : [],
-    specifications: dbProduct.specifications ? JSON.parse(dbProduct.specifications) : {},
+    inStock: dbProduct.in_stock || dbProduct.inStock || true,
+    isCustom: dbProduct.is_custom || dbProduct.isCustom || false,
+    estimatedDelivery: dbProduct.estimated_delivery || dbProduct.estimatedDelivery,
+    features: safeJsonParse(dbProduct.features) || [],
+    specifications: safeJsonParse(dbProduct.specifications) || {},
     displayOrder: parseInt(dbProduct.display_order) || 0,
-    createdAt: dbProduct.created_at,
-    updatedAt: dbProduct.updated_at
+    createdAt: dbProduct.created_at || dbProduct.createdAt,
+    updatedAt: dbProduct.updated_at || dbProduct.updatedAt
   };
 };
 
