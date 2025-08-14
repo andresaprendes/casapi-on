@@ -631,7 +631,7 @@ const Checkout = () => {
                     </div>
                   )}
 
-                  {(paymentInfo?.method !== 'epayco' || (paymentInfo?.method === 'mercadopago' && !orderNumber)) && (
+                  {((paymentInfo?.method !== 'epayco' && paymentInfo?.method !== 'mercadopago') || (paymentInfo?.method === 'mercadopago' && !orderNumber)) && (
                     <button
                       onClick={() => handlePaymentSubmit(paymentInfo!)}
                       disabled={!paymentInfo?.method || isCreatingOrder}
