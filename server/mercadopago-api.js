@@ -342,12 +342,21 @@ app.post('/api/mercadopago/create-preference', async (req, res) => {
           title: description || `Orden ${orderId} - Casa Piñón Ebanistería`,
           unit_price: Number(amount),
           quantity: 1,
-          currency_id: 'COP'
+          currency_id: 'COP',
+          description: `Compra en Casa Piñón Ebanistería - ${description || 'Productos de madera fina'}`
         }
       ],
       payer: {
-        email: customerEmail
-      },
+        email: customerEmail,
+        name: customerName || 'Cliente Casa Piñón'
+            },
+      
+      // Seller information to distinguish from buyer
+      application_id: 'CASA_PINON_EBANISTERIA',
+      expires: false,
+      marketplace_fee: 0,
+      statement_descriptor: 'CASA PINON',
+
       external_reference: orderId,
       back_urls: {
         success: `${BASE_URL}/checkout/success?payment_id={payment_id}&status={status}&external_reference={external_reference}`,
@@ -355,9 +364,7 @@ app.post('/api/mercadopago/create-preference', async (req, res) => {
         pending: `${BASE_URL}/checkout?payment_status=pending&external_reference={external_reference}`
       },
       notification_url: `${API_URL}/api/mercadopago/webhook`,
-      auto_return: 'approved',
-      expires: false,
-      marketplace_fee: 0
+      auto_return: 'approved'
     };
 
     console.log('Creating MercadoPago preference:', {
