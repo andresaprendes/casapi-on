@@ -87,10 +87,9 @@ const Checkout = () => {
     }
   }
 
-  const handlePaymentSubmit = (data: PaymentInfo) => {
-    setPaymentInfo(data)
-    // Order is already created, just set payment method
-    console.log('✅ Payment method selected:', data.method)
+  const handlePaymentMethodSelect = (method: 'mercadopago') => {
+    setPaymentInfo({ method })
+    console.log('✅ Payment method selected:', method)
   }
 
   const handleMercadoPagoError = (error: any) => {
@@ -516,7 +515,7 @@ const Checkout = () => {
                     {paymentMethods.map((method) => (
                       <div
                         key={method.id}
-                        onClick={() => setPaymentInfo({ method: method.id as any })}
+                        onClick={() => handlePaymentMethodSelect(method.id as 'mercadopago')}
                         className={`p-4 border-2 rounded-lg cursor-pointer transition-colors ${
                           paymentInfo?.method === method.id
                             ? 'border-brown-800 bg-brown-50'
