@@ -555,6 +555,7 @@ function getPaymentStatusMessage(status, statusDetail) {
 // 3. Secure webhook for payment notifications
 app.post('/api/mercadopago/webhook', express.json(), async (req, res) => {
   try {
+    console.log('🔔 WEBHOOK RECEIVED - TIMESTAMP:', new Date().toISOString());
     console.log('🔔 Webhook received:', JSON.stringify(req.body, null, 2));
     console.log('📋 Headers:', JSON.stringify(req.headers, null, 2));
     
@@ -665,6 +666,16 @@ app.get('/api/mercadopago/test', (req, res) => {
     success: true,
     message: 'MercadoPago API is working',
     timestamp: new Date().toISOString()
+  });
+});
+
+// 6. Webhook test endpoint
+app.get('/api/mercadopago/webhook-test', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Webhook endpoint is accessible',
+    timestamp: new Date().toISOString(),
+    url: `${API_URL}/api/mercadopago/webhook`
   });
 });
 
