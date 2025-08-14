@@ -361,10 +361,6 @@ app.post('/api/mercadopago/create-preference', async (req, res) => {
           description: `Compra en Casa Piñón Ebanistería - ${description || 'Productos de madera fina'}`
         }
       ],
-      payer: {
-        email: customerEmail,
-        name: customerName || 'Cliente Casa Piñón'
-      },
       external_reference: orderId,
       back_urls: {
         success: `${BASE_URL}/checkout/success?payment_id={payment_id}&status={status}&external_reference={external_reference}`,
