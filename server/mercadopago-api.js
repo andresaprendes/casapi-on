@@ -72,7 +72,11 @@ const upload = multer({
 });
 
 // MercadoPago Configuration
-const MERCADOPAGO_ACCESS_TOKEN = process.env.MERCADOPAGO_ACCESS_TOKEN || 'TEST-12345678-1234-1234-1234-123456789012';
+const MERCADOPAGO_ACCESS_TOKEN = process.env.MERCADOPAGO_ACCESS_TOKEN;
+if (!MERCADOPAGO_ACCESS_TOKEN) {
+  console.error('❌ MERCADOPAGO_ACCESS_TOKEN is not set!');
+  process.exit(1);
+}
 const WEBHOOK_SECRET = process.env.MERCADOPAGO_WEBHOOK_SECRET || 'your-webhook-secret';
 console.log('Initializing MercadoPago with token:', MERCADOPAGO_ACCESS_TOKEN ? MERCADOPAGO_ACCESS_TOKEN.substring(0, 15) + '...' : 'NONE');
 

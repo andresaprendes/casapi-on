@@ -43,7 +43,7 @@ const initializeDatabase = async () => {
         payment_id VARCHAR(100),
         shipping_zone VARCHAR(100),
         notes TEXT,
-        estimated_delivery TIMESTAMP,
+        estimated_delivery VARCHAR(100),
         abandoned_at TIMESTAMP,
         retry_count INTEGER DEFAULT 0,
         last_payment_attempt TIMESTAMP,
