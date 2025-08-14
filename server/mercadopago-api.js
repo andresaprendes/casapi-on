@@ -584,6 +584,8 @@ app.post('/api/mercadopago/webhook', express.json(), async (req, res) => {
     console.log('🔔 WEBHOOK RECEIVED - TIMESTAMP:', new Date().toISOString());
     console.log('🔔 Webhook received:', JSON.stringify(req.body, null, 2));
     console.log('📋 Headers:', JSON.stringify(req.headers, null, 2));
+    console.log('🔔 Webhook URL called:', req.url);
+    console.log('🔔 Webhook method:', req.method);
     
     const { action, api_version, data, date_created, id, live_mode, type, user_id } = req.body;
     
@@ -702,6 +704,16 @@ app.get('/api/mercadopago/webhook-test', (req, res) => {
     message: 'Webhook endpoint is accessible',
     timestamp: new Date().toISOString(),
     url: `${API_URL}/api/mercadopago/webhook`
+  });
+});
+
+// 7. Simple webhook test endpoint (GET)
+app.get('/api/mercadopago/webhook', (req, res) => {
+  console.log('🔔 WEBHOOK GET TEST - TIMESTAMP:', new Date().toISOString());
+  res.json({
+    success: true,
+    message: 'Webhook GET endpoint is accessible',
+    timestamp: new Date().toISOString()
   });
 });
 
