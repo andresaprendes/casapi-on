@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer, ReactNode } from 'react'
+import React, { createContext, useContext, useReducer, ReactNode, useEffect } from 'react'
 import { CartItem, Product } from '../types'
 
 interface CartState {
@@ -106,10 +106,38 @@ interface CartProviderProps {
 }
 
 export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
-  const [state, dispatch] = useReducer(cartReducer, {
-    items: [],
-    isOpen: false
-  })
+  // Load cart from localStorage on initialization
+  const getInitialState = (): CartState => {
+    try {
+      const savedCart = localStorage.getItem('casa-pinon-cart')
+      if (savedCart) {
+        const parsed = JSON.parse(savedCart)
+        return {
+          items: parsed.items || [],
+          isOpen: false
+        }
+      }
+    } catch (error) {
+      console.error('Error loading cart from localStorage:', error)
+    }
+    return {
+      items: [],
+      isOpen: false
+    }
+  }
+
+  const [state, dispatch] = useReducer(cartReducer, getInitialState())
+
+  // Save cart to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem('casa-pinon-cart', JSON.stringify({
+        items: state.items
+      }))
+    } catch (error) {
+      console.error('Error saving cart to localStorage:', error)
+    }
+  }, [state.items])
 
   const addItem = (product: Product, quantity: number, customizations?: Record<string, string>) => {
     dispatch({ type: 'ADD_ITEM', payload: { product, quantity, customizations } })
