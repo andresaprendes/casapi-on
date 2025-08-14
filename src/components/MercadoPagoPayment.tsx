@@ -91,16 +91,16 @@ const MercadoPagoPayment = ({
       } else {
         throw new Error(result.error || 'Error al crear la preferencia de pago')
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('MercadoPago payment error:', error)
       
       // Provide more specific error messages
       let errorMsg = 'Error al procesar el pago. Por favor, intenta nuevamente.'
-      if (error.message?.includes('network')) {
+      if (error?.message?.includes('network')) {
         errorMsg = 'Error de conexión. Verifica tu internet e intenta nuevamente.'
-      } else if (error.message?.includes('preference')) {
+      } else if (error?.message?.includes('preference')) {
         errorMsg = 'Error al crear la preferencia de pago. Contacta soporte.'
-      } else if (error.message?.includes('amount')) {
+      } else if (error?.message?.includes('amount')) {
         errorMsg = 'Error en el monto del pago. Verifica el total e intenta nuevamente.'
       }
       
@@ -152,21 +152,6 @@ const MercadoPagoPayment = ({
           >
             Proceder al Pago
           </button>
-        </div>
-      )}
-            <div className="flex justify-between">
-              <span className="text-brown-600">Orden:</span>
-              <span className="font-medium">{orderId}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-brown-600">Cliente:</span>
-              <span className="font-medium">{customerName}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-brown-600">Total a Pagar:</span>
-              <span className="font-bold text-brown-900">{formatPrice(amount)}</span>
-            </div>
-          </div>
         </div>
       )}
 
@@ -228,29 +213,6 @@ const MercadoPagoPayment = ({
         </div>
       </div>
 
-      {/* MercadoPago Checkout Button */}
-      <div className="space-y-4">
-        <button
-          onClick={handlePayment}
-          disabled={isProcessing}
-          className="w-full btn-primary py-4 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isProcessing ? (
-            <div className="flex items-center justify-center space-x-2">
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              <span>Creando preferencia de pago...</span>
-            </div>
-          ) : (
-            <div className="flex items-center justify-center space-x-2">
-              <CreditCard className="w-5 h-5" />
-              <span>Pagar {formatPrice(amount)} con MercadoPago</span>
-            </div>
-          )}
-        </button>
-
-        {/* MercadoPago will redirect automatically when payment is initiated */}
-      </div>
-
       {/* Status Messages */}
       {paymentStatus === 'success' && (
         <div className="p-4 bg-blue-100 border border-blue-400 text-blue-700 rounded-lg">
@@ -259,18 +221,6 @@ const MercadoPagoPayment = ({
             <span className="font-medium">¡Redirigiendo a MercadoPago!</span>
           </div>
           <p className="text-sm mt-1">Serás redirigido automáticamente a MercadoPago para completar tu pago.</p>
-        </div>
-      )}
-
-      {paymentStatus === 'error' && (
-        <div className="p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
-          <div className="flex items-center space-x-2">
-            <AlertCircle className="w-5 h-5" />
-            <span className="font-medium">Error al procesar el pago</span>
-          </div>
-          {errorMessage && (
-            <p className="text-sm mt-1">{errorMessage}</p>
-          )}
         </div>
       )}
     </div>
