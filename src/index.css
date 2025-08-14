@@ -52,4 +52,11 @@
   .gradient-overlay {
     background: linear-gradient(135deg, rgba(67, 48, 43, 0.8) 0%, rgba(67, 48, 43, 0.4) 100%);
   }
+  
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
 } 

@@ -4,10 +4,12 @@ import { Helmet } from 'react-helmet-async'
 import { motion } from 'framer-motion'
 import { Search, Grid, List } from 'lucide-react'
 import ProductCard from '../components/ProductCard'
-import { products, categories } from '../data/mockData'
+import { categories } from '../data/mockData'
+import { useProducts } from '../hooks/useProducts'
 
 const Products = () => {
   const { category } = useParams()
+  const { products } = useProducts()
   const [searchTerm, setSearchTerm] = useState('')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [filteredProducts, setFilteredProducts] = useState(products)
@@ -32,7 +34,7 @@ const Products = () => {
     }
 
     setFilteredProducts(filtered)
-  }, [category, searchTerm])
+  }, [products, category, searchTerm])
 
   const currentCategory = categories.find(cat => cat.slug === category)
 

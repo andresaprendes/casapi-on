@@ -8,7 +8,7 @@ export const products: Product[] = [
     price: 2800000,
     category: 'comedor',
     subcategory: 'mesas',
-    images: ['/images/mesa-comedor-pinon-1.jpg', '/images/mesa-comedor-pinon-2.jpg'],
+    images: ['/images/image-1755135305383-454296344.png'],
     materials: ['Piñón macizo', 'Barniz natural'],
     dimensions: { length: 180, width: 90, height: 75 },
     weight: 45,

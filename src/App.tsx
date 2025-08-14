@@ -13,6 +13,8 @@ import MercadoPagoPayment from './pages/MercadoPagoPayment'
 import About from './pages/About'
 import Contact from './pages/Contact'
 import Orders from './pages/Orders'
+import AdminProducts from './pages/AdminProducts'
+import AdminDashboard from './pages/AdminDashboard'
 import AdminLogin from './pages/AdminLogin'
 import ProtectedRoute from './components/ProtectedRoute'
 import { CartProvider } from './store/CartContext'
@@ -44,9 +46,19 @@ function App() {
                    <Route path="/nosotros" element={<About />} />
                    <Route path="/contacto" element={<Contact />} />
                    <Route path="/admin/login" element={<AdminLogin />} />
+                   <Route path="/admin" element={
+                     <ProtectedRoute>
+                       <AdminDashboard />
+                     </ProtectedRoute>
+                   } />
                    <Route path="/admin/pedidos" element={
                      <ProtectedRoute>
                        <Orders />
+                     </ProtectedRoute>
+                   } />
+                   <Route path="/admin/productos" element={
+                     <ProtectedRoute>
+                       <AdminProducts />
                      </ProtectedRoute>
                    } />
           </Routes>

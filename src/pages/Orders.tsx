@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
-import { Search, Calendar, Package, CreditCard, Eye, Edit3, Truck, LogOut } from 'lucide-react'
+import { Search, Calendar, Package, CreditCard, Eye, Edit3, Truck, LogOut, Settings, BarChart3 } from 'lucide-react'
 import { Order, OrderFilters, OrderStats } from '../types'
 import { useAuth } from '../store/AuthContext'
+import { Link } from 'react-router-dom'
 
 const Orders = () => {
   const [orders, setOrders] = useState<Order[]>([])
@@ -145,13 +146,29 @@ const Orders = () => {
             <h1 className="text-2xl sm:text-3xl font-bold text-brown-900 mb-2">Gestión de Pedidos</h1>
             <p className="text-brown-600">Administra y da seguimiento a todos los pedidos</p>
           </div>
-          <button
-            onClick={logout}
-            className="flex items-center justify-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200 w-full sm:w-auto"
-          >
-            <LogOut className="w-4 h-4" />
-            <span>Cerrar Sesión</span>
-          </button>
+          <div className="flex gap-2">
+            <Link
+              to="/admin"
+              className="flex items-center justify-center space-x-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors duration-200"
+            >
+              <BarChart3 className="w-4 h-4" />
+              <span>Dashboard</span>
+            </Link>
+            <Link
+              to="/admin/productos"
+              className="flex items-center justify-center space-x-2 px-4 py-2 bg-brown-600 text-white rounded-lg hover:bg-brown-700 transition-colors duration-200"
+            >
+              <Settings className="w-4 h-4" />
+              <span>Gestionar Productos</span>
+            </Link>
+            <button
+              onClick={logout}
+              className="flex items-center justify-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>Cerrar Sesión</span>
+            </button>
+          </div>
         </div>
 
         {/* Stats Cards */}

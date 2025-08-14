@@ -1,6 +1,9 @@
 const express = require('express');
 const cors = require('cors');
 const crypto = require('crypto');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 const { MercadoPagoConfig, Preference, Payment, PaymentMethod } = require('mercadopago');
 require('dotenv').config();
 
@@ -28,6 +31,39 @@ app.use('/api/mercadopago/test', express.json());
 // Raw middleware for webhook (signature verification needs raw body)
 // Note: The webhook endpoint will handle its own raw parsing
 
+// File upload configuration
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadPath = path.join(__dirname, '..', 'public', 'images');
+    // Create directory if it doesn't exist
+    if (!fs.existsSync(uploadPath)) {
+      fs.mkdirSync(uploadPath, { recursive: true });
+    }
+    cb(null, uploadPath);
+  },
+  filename: function (req, file, cb) {
+    // Generate unique filename with timestamp
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    cb(null, file.fieldname + '-' + uniqueSuffix + ext);
+  }
+});
+
+const upload = multer({ 
+  storage: storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB limit
+  },
+  fileFilter: function (req, file, cb) {
+    // Accept only image files
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed!'), false);
+    }
+  }
+});
+
 // MercadoPago Configuration
 const MERCADOPAGO_ACCESS_TOKEN = process.env.MERCADOPAGO_ACCESS_TOKEN || 'TEST-12345678-1234-1234-1234-123456789012';
 const WEBHOOK_SECRET = process.env.MERCADOPAGO_WEBHOOK_SECRET || 'your-webhook-secret';
@@ -36,6 +72,148 @@ console.log('Initializing MercadoPago with token:', MERCADOPAGO_ACCESS_TOKEN ? M
 // In-memory storage (in production, use a real database)
 const paymentDatabase = new Map();
 const orderDatabase = new Map();
+const productDatabase = new Map();
+
+// Initialize products with default data
+const defaultProducts = [
+  {
+    id: '1',
+    name: 'Mesa de Comedor de Piñón',
+    description: 'Mesa de comedor elegante fabricada en madera de piñón maciza, perfecta para 6 personas. Acabados de primera calidad con barniz natural que resalta la belleza única del piñón.',
+    price: 2800000,
+    category: 'comedor',
+    subcategory: 'mesas',
+    images: ['/images/image-1755135305383-454296344.png'],
+    materials: ['Piñón macizo', 'Barniz natural'],
+    dimensions: { length: 180, width: 90, height: 75 },
+    weight: 45,
+    inStock: true,
+    isCustom: false,
+    estimatedDelivery: '4-6 semanas',
+    features: ['Asientos para 6 personas', 'Madera de piñón auténtica', 'Diseño clásico'],
+    specifications: {
+      'Material': 'Piñón macizo',
+      'Acabado': 'Barniz natural',
+      'Capacidad': '6 personas',
+      'Garantía': '3 años'
+    }
+  },
+  {
+    id: '2',
+    name: 'Puerta Principal de Piñón',
+    description: 'Puerta principal fabricada en madera de piñón maciza con herrajes de bronce. Diseño tradicional que aporta elegancia y seguridad a tu hogar.',
+    price: 1200000,
+    category: 'puertas',
+    subcategory: 'principales',
+    images: ['/images/image-1755136170928-605023865.webp', '/images/image-1755136180161-48892126.webp'],
+    materials: ['Piñón macizo', 'Herrajes de bronce', 'Barniz protector'],
+    dimensions: { length: 210, width: 90, height: 6 },
+    weight: 35,
+    inStock: true,
+    isCustom: false,
+    estimatedDelivery: '3-5 semanas',
+    features: ['Piñón macizo', 'Herrajes de bronce', 'Resistente a la intemperie'],
+    specifications: {
+      'Material': 'Piñón macizo',
+      'Dimensiones': '210x90cm',
+      'Acabado': 'Barniz protector',
+      'Garantía': '5 años'
+    }
+  },
+  {
+    id: '3',
+    name: 'Cama Queen de Piñón',
+    description: 'Cama queen size fabricada en madera de piñón con cabecera tallada a mano. Diseño único que combina tradición y elegancia para tu habitación.',
+    price: 2200000,
+    category: 'habitacion',
+    subcategory: 'camas',
+    images: [],
+    materials: ['Piñón macizo', 'Tallado artesanal', 'Barniz natural'],
+    dimensions: { length: 200, width: 160, height: 120 },
+    weight: 40,
+    inStock: true,
+    isCustom: false,
+    estimatedDelivery: '4-6 semanas',
+    features: ['Tamaño Queen', 'Cabecera tallada', 'Madera de piñón auténtica'],
+    specifications: {
+      'Material': 'Piñón macizo',
+      'Tamaño': 'Queen (200x160cm)',
+      'Acabado': 'Barniz natural',
+      'Garantía': '3 años'
+    }
+  },
+  {
+    id: '4',
+    name: 'Estantería Artesanal de Piñón',
+    description: 'Estantería de 5 niveles fabricada en madera de piñón con diseño artesanal. Perfecta para exhibir libros y objetos decorativos con el toque auténtico del piñón.',
+    price: 1800000,
+    category: 'sala',
+    subcategory: 'estanterias',
+    images: [],
+    materials: ['Piñón macizo', 'Barniz natural', 'Tallado artesanal'],
+    dimensions: { length: 100, width: 35, height: 180 },
+    weight: 35,
+    inStock: true,
+    isCustom: false,
+    estimatedDelivery: '3-5 semanas',
+    features: ['5 niveles', 'Diseño artesanal', 'Madera de piñón'],
+    specifications: {
+      'Material': 'Piñón macizo',
+      'Niveles': '5',
+      'Acabado': 'Barniz natural',
+      'Garantía': '3 años'
+    }
+  },
+  {
+    id: '5',
+    name: 'Mesa de Centro de Piñón',
+    description: 'Mesa de centro única fabricada en madera de piñón con detalles tallados. Pieza central perfecta para tu sala que refleja la tradición y calidad de Casa Piñón.',
+    price: 1500000,
+    category: 'sala',
+    subcategory: 'mesas-centro',
+    images: [],
+    materials: ['Piñón macizo', 'Tallado decorativo', 'Barniz natural'],
+    dimensions: { length: 120, width: 60, height: 45 },
+    weight: 25,
+    inStock: true,
+    isCustom: false,
+    estimatedDelivery: '2-4 semanas',
+    features: ['Diseño único', 'Tallado decorativo', 'Madera de piñón auténtica'],
+    specifications: {
+      'Material': 'Piñón macizo',
+      'Dimensiones': '120x60cm',
+      'Acabado': 'Barniz natural',
+      'Garantía': '3 años'
+    }
+  },
+  {
+    id: '6',
+    name: 'Escritorio Ejecutivo de Piñón',
+    description: 'Escritorio ejecutivo fabricado en madera de piñón con cajones tallados y amplío espacio de trabajo. Ideal para oficinas que valoran la elegancia y funcionalidad.',
+    price: 3200000,
+    category: 'oficina',
+    subcategory: 'escritorios',
+    images: [],
+    materials: ['Piñón macizo', 'Herrajes de bronce', 'Barniz satinado'],
+    dimensions: { length: 150, width: 70, height: 75 },
+    weight: 50,
+    inStock: true,
+    isCustom: false,
+    estimatedDelivery: '5-7 semanas',
+    features: ['Cajones tallados', 'Amplio espacio', 'Diseño ejecutivo'],
+    specifications: {
+      'Material': 'Piñón macizo',
+      'Dimensiones': '150x70cm',
+      'Acabado': 'Barniz satinado',
+      'Garantía': '3 años'
+    }
+  }
+];
+
+// Initialize product database with default products
+defaultProducts.forEach(product => {
+  productDatabase.set(product.id, product);
+});
 
 // Order utility functions
 function generateOrderNumber() {
@@ -679,6 +857,177 @@ app.put('/api/orders/:orderId', express.json(), (req, res) => {
   }
 });
 
+// File upload endpoints
+app.post('/api/upload/image', upload.single('image'), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        error: 'No file uploaded'
+      });
+    }
+
+    // Return the file path relative to public directory
+    const relativePath = `/images/${req.file.filename}`;
+    
+    console.log('✅ Image uploaded:', req.file.filename);
+    
+    res.json({
+      success: true,
+      filename: req.file.filename,
+      path: relativePath,
+      size: req.file.size,
+      mimetype: req.file.mimetype
+    });
+  } catch (error) {
+    console.error('❌ Image upload error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Error uploading image'
+    });
+  }
+});
+
+// Serve static files from public directory
+app.use('/images', express.static(path.join(__dirname, '..', 'public', 'images')));
+
+// Product API endpoints
+app.get('/api/products', (req, res) => {
+  try {
+    const products = Array.from(productDatabase.values());
+    res.json({
+      success: true,
+      products: products
+    });
+  } catch (error) {
+    console.error('Error fetching products:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Error fetching products'
+    });
+  }
+});
+
+app.get('/api/products/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    const product = productDatabase.get(id);
+    
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        error: 'Product not found'
+      });
+    }
+    
+    res.json({
+      success: true,
+      product: product
+    });
+  } catch (error) {
+    console.error('Error fetching product:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Error fetching product'
+    });
+  }
+});
+
+app.post('/api/products', express.json(), (req, res) => {
+  try {
+    const productData = req.body;
+    const newId = Date.now().toString();
+    
+    const newProduct = {
+      ...productData,
+      id: newId,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    
+    productDatabase.set(newId, newProduct);
+    
+    console.log('✅ Product created:', newId);
+    
+    res.json({
+      success: true,
+      product: newProduct
+    });
+  } catch (error) {
+    console.error('Error creating product:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Error creating product'
+    });
+  }
+});
+
+app.put('/api/products/:id', express.json(), (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+    
+    const existingProduct = productDatabase.get(id);
+    if (!existingProduct) {
+      return res.status(404).json({
+        success: false,
+        error: 'Product not found'
+      });
+    }
+    
+    const updatedProduct = {
+      ...existingProduct,
+      ...updates,
+      id: id, // Ensure ID doesn't change
+      updatedAt: new Date().toISOString()
+    };
+    
+    productDatabase.set(id, updatedProduct);
+    
+    console.log('✅ Product updated:', id);
+    
+    res.json({
+      success: true,
+      product: updatedProduct
+    });
+  } catch (error) {
+    console.error('Error updating product:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Error updating product'
+    });
+  }
+});
+
+app.delete('/api/products/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const existingProduct = productDatabase.get(id);
+    if (!existingProduct) {
+      return res.status(404).json({
+        success: false,
+        error: 'Product not found'
+      });
+    }
+    
+    productDatabase.delete(id);
+    
+    console.log('✅ Product deleted:', id);
+    
+    res.json({
+      success: true,
+      message: 'Product deleted successfully'
+    });
+  } catch (error) {
+    console.error('Error deleting product:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Error deleting product'
+    });
+  }
+});
+
 const PORT = process.env.PORT || 3001;
 
 // Prevent process from crashing
@@ -698,6 +1047,12 @@ app.listen(PORT, () => {
   console.log(`- POST /api/mercadopago/webhook`);
   console.log(`- GET  /api/mercadopago/payment-methods`);
   console.log(`- GET  /api/mercadopago/test`);
+  console.log(`- POST /api/upload/image`);
+  console.log(`- GET  /api/products`);
+  console.log(`- GET  /api/products/:id`);
+  console.log(`- POST /api/products`);
+  console.log(`- PUT  /api/products/:id`);
+  console.log(`- DELETE /api/products/:id`);
 });
 
 module.exports = app;

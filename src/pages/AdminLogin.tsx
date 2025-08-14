@@ -13,7 +13,7 @@ const AdminLogin = () => {
 
   // If already authenticated, redirect to admin dashboard
   if (isAuthenticated) {
-    return <Navigate to="/admin/pedidos" replace />
+    return <Navigate to="/admin" replace />
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -27,7 +27,7 @@ const AdminLogin = () => {
     const success = login(password)
     
     if (success) {
-      navigate('/admin/pedidos')
+      navigate('/admin')
     } else {
       setError('Contraseña incorrecta. Inténtalo nuevamente.')
       setPassword('')
