@@ -75,6 +75,14 @@ const Checkout = () => {
       console.log('🔍 Creating order before MercadoPago redirect...')
       const orderResult = await processOrder()
       console.log('🔍 Order creation result:', orderResult)
+      
+      // Only proceed if order was created successfully
+      if (orderResult && orderNumber) {
+        console.log('✅ Order created, proceeding with MercadoPago payment')
+      } else {
+        console.error('❌ Order creation failed, cannot proceed with payment')
+        return
+      }
       return
     }
     if (data.method === 'epayco') {
@@ -555,10 +563,10 @@ const Checkout = () => {
                     />
                   )}
 
-                  {paymentInfo?.method === 'mercadopago' && customerInfo && (
+                  {paymentInfo?.method === 'mercadopago' && customerInfo && orderNumber && (
                     <MercadoPagoPayment
                       amount={total}
-                      orderId={`CP-${Date.now()}`}
+                      orderId={orderNumber}
                       customerEmail={customerInfo.email}
                       customerName={`${customerInfo.firstName} ${customerInfo.lastName}`}
                       onError={handleMercadoPagoError}
