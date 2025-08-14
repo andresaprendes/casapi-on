@@ -42,7 +42,7 @@ const CheckoutSuccess: React.FC = () => {
       }
 
       try {
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+        const apiUrl = import.meta.env.VITE_API_URL || 'https://casa-pinon-backend-production.up.railway.app';
         const response = await fetch(`${apiUrl}/api/mercadopago/payment-status/${paymentId}`);
         const result = await response.json();
 
@@ -103,7 +103,7 @@ const CheckoutSuccess: React.FC = () => {
     }
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+      const apiUrl = import.meta.env.VITE_API_URL || 'https://casa-pinon-backend-production.up.railway.app';
       
       // Get customer info from localStorage or create default
       const customerInfo = JSON.parse(localStorage.getItem('checkout_customer_info') || '{}');

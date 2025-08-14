@@ -107,7 +107,7 @@ const Checkout = () => {
 
     try {
       // Create order in database
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+      const apiUrl = import.meta.env.VITE_API_URL || 'https://casa-pinon-backend-production.up.railway.app'
       
       const orderData = {
         customer: {

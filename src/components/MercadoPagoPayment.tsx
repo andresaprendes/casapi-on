@@ -37,7 +37,7 @@ const MercadoPagoPayment = ({
 
     try {
       // Create MercadoPago preference
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+      const apiUrl = import.meta.env.VITE_API_URL || 'https://casa-pinon-backend-production.up.railway.app';
       console.log('API URL being used:', apiUrl);
       console.log('Full endpoint:', `${apiUrl}/api/mercadopago/create-preference`);
       
