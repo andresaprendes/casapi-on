@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { CreditCard, Building2, DollarSign, Lock, CheckCircle, AlertCircle } from 'lucide-react'
 
 interface MercadoPagoPaymentProps {
@@ -20,6 +20,14 @@ const MercadoPagoPayment = ({
   const [isProcessing, setIsProcessing] = useState(false)
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle')
   const [errorMessage, setErrorMessage] = useState('')
+
+  // Auto-trigger payment when component mounts
+  useEffect(() => {
+    if (orderId && !isProcessing && paymentStatus === 'idle') {
+      console.log('🚀 Auto-triggering MercadoPago payment for order:', orderId)
+      handlePayment()
+    }
+  }, [orderId])
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('es-CO', {
@@ -84,24 +92,46 @@ const MercadoPagoPayment = ({
 
   return (
     <div className="space-y-6">
-      {/* Payment Summary */}
-      <div className="bg-brown-50 rounded-lg p-4">
-        <h3 className="font-medium text-brown-900 mb-2">Resumen del Pago - MercadoPago</h3>
-        <div className="space-y-1 text-sm">
-          <div className="flex justify-between">
-            <span className="text-brown-600">Orden:</span>
-            <span className="font-medium">{orderId}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-brown-600">Cliente:</span>
-            <span className="font-medium">{customerName}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-brown-600">Total a Pagar:</span>
-            <span className="font-bold text-brown-900">{formatPrice(amount)}</span>
+      {/* Loading State */}
+      {isProcessing && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+          <div className="flex items-center justify-center space-x-3">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+            <span className="text-blue-800 font-medium">Redirigiendo a MercadoPago...</span>
           </div>
         </div>
-      </div>
+      )}
+
+      {/* Error State */}
+      {paymentStatus === 'error' && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex items-center space-x-2">
+            <AlertCircle className="w-5 h-5 text-red-600" />
+            <span className="text-red-800 font-medium">Error: {errorMessage}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Payment Summary - Only show if not processing */}
+      {!isProcessing && paymentStatus !== 'error' && (
+        <div className="bg-brown-50 rounded-lg p-4">
+          <h3 className="font-medium text-brown-900 mb-2">Resumen del Pago - MercadoPago</h3>
+          <div className="space-y-1 text-sm">
+            <div className="flex justify-between">
+              <span className="text-brown-600">Orden:</span>
+              <span className="font-medium">{orderId}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-brown-600">Cliente:</span>
+              <span className="font-medium">{customerName}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-brown-600">Total a Pagar:</span>
+              <span className="font-bold text-brown-900">{formatPrice(amount)}</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Payment Methods Available */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
