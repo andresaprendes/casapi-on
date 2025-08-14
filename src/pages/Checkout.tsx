@@ -158,22 +158,28 @@ const Checkout = () => {
 
       const result = await response.json()
       console.log('🔍 API Response:', result)
+      console.log('🔍 API Response type:', typeof result)
+      console.log('🔍 API Response keys:', Object.keys(result))
       
       if (result.success && result.order) {
         console.log('✅ Order created successfully:', result.order.orderNumber)
-        return {
+        const returnValue = {
           success: true,
           orderNumber: result.order.orderNumber
         }
+        console.log('🔍 Returning:', returnValue)
+        return returnValue
       } else {
         console.error('❌ API failed to create order:', result)
         // Create a fallback order number and continue anyway
         const fallbackOrderNumber = `CP-${Date.now()}`
         console.log('⚠️ Using fallback order number:', fallbackOrderNumber)
-        return {
+        const returnValue = {
           success: true,
           orderNumber: fallbackOrderNumber
         }
+        console.log('🔍 Returning fallback:', returnValue)
+        return returnValue
       }
       
     } catch (error) {
