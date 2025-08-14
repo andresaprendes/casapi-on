@@ -365,11 +365,6 @@ app.post('/api/mercadopago/create-preference', async (req, res) => {
         email: customerEmail,
         name: customerName || 'Cliente Casa Piñón'
       },
-      
-      // Seller information to distinguish from buyer
-      application_id: 'CASA_PINON_EBANISTERIA',
-      statement_descriptor: 'CASA PINON',
-
       external_reference: orderId,
       back_urls: {
         success: `${BASE_URL}/checkout/success?payment_id={payment_id}&status={status}&external_reference={external_reference}`,
