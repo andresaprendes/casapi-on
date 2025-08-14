@@ -105,10 +105,7 @@ const Checkout = () => {
     }
   }
 
-  const handleFinalizarCompra = async () => {
-    // This function is no longer needed since MercadoPago will handle order creation
-    console.log('⚠️ handleFinalizarCompra called but should not be used')
-  }
+
 
   const handleMercadoPagoError = (error: any) => {
     console.error('MercadoPago payment error:', error)
