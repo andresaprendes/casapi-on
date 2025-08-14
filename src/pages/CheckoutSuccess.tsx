@@ -38,35 +38,15 @@ const CheckoutSuccess: React.FC = () => {
 
   useEffect(() => {
     const verifyPayment = async () => {
-      // If we have a status parameter, use it directly
-      if (status) {
-        if (status === 'success') {
-          setVerification({
-            isVerified: true,
-            isApproved: true,
-            isPending: false,
-            isRejected: false,
-            message: 'Pago exitoso'
-          });
-          clearCart();
-          localStorage.removeItem('checkout_customer_info');
-        } else if (status === 'failure') {
-          setVerification({
-            isVerified: true,
-            isApproved: false,
-            isPending: false,
-            isRejected: true,
-            error: 'El pago fue rechazado'
-          });
-        } else if (status === 'pending') {
-          setVerification({
-            isVerified: true,
-            isApproved: false,
-            isPending: true,
-            isRejected: false,
-            message: 'Pago pendiente'
-          });
-        }
+      // Always verify payment with MercadoPago API for security
+      if (!paymentId) {
+        setVerification({
+          isVerified: false,
+          isApproved: false,
+          isPending: false,
+          isRejected: true,
+          error: 'No se encontró información del pago'
+        });
         setIsLoading(false);
         return;
       }

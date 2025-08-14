@@ -21,13 +21,24 @@ const MercadoPagoPayment = ({
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle')
   const [errorMessage, setErrorMessage] = useState('')
 
-  // Auto-trigger payment when component mounts
+  // Auto-trigger payment when component mounts (only once)
   useEffect(() => {
     if (orderId && !isProcessing && paymentStatus === 'idle') {
       console.log('🚀 Auto-triggering MercadoPago payment for order:', orderId)
+      // Add a small delay to prevent multiple triggers
+      const timer = setTimeout(() => {
+        handlePayment()
+      }, 100)
+      return () => clearTimeout(timer)
+    }
+  }, [orderId, isProcessing, paymentStatus])
+
+  // Manual payment trigger function
+  const handleManualPayment = () => {
+    if (!isProcessing && paymentStatus === 'idle') {
       handlePayment()
     }
-  }, [orderId])
+  }
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('es-CO', {
@@ -82,7 +93,18 @@ const MercadoPagoPayment = ({
       }
     } catch (error) {
       console.error('MercadoPago payment error:', error)
-      setErrorMessage('Error al procesar el pago. Por favor, intenta nuevamente.')
+      
+      // Provide more specific error messages
+      let errorMsg = 'Error al procesar el pago. Por favor, intenta nuevamente.'
+      if (error.message?.includes('network')) {
+        errorMsg = 'Error de conexión. Verifica tu internet e intenta nuevamente.'
+      } else if (error.message?.includes('preference')) {
+        errorMsg = 'Error al crear la preferencia de pago. Contacta soporte.'
+      } else if (error.message?.includes('amount')) {
+        errorMsg = 'Error en el monto del pago. Verifica el total e intenta nuevamente.'
+      }
+      
+      setErrorMessage(errorMsg)
       setPaymentStatus('error')
       onError(error)
     } finally {
@@ -117,6 +139,21 @@ const MercadoPagoPayment = ({
         <div className="bg-brown-50 rounded-lg p-4">
           <h3 className="font-medium text-brown-900 mb-2">Resumen del Pago - MercadoPago</h3>
           <div className="space-y-1 text-sm">
+            <p><strong>Orden:</strong> {orderId}</p>
+            <p><strong>Total:</strong> {formatPrice(amount)}</p>
+            <p><strong>Cliente:</strong> {customerName}</p>
+            <p><strong>Email:</strong> {customerEmail}</p>
+          </div>
+          
+          {/* Manual payment button as backup */}
+          <button
+            onClick={handleManualPayment}
+            className="mt-4 w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Proceder al Pago
+          </button>
+        </div>
+      )}
             <div className="flex justify-between">
               <span className="text-brown-600">Orden:</span>
               <span className="font-medium">{orderId}</span>

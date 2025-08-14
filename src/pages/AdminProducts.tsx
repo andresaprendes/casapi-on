@@ -95,7 +95,7 @@ const AdminProducts = () => {
     setUploadingImages(true)
     try {
       const uploadedImages: string[] = []
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+      const apiUrl = import.meta.env.VITE_API_URL || 'https://casa-pinon-backend-production.up.railway.app'
       
       for (let i = 0; i < files.length; i++) {
         const file = files[i]

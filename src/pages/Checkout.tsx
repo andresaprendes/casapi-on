@@ -78,8 +78,11 @@ const Checkout = () => {
     setIsCreatingOrder(true)
     
     try {
+      console.log('🔍 Starting processOrder...')
       const orderResult = await processOrder()
       console.log('🔍 Auto order creation result:', orderResult)
+      console.log('🔍 Order result type:', typeof orderResult)
+      console.log('🔍 Order result keys:', orderResult ? Object.keys(orderResult) : 'null')
       
       if (orderResult && orderResult.success && orderResult.orderNumber) {
         console.log('✅ Auto order created successfully:', orderResult.orderNumber)
@@ -89,12 +92,14 @@ const Checkout = () => {
         setCurrentStep('payment')
       } else {
         console.error('❌ Auto order creation failed')
+        console.error('❌ Order result details:', orderResult)
         setIsCreatingOrder(false)
         alert('Error al crear la orden automáticamente. Por favor intenta de nuevo.')
         return
       }
     } catch (error) {
       console.error('❌ Auto order creation error:', error)
+      console.error('❌ Error details:', error)
       setIsCreatingOrder(false)
       alert('Error al crear la orden automáticamente. Por favor intenta de nuevo.')
       return

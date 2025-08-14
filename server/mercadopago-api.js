@@ -266,6 +266,29 @@ function calculateEstimatedDelivery(shippingZone) {
   return baseDate.toISOString();
 }
 
+// Clean up abandoned orders (older than 24 hours)
+function cleanupAbandonedOrders() {
+  const now = new Date();
+  const twentyFourHoursAgo = new Date(now.getTime() - (24 * 60 * 60 * 1000));
+  
+  let cleanedCount = 0;
+  for (const [orderId, order] of orderDatabase.entries()) {
+    if (order.status === 'pending' && 
+        order.paymentStatus === 'pending' && 
+        new Date(order.createdAt) < twentyFourHoursAgo) {
+      orderDatabase.delete(orderId);
+      cleanedCount++;
+    }
+  }
+  
+  if (cleanedCount > 0) {
+    console.log(`🧹 Cleaned up ${cleanedCount} abandoned orders`);
+  }
+}
+
+// Run cleanup every hour
+setInterval(cleanupAbandonedOrders, 60 * 60 * 1000);
+
 function updateOrderPaymentStatus(orderReference, paymentStatus, paymentId) {
   try {
     // Find order by external reference (order number)
@@ -313,7 +336,7 @@ const client = new MercadoPagoConfig({
 });
 
 // Environment variables for URLs
-const BASE_URL = process.env.BASE_URL || 'https://casapi-on-production.up.railway.app';
+const BASE_URL = process.env.BASE_URL || 'https://casa-pinon-ebanisteria-production.up.railway.app';
 const API_URL = process.env.API_URL || 'https://casa-pinon-backend-production.up.railway.app';
 
 // Root endpoint to test if server is running
@@ -361,9 +384,9 @@ app.post('/api/mercadopago/create-preference', async (req, res) => {
       ],
       external_reference: orderId,
       back_urls: {
-        success: `${BASE_URL}/checkout/success?status=success`,
-        failure: `${BASE_URL}/checkout/success?status=failure`,
-        pending: `${BASE_URL}/checkout/success?status=pending`
+        success: `${BASE_URL}/checkout/success?payment_id={payment_id}&status={status}&external_reference={external_reference}`,
+        failure: `${BASE_URL}/checkout/success?payment_id={payment_id}&status={status}&external_reference={external_reference}`,
+        pending: `${BASE_URL}/checkout/success?payment_id={payment_id}&status={status}&external_reference={external_reference}`
       },
       auto_return: 'approved'
     };
@@ -769,7 +792,11 @@ app.post('/api/orders', express.json(), (req, res) => {
       updatedAt: now,
       estimatedDelivery: calculateEstimatedDelivery(shippingZone),
       shippingZone,
-      notes: notes || ''
+      notes: notes || '',
+      // Add tracking fields
+      abandonedAt: null,
+      retryCount: 0,
+      lastPaymentAttempt: null
     };
 
     // Store order

@@ -81,7 +81,7 @@ const Orders = () => {
   const fetchOrders = async () => {
     try {
       setLoading(true)
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+      const apiUrl = import.meta.env.VITE_API_URL || 'https://casa-pinon-backend-production.up.railway.app'
       
       const queryParams = new URLSearchParams()
       if (filters.status) queryParams.append('status', filters.status)
@@ -105,7 +105,7 @@ const Orders = () => {
 
   const updateOrderStatus = async (orderId: string, updates: Partial<Order>) => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+      const apiUrl = import.meta.env.VITE_API_URL || 'https://casa-pinon-backend-production.up.railway.app'
       const response = await fetch(`${apiUrl}/api/orders/${orderId}`, {
         method: 'PUT',
         headers: {
