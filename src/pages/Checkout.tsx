@@ -73,7 +73,7 @@ const Checkout = () => {
       const orderResult = await processOrder()
       console.log('🔍 Order creation result:', orderResult)
       
-      if (orderResult.success && orderResult.orderNumber) {
+      if (orderResult && orderResult.success && orderResult.orderNumber) {
         console.log('✅ Order created successfully:', orderResult.orderNumber)
         setOrderNumber(orderResult.orderNumber)
         setIsCreatingOrder(false)
@@ -102,7 +102,10 @@ const Checkout = () => {
     console.log('🔍 processOrder called with:', { customerInfo, items: items.length })
     if (!customerInfo || !items.length) {
       console.error('Missing customer info or items for order creation')
-      return false
+      return {
+        success: false,
+        orderNumber: null
+      }
     }
 
     try {
