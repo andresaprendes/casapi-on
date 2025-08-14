@@ -946,9 +946,26 @@ app.get('/api/orders', async (req, res) => {
       averageOrderValue: orders.length > 0 ? orders.reduce((sum, o) => sum + o.total, 0) / orders.length : 0
     };
 
+    // Transform database fields to match frontend expectations
+    const transformedOrders = paginatedOrders.map(order => ({
+      ...order,
+      orderNumber: order.order_number || order.orderNumber,
+      customerName: order.customer_name || order.customerName,
+      customerEmail: order.customer_email || order.customerEmail,
+      customerPhone: order.customer_phone || order.customerPhone,
+      customerAddress: order.customer_address || order.customerAddress,
+      paymentStatus: order.payment_status || order.paymentStatus,
+      paymentMethod: order.payment_method || order.paymentMethod,
+      paymentId: order.payment_id || order.paymentId,
+      shippingZone: order.shipping_zone || order.shippingZone,
+      estimatedDelivery: order.estimated_delivery || order.estimatedDelivery,
+      createdAt: order.created_at || order.createdAt,
+      updatedAt: order.updated_at || order.updatedAt
+    }));
+    
     res.json({
       success: true,
-      orders: paginatedOrders,
+      orders: transformedOrders,
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
@@ -1079,9 +1096,18 @@ app.get('/api/products', async (req, res) => {
       products = Array.from(productDatabase.values());
     }
     
+    // Transform database fields to match frontend expectations
+    const transformedProducts = products.map(product => ({
+      ...product,
+      inStock: product.in_stock || product.inStock,
+      isCustom: product.is_custom || product.isCustom,
+      createdAt: product.created_at || product.createdAt,
+      updatedAt: product.updated_at || product.updatedAt
+    }));
+    
     res.json({
       success: true,
-      products: products
+      products: transformedProducts
     });
   } catch (error) {
     console.error('Error fetching products:', error);
@@ -1092,10 +1118,16 @@ app.get('/api/products', async (req, res) => {
   }
 });
 
-app.get('/api/products/:id', (req, res) => {
+app.get('/api/products/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const product = productDatabase.get(id);
+    
+    let product;
+    if (process.env.DATABASE_URL) {
+      product = await productOperations.getById(id);
+    } else {
+      product = productDatabase.get(id);
+    }
     
     if (!product) {
       return res.status(404).json({
@@ -1104,9 +1136,18 @@ app.get('/api/products/:id', (req, res) => {
       });
     }
     
+    // Transform database fields to match frontend expectations
+    const transformedProduct = {
+      ...product,
+      inStock: product.in_stock || product.inStock,
+      isCustom: product.is_custom || product.isCustom,
+      createdAt: product.created_at || product.createdAt,
+      updatedAt: product.updated_at || product.updatedAt
+    };
+    
     res.json({
       success: true,
-      product: product
+      product: transformedProduct
     });
   } catch (error) {
     console.error('Error fetching product:', error);
