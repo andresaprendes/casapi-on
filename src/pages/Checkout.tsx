@@ -31,7 +31,7 @@ interface PaymentInfo {
 }
 
 const Checkout = () => {
-  const { state, clearCart } = useCart()
+  const { state } = useCart()
   const { items } = state
   const [currentStep, setCurrentStep] = useState<'cart' | 'shipping' | 'payment' | 'confirmation'>('cart')
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null)
@@ -78,8 +78,8 @@ const Checkout = () => {
     setIsCreatingOrder(true)
     
     try {
-      console.log('🔍 Starting processOrder...')
-      const orderResult = await processOrder()
+      console.log('🔍 Starting processOrder with data:', data)
+      const orderResult = await processOrderWithData(data)
       console.log('🔍 Auto order creation result:', orderResult)
       console.log('🔍 Order result type:', typeof orderResult)
       console.log('🔍 Order result keys:', orderResult ? Object.keys(orderResult) : 'null')
@@ -118,10 +118,10 @@ const Checkout = () => {
     // Handle error - could show a toast or error message
   }
 
-  const processOrder = async () => {
-    console.log('🔍 processOrder called with:', { customerInfo, items: items.length })
-    if (!customerInfo || !items.length) {
-      console.error('Missing customer info or items for order creation')
+  const processOrderWithData = async (customerData: CustomerInfo) => {
+    console.log('🔍 processOrderWithData called with:', { customerData, items: items.length })
+    if (!customerData || !items.length) {
+      console.error('Missing customer data or items for order creation')
       return {
         success: false,
         orderNumber: null
@@ -134,14 +134,14 @@ const Checkout = () => {
       
       const orderData = {
         customer: {
-          name: `${customerInfo.firstName} ${customerInfo.lastName}`,
-          email: customerInfo.email,
-          phone: customerInfo.phone,
+          name: `${customerData.firstName} ${customerData.lastName}`,
+          email: customerData.email,
+          phone: customerData.phone,
           address: {
-            street: customerInfo.address,
-            city: customerInfo.city,
-            state: customerInfo.state,
-            zipCode: customerInfo.zipCode || '',
+            street: customerData.address,
+            city: customerData.city,
+            state: customerData.state,
+            zipCode: customerData.zipCode || '',
             country: 'Colombia'
           }
         },
@@ -158,9 +158,9 @@ const Checkout = () => {
         shipping: 0, // No shipping cost
         tax: 0, // IVA included in product prices
         total,
-        shippingZone: customerInfo.shippingZone,
+        shippingZone: customerData.shippingZone,
         paymentMethod: paymentInfo?.method || 'unknown',
-        notes: customerInfo.notes || ''
+        notes: customerData.notes || ''
       }
 
       console.log('Creating order:', orderData)
@@ -212,13 +212,9 @@ const Checkout = () => {
         orderNumber: fallbackOrderNumber
       }
     }
-    
-    clearCart()
-    return {
-      success: false,
-      orderNumber: null
-    }
   }
+
+
 
   const paymentMethods = [
     {
