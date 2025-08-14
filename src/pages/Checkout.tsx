@@ -8,6 +8,7 @@ import {
   Building2,
   DollarSign,
   CheckCircle,
+  Loader2,
   MessageCircle
 } from 'lucide-react'
 import { useCart } from '../store/CartContext'
@@ -43,6 +44,7 @@ const Checkout = () => {
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null)
   const [paymentInfo, setPaymentInfo] = useState<PaymentInfo | null>(null)
   const [orderNumber, setOrderNumber] = useState<string>('')
+  const [isCreatingOrder, setIsCreatingOrder] = useState(false)
 
   const { register, handleSubmit, formState: { errors } } = useForm<CustomerInfo>()
 
@@ -73,16 +75,27 @@ const Checkout = () => {
       // For MercadoPago, create order BEFORE redirecting to payment
       // This ensures the order exists when the webhook arrives
       console.log('🔍 Creating order before MercadoPago redirect...')
-      const orderResult = await processOrder()
-      console.log('🔍 Order creation result:', orderResult)
+      setIsCreatingOrder(true)
       
-      // Only proceed if order was created successfully
-      if (orderResult) {
-        console.log('✅ Order created, proceeding with MercadoPago payment')
-        // Force re-render to show MercadoPago component
-        setCurrentStep('payment')
-      } else {
-        console.error('❌ Order creation failed, cannot proceed with payment')
+      try {
+        const orderResult = await processOrder()
+        console.log('🔍 Order creation result:', orderResult)
+        
+        if (orderResult && orderNumber) {
+          console.log('✅ Order created successfully:', orderNumber)
+          setIsCreatingOrder(false)
+          // Force re-render to show MercadoPago component
+          setCurrentStep('payment')
+        } else {
+          console.error('❌ Order creation failed or orderNumber not set')
+          setIsCreatingOrder(false)
+          alert('Error al crear la orden. Por favor intenta de nuevo.')
+          return
+        }
+      } catch (error) {
+        console.error('❌ Error in order creation:', error)
+        setIsCreatingOrder(false)
+        alert('Error al crear la orden. Por favor intenta de nuevo.')
         return
       }
       return
@@ -621,12 +634,21 @@ const Checkout = () => {
                   {(paymentInfo?.method !== 'epayco' || (paymentInfo?.method === 'mercadopago' && !orderNumber)) && (
                     <button
                       onClick={() => handlePaymentSubmit(paymentInfo!)}
-                      disabled={!paymentInfo?.method}
+                      disabled={!paymentInfo?.method || isCreatingOrder}
                       className="w-full btn-primary mt-6 py-4 text-lg font-semibold flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed hover:bg-brown-900 transition-colors"
                     >
-                      <CreditCard className="w-5 h-5 mr-2" />
-                      Finalizar Compra
-                      <ArrowRight className="w-5 h-5 ml-2" />
+                      {isCreatingOrder ? (
+                        <>
+                          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                          Creando Orden...
+                        </>
+                      ) : (
+                        <>
+                          <CreditCard className="w-5 h-5 mr-2" />
+                          Finalizar Compra
+                          <ArrowRight className="w-5 h-5 ml-2" />
+                        </>
+                      )}
                     </button>
                   )}
                 </div>
