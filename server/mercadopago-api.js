@@ -842,6 +842,7 @@ app.post('/api/orders', express.json(), async (req, res) => {
     }
     
     console.log('✅ Order created:', orderId);
+    console.log('🔍 Created order object:', JSON.stringify(createdOrder, null, 2));
     
     res.json({
       success: true,
