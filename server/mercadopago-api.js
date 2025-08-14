@@ -9,6 +9,11 @@ const { initializeDatabase } = require('./database');
 const { orderOperations, paymentOperations, productOperations } = require('./dbOperations');
 require('dotenv').config();
 
+// In-memory storage as fallback (when DATABASE_URL is not available)
+const orderDatabase = new Map();
+const paymentDatabase = new Map();
+const productDatabase = new Map();
+
 const app = express();
 
 // Middleware
@@ -744,46 +749,91 @@ app.post('/api/mercadopago/trigger-webhook/:paymentId', async (req, res) => {
 
 // 6. Order Management Endpoints
 
+// Helper functions
+function generateOrderNumber() {
+  return 'ORD-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+}
+
+function calculateEstimatedDelivery(shippingZone) {
+  const deliveryDays = {
+    'bogota': '1-2 días',
+    'medellin': '2-3 días',
+    'cali': '2-3 días',
+    'barranquilla': '3-4 días',
+    'cartagena': '3-4 días',
+    'other': '5-7 días'
+  };
+  return deliveryDays[shippingZone] || '5-7 días';
+}
+
 // Create a new order
 app.post('/api/orders', express.json(), async (req, res) => {
   try {
-    const { customer, items, subtotal, shipping, tax, total, shippingZone, paymentMethod, notes } = req.body;
+    // Handle both old and new request formats
+    const { 
+      customer, 
+      customerInfo, // Old format
+      items, 
+      subtotal, 
+      shipping, 
+      tax, 
+      total, 
+      shippingZone, 
+      paymentMethod, 
+      notes 
+    } = req.body;
+
+    // Use customer or customerInfo, whichever is available
+    const customerData = customer || customerInfo;
 
     // Validate required fields
-    if (!customer || !items || !total || !shippingZone) {
+    if (!customerData || !items || !total) {
       return res.status(400).json({
         success: false,
-        error: 'Missing required fields: customer, items, total, shippingZone'
+        error: 'Missing required fields: customer info, items, or total'
       });
     }
 
-    // Generate order
+    // Generate order number
     const orderId = generateOrderNumber();
-    const estimatedDelivery = calculateEstimatedDelivery(shippingZone);
+    const estimatedDelivery = shippingZone ? calculateEstimatedDelivery(shippingZone) : '5-7 días';
     
     const orderData = {
       id: orderId,
       orderNumber: orderId,
-      customer,
+      customer: customerData,
       items,
       subtotal: subtotal || 0,
       shipping: shipping || 0,
       tax: tax || 0,
       total,
-      shippingZone,
+      shippingZone: shippingZone || 'other',
       paymentMethod: paymentMethod || 'mercadopago',
       notes: notes || '',
-      estimatedDelivery
+      estimatedDelivery,
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+      // Add tracking fields
+      abandonedAt: null,
+      retryCount: 0,
+      lastPaymentAttempt: null
     };
 
-    // Store order in database
-    const order = await orderOperations.create(orderData);
+    // Store order in appropriate storage
+    let createdOrder;
+    if (process.env.DATABASE_URL) {
+      createdOrder = await orderOperations.create(orderData);
+    } else {
+      // Fallback to in-memory storage
+      orderDatabase.set(orderId, orderData);
+      createdOrder = orderData;
+    }
     
     console.log('✅ Order created:', orderId);
     
     res.json({
       success: true,
-      order
+      order: createdOrder
     });
   } catch (error) {
     console.error('Order creation error:', error);
@@ -795,7 +845,7 @@ app.post('/api/orders', express.json(), async (req, res) => {
 });
 
 // Get all orders with filtering and pagination
-app.get('/api/orders', (req, res) => {
+app.get('/api/orders', async (req, res) => {
   try {
     const { 
       status, 
@@ -810,7 +860,12 @@ app.get('/api/orders', (req, res) => {
       sortOrder = 'desc'
     } = req.query;
 
-    let orders = Array.from(orderDatabase.values());
+    let orders;
+    if (process.env.DATABASE_URL) {
+      orders = await orderOperations.getAll({ status, paymentStatus, paymentMethod, dateFrom, dateTo, search });
+    } else {
+      orders = Array.from(orderDatabase.values());
+    }
 
     // Apply filters
     if (status) {
@@ -995,9 +1050,15 @@ app.post('/api/upload/image', upload.single('image'), (req, res) => {
 app.use('/images', express.static(path.join(__dirname, '..', 'public', 'images')));
 
 // Product API endpoints
-app.get('/api/products', (req, res) => {
+app.get('/api/products', async (req, res) => {
   try {
-    const products = Array.from(productDatabase.values());
+    let products;
+    if (process.env.DATABASE_URL) {
+      products = await productOperations.getAll();
+    } else {
+      products = Array.from(productDatabase.values());
+    }
+    
     res.json({
       success: true,
       products: products
@@ -1168,11 +1229,26 @@ process.on('unhandledRejection', (reason, promise) => {
 // Initialize database and start server
 async function startServer() {
   try {
-    // Initialize database tables
-    await initializeDatabase();
-    
-    // Initialize with default products
-    await productOperations.initializeWithDefaults(defaultProducts);
+    // Check if DATABASE_URL is available
+    if (process.env.DATABASE_URL) {
+      console.log('🔧 Initializing PostgreSQL database...');
+      // Initialize database tables
+      await initializeDatabase();
+      
+      // Initialize with default products
+      await productOperations.initializeWithDefaults(defaultProducts);
+      console.log('✅ Database initialized successfully');
+    } else {
+      console.log('⚠️  No DATABASE_URL found, using in-memory storage');
+      console.log('⚠️  Orders will not persist across deployments');
+      
+      // Fallback to in-memory storage for now
+      // Initialize with default products in memory
+      defaultProducts.forEach(product => {
+        productDatabase.set(product.id, product);
+      });
+      console.log('✅ In-memory storage initialized with default products');
+    }
     
     // Start server
     app.listen(PORT, () => {
@@ -1194,7 +1270,24 @@ async function startServer() {
     });
   } catch (error) {
     console.error('Failed to start server:', error);
-    process.exit(1);
+    console.error('This might be due to database connection issues.');
+    console.error('The server will continue with in-memory storage.');
+    
+    // Fallback: start server without database
+    try {
+      // Initialize with default products in memory
+      defaultProducts.forEach(product => {
+        productDatabase.set(product.id, product);
+      });
+      
+      app.listen(PORT, () => {
+        console.log(`MercadoPago API server running on port ${PORT} (fallback mode)`);
+        console.log('⚠️  Using in-memory storage - orders will not persist');
+      });
+    } catch (fallbackError) {
+      console.error('Failed to start server even in fallback mode:', fallbackError);
+      process.exit(1);
+    }
   }
 }
 
