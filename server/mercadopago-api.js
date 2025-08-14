@@ -1252,12 +1252,17 @@ app.put('/api/products/:id/order', express.json(), async (req, res) => {
 // SYNC DATABASE - Reset to default products (for Railway sync)
 app.post('/api/products/sync', async (req, res) => {
   try {
+    console.log('🔄 Starting product sync...');
+    console.log('📊 Default products count:', defaultProducts.length);
+    
     if (process.env.DATABASE_URL) {
       // Clear and re-initialize with default products
+      console.log('🗄️  Using PostgreSQL database');
       await productOperations.initializeWithDefaults(defaultProducts);
       console.log('✅ Database synced with default products');
     } else {
       // Clear current database
+      console.log('💾 Using in-memory storage');
       productDatabase.clear();
       
       // Re-initialize with default products
@@ -1270,10 +1275,40 @@ app.post('/api/products/sync', async (req, res) => {
     
     res.json({ 
       success: true, 
-      message: 'Database synced successfully'
+      message: 'Database synced successfully',
+      productsCount: defaultProducts.length
     });
   } catch (error) {
     console.error('Error syncing database:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// MANUAL INITIALIZE - Force initialize products
+app.post('/api/products/initialize', async (req, res) => {
+  try {
+    console.log('🚀 Manual product initialization...');
+    console.log('📊 Default products count:', defaultProducts.length);
+    
+    if (process.env.DATABASE_URL) {
+      console.log('🗄️  Using PostgreSQL database');
+      await productOperations.initializeWithDefaults(defaultProducts);
+      console.log('✅ Products initialized in database');
+    } else {
+      console.log('💾 Using in-memory storage');
+      defaultProducts.forEach(product => {
+        productDatabase.set(product.id, product);
+      });
+      console.log('✅ Products initialized in memory');
+    }
+    
+    res.json({ 
+      success: true, 
+      message: 'Products initialized successfully',
+      productsCount: defaultProducts.length
+    });
+  } catch (error) {
+    console.error('Error initializing products:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
