@@ -53,6 +53,31 @@ const initializeDatabase = async () => {
       )
     `);
 
+    // Drop and recreate products table to add display_order column
+    await pool.query(`DROP TABLE IF EXISTS products CASCADE`);
+    await pool.query(`
+      CREATE TABLE products (
+        id VARCHAR(50) PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        description TEXT,
+        price DECIMAL(10,2) NOT NULL,
+        category VARCHAR(100),
+        subcategory VARCHAR(100),
+        images JSONB,
+        materials JSONB,
+        dimensions JSONB,
+        weight DECIMAL(8,2),
+        in_stock BOOLEAN DEFAULT TRUE,
+        is_custom BOOLEAN DEFAULT FALSE,
+        estimated_delivery VARCHAR(100),
+        features JSONB,
+        specifications JSONB,
+        display_order INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
     // Create payments table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS payments (
