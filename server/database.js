@@ -23,9 +23,10 @@ const initializeDatabase = async () => {
   try {
     console.log('🔧 Initializing database tables...');
     
-    // Create orders table
+    // Drop and recreate orders table to fix schema issues
+    await pool.query(`DROP TABLE IF EXISTS orders CASCADE`);
     await pool.query(`
-      CREATE TABLE IF NOT EXISTS orders (
+      CREATE TABLE orders (
         id VARCHAR(50) PRIMARY KEY,
         order_number VARCHAR(50) UNIQUE NOT NULL,
         customer_name VARCHAR(255) NOT NULL,

@@ -77,8 +77,16 @@ if (!MERCADOPAGO_ACCESS_TOKEN) {
   console.error('❌ MERCADOPAGO_ACCESS_TOKEN is not set!');
   process.exit(1);
 }
+
+// Validate token format
+if (!MERCADOPAGO_ACCESS_TOKEN.startsWith('APP_USR-') && !MERCADOPAGO_ACCESS_TOKEN.startsWith('TEST-')) {
+  console.error('❌ Invalid MercadoPago token format! Should start with APP_USR- or TEST-');
+  console.error('Current token:', MERCADOPAGO_ACCESS_TOKEN);
+  process.exit(1);
+}
+
 const WEBHOOK_SECRET = process.env.MERCADOPAGO_WEBHOOK_SECRET || 'your-webhook-secret';
-console.log('Initializing MercadoPago with token:', MERCADOPAGO_ACCESS_TOKEN ? MERCADOPAGO_ACCESS_TOKEN.substring(0, 15) + '...' : 'NONE');
+console.log('✅ MercadoPago token validated:', MERCADOPAGO_ACCESS_TOKEN.substring(0, 15) + '...');
 
 // Database will be initialized on startup
 
