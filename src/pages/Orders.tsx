@@ -89,15 +89,21 @@ const Orders = () => {
       if (filters.paymentMethod) queryParams.append('paymentMethod', filters.paymentMethod)
       if (searchTerm) queryParams.append('search', searchTerm)
       
+      console.log('🔍 Fetching orders from:', `${apiUrl}/api/orders?${queryParams}`)
       const response = await fetch(`${apiUrl}/api/orders?${queryParams}`)
       const data = await response.json()
       
+      console.log('🔍 Orders API response:', data)
+      
       if (data.success) {
+        console.log('✅ Orders fetched successfully:', data.orders.length, 'orders')
         setOrders(data.orders)
         setStats(data.stats)
+      } else {
+        console.error('❌ Orders API returned error:', data.error)
       }
     } catch (error) {
-      console.error('Error fetching orders:', error)
+      console.error('❌ Error fetching orders:', error)
     } finally {
       setLoading(false)
     }

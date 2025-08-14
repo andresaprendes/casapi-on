@@ -64,6 +64,13 @@ const CheckoutSuccess: React.FC = () => {
         console.log('🔍 Payment verification result:', result);
 
         if (result.success) {
+          console.log('✅ Payment verification successful:', {
+            is_approved: result.verification.is_approved,
+            is_pending: result.verification.is_pending,
+            is_rejected: result.verification.is_rejected,
+            message: result.verification.message
+          });
+          
           setVerification({
             isVerified: true,
             isApproved: result.verification.is_approved,
