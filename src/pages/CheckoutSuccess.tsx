@@ -110,26 +110,29 @@ const CheckoutSuccess: React.FC = () => {
           clearCart();
           localStorage.removeItem('checkout_customer_info');
         }
-      } else {
-        // If payment not found and we haven't exceeded retries, try again
-        // For PSE payments, retry more times with longer intervals
-        const maxRetries = verification.paymentDetails?.payment_method_id === 'pse' ? 10 : 3;
-        const retryDelay = verification.paymentDetails?.payment_method_id === 'pse' ? 5000 : 2000;
-        
-        if (retryCount < maxRetries && result.error?.includes('not found')) {
-          console.log(`🔄 Payment not found, retrying in ${retryDelay/1000} seconds... (attempt ${retryCount + 1}/${maxRetries})`);
-          setTimeout(() => verifyPayment(retryCount + 1), retryDelay);
-          return;
+              } else {
+          // If payment not found and we haven't exceeded retries, try again
+          // For PSE payments, retry more times with longer intervals
+          const maxRetries = verification.paymentDetails?.payment_method_id === 'pse' ? 10 : 3;
+          const retryDelay = verification.paymentDetails?.payment_method_id === 'pse' ? 5000 : 2000;
+          
+          if (retryCount < maxRetries && result.error?.includes('not found')) {
+            console.log(`🔄 Payment not found, retrying in ${retryDelay/1000} seconds... (attempt ${retryCount + 1}/${maxRetries})`);
+            setTimeout(() => verifyPayment(retryCount + 1), retryDelay);
+            return;
+          }
+          
+          // After all retries failed, show pending instead of rejected
+          // The payment might be successful but webhook delayed
+          setVerification({
+            isVerified: false,
+            isApproved: false,
+            isPending: true,
+            isRejected: false,
+            message: 'El pago está siendo procesado. Te notificaremos cuando se confirme.',
+            error: 'No se pudo verificar el estado del pago inmediatamente'
+          });
         }
-        
-        setVerification({
-          isVerified: false,
-          isApproved: false,
-          isPending: false,
-          isRejected: true,
-          error: result.error || 'Error al verificar el pago'
-        });
-      }
     } catch (error) {
       console.error('Error verifying payment:', error);
       setVerification({
@@ -213,6 +216,16 @@ const CheckoutSuccess: React.FC = () => {
               <p className="text-brown-800 mb-4">
                 {verification.message}
               </p>
+              
+              {/* Show additional info if verification failed */}
+              {verification.error && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                  <h4 className="text-sm font-medium text-blue-800 mb-2">Información Adicional</h4>
+                  <p className="text-sm text-blue-700">
+                    {verification.error}
+                  </p>
+                </div>
+              )}
               
               {/* PSE Specific Instructions */}
               {verification.paymentDetails?.payment_method_id === 'pse' && (
