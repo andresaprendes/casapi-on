@@ -5,15 +5,12 @@ import {
   ArrowLeft,
   ArrowRight,
   CreditCard,
-  Building2,
-  DollarSign,
   CheckCircle,
   Loader2,
   MessageCircle
 } from 'lucide-react'
 import { useCart } from '../store/CartContext'
 import { shippingZones } from '../data/mockData'
-import EPaycoPayment from '../components/EPaycoPayment'
 import MercadoPagoPayment from '../components/MercadoPagoPayment'
 
 interface CustomerInfo {
@@ -30,11 +27,7 @@ interface CustomerInfo {
 }
 
 interface PaymentInfo {
-  method: 'epayco' | 'mercadopago' | 'bank_transfer' | 'cash_delivery'
-  cardNumber?: string
-  cardName?: string
-  cardExpiry?: string
-  cardCvv?: string
+  method: 'mercadopago'
 }
 
 const Checkout = () => {
@@ -71,58 +64,32 @@ const Checkout = () => {
 
   const handlePaymentSubmit = async (data: PaymentInfo) => {
     setPaymentInfo(data)
-    if (data.method === 'mercadopago') {
-      // For MercadoPago, create order BEFORE redirecting to payment
-      // This ensures the order exists when the webhook arrives
-      console.log('🔍 Creating order before MercadoPago redirect...')
-      setIsCreatingOrder(true)
+    // For MercadoPago, create order BEFORE redirecting to payment
+    // This ensures the order exists when the webhook arrives
+    console.log('🔍 Creating order before MercadoPago redirect...')
+    setIsCreatingOrder(true)
+    
+    try {
+      const orderResult = await processOrder()
+      console.log('🔍 Order creation result:', orderResult)
       
-      try {
-        const orderResult = await processOrder()
-        console.log('🔍 Order creation result:', orderResult)
-        
-        if (orderResult && orderNumber) {
-          console.log('✅ Order created successfully:', orderNumber)
-          setIsCreatingOrder(false)
-          // Force re-render to show MercadoPago component
-          setCurrentStep('payment')
-        } else {
-          console.error('❌ Order creation failed or orderNumber not set')
-          setIsCreatingOrder(false)
-          alert('Error al crear la orden. Por favor intenta de nuevo.')
-          return
-        }
-      } catch (error) {
-        console.error('❌ Error in order creation:', error)
+      if (orderResult && orderNumber) {
+        console.log('✅ Order created successfully:', orderNumber)
+        setIsCreatingOrder(false)
+        // Force re-render to show MercadoPago component
+        setCurrentStep('payment')
+      } else {
+        console.error('❌ Order creation failed or orderNumber not set')
         setIsCreatingOrder(false)
         alert('Error al crear la orden. Por favor intenta de nuevo.')
         return
       }
+    } catch (error) {
+      console.error('❌ Error in order creation:', error)
+      setIsCreatingOrder(false)
+      alert('Error al crear la orden. Por favor intenta de nuevo.')
       return
     }
-    if (data.method === 'epayco') {
-      // For ePayco, we'll handle the payment in the component
-      // Order will be processed after payment verification
-      return
-    }
-    // For other payment methods, process order immediately
-    setCurrentStep('confirmation')
-    processOrder()
-  }
-
-  const handleEPaycoSuccess = (_response: any) => {
-    setCurrentStep('confirmation')
-    processOrder()
-  }
-
-  const handleEPaycoError = (error: any) => {
-    console.error('ePayco payment error:', error)
-    // Handle error - could show a toast or error message
-  }
-
-  const handleMercadoPagoSuccess = (_response: any) => {
-    setCurrentStep('confirmation')
-    processOrder()
   }
 
   const handleMercadoPagoError = (error: any) => {
@@ -222,30 +189,7 @@ const Checkout = () => {
       icon: CreditCard,
       popular: true,
       component: MercadoPagoPayment,
-      onSuccess: handleMercadoPagoSuccess,
       onError: handleMercadoPagoError
-    },
-    {
-      id: 'epayco',
-      name: 'ePayco',
-      description: 'Paga con tarjeta de crédito, débito, PSE o efectivo',
-      icon: CreditCard,
-      popular: true,
-      component: EPaycoPayment,
-      onSuccess: handleEPaycoSuccess,
-      onError: handleEPaycoError
-    },
-    {
-      id: 'bank_transfer',
-      name: 'Transferencia Bancaria',
-      description: 'Transferencia directa a nuestra cuenta',
-      icon: Building2
-    },
-    {
-      id: 'cash_delivery',
-      name: 'Pago Contra Entrega',
-      description: 'Paga en efectivo al recibir tu pedido',
-      icon: DollarSign
     }
   ]
 
@@ -575,15 +519,6 @@ const Checkout = () => {
                   </div>
 
                   {/* Payment Components */}
-                  {paymentInfo?.method === 'epayco' && customerInfo && (
-                    <EPaycoPayment
-                      amount={total}
-                      orderId={`CP-${Date.now()}`}
-                      onSuccess={handleEPaycoSuccess}
-                      onError={handleEPaycoError}
-                    />
-                  )}
-
                   {paymentInfo?.method === 'mercadopago' && customerInfo && orderNumber && (
                     <MercadoPagoPayment
                       amount={total}
@@ -604,34 +539,7 @@ const Checkout = () => {
                     </div>
                   )}
 
-                  {paymentInfo?.method === 'bank_transfer' && (
-                    <div className="mt-6 p-6 bg-blue-50 border border-blue-200 rounded-lg">
-                      <h3 className="text-lg font-semibold text-blue-900 mb-4">Transferencia Bancaria</h3>
-                      <div className="space-y-3 text-blue-800">
-                        <p><strong>Banco:</strong> Bancolombia</p>
-                        <p><strong>Tipo de cuenta:</strong> Corriente</p>
-                        <p><strong>Número de cuenta:</strong> 123-456789-01</p>
-                        <p><strong>Titular:</strong> Casa Piñón Ebanistería</p>
-                        <p><strong>Monto a transferir:</strong> ${total.toLocaleString()}</p>
-                      </div>
-                      <p className="text-sm text-blue-700 mt-4">
-                        Una vez realizada la transferencia, envíanos el comprobante por WhatsApp al 310 000 0000
-                      </p>
-                    </div>
-                  )}
-
-                  {paymentInfo?.method === 'cash_delivery' && (
-                    <div className="mt-6 p-6 bg-green-50 border border-green-200 rounded-lg">
-                      <h3 className="text-lg font-semibold text-green-900 mb-4">Pago Contra Entrega</h3>
-                      <div className="space-y-3 text-green-800">
-                        <p><strong>Monto a pagar:</strong> ${total.toLocaleString()}</p>
-                        <p>Pagarás en efectivo al recibir tu pedido en la dirección especificada.</p>
-                        <p>Nuestro equipo te contactará para coordinar la entrega.</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {((paymentInfo?.method !== 'epayco' && paymentInfo?.method !== 'mercadopago') || (paymentInfo?.method === 'mercadopago' && !orderNumber)) && (
+                  {paymentInfo?.method === 'mercadopago' && !orderNumber && (
                     <button
                       onClick={() => handlePaymentSubmit(paymentInfo!)}
                       disabled={!paymentInfo?.method || isCreatingOrder}
