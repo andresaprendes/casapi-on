@@ -45,7 +45,7 @@ const Checkout = () => {
   const subtotal = items.reduce((sum: number, item: any) => sum + (item.product.price * item.quantity), 0)
   const total = subtotal // No additional taxes or shipping
 
-  const handleCustomerSubmit = (data: CustomerInfo) => {
+  const handleCustomerSubmit = async (data: CustomerInfo) => {
     setCustomerInfo(data)
     // Save customer info to localStorage for use in success page
     localStorage.setItem('checkout_customer_info', JSON.stringify({
@@ -59,14 +59,9 @@ const Checkout = () => {
       shippingZone: data.shippingZone,
       notes: data.notes
     }))
-    setCurrentStep('payment')
-  }
-
-  const handlePaymentSubmit = async (data: PaymentInfo) => {
-    setPaymentInfo(data)
-    // For MercadoPago, create order BEFORE redirecting to payment
-    // This ensures the order exists when the webhook arrives
-    console.log('🔍 Creating order before MercadoPago redirect...')
+    
+    // Create order immediately when customer info is submitted
+    console.log('🔍 Creating order after customer info submission...')
     setIsCreatingOrder(true)
     
     try {
@@ -77,10 +72,9 @@ const Checkout = () => {
         console.log('✅ Order created successfully:', orderResult.orderNumber)
         setOrderNumber(orderResult.orderNumber)
         setIsCreatingOrder(false)
-        // Force re-render to show MercadoPago component
         setCurrentStep('payment')
       } else {
-        console.error('❌ Order creation failed or orderNumber not set')
+        console.error('❌ Order creation failed')
         setIsCreatingOrder(false)
         alert('Error al crear la orden. Por favor intenta de nuevo.')
         return
@@ -91,6 +85,12 @@ const Checkout = () => {
       alert('Error al crear la orden. Por favor intenta de nuevo.')
       return
     }
+  }
+
+  const handlePaymentSubmit = (data: PaymentInfo) => {
+    setPaymentInfo(data)
+    // Order is already created, just set payment method
+    console.log('✅ Payment method selected:', data.method)
   }
 
   const handleMercadoPagoError = (error: any) => {
@@ -470,10 +470,20 @@ const Checkout = () => {
 
               <button
                 type="submit"
-                className="w-full btn-primary py-4"
+                disabled={isCreatingOrder}
+                className="w-full btn-primary py-4 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Continuar al Pago
-                <ArrowRight className="w-4 h-4 ml-2" />
+                {isCreatingOrder ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Creando Orden...
+                  </>
+                ) : (
+                  <>
+                    Continuar al Pago
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </>
+                )}
               </button>
             </form>
           </motion.div>
@@ -532,7 +542,16 @@ const Checkout = () => {
                   </div>
 
                   {/* Payment Components */}
-                  {paymentInfo?.method === 'mercadopago' && customerInfo && orderNumber && (
+                  {isCreatingOrder && (
+                    <div className="mt-6 p-6 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="flex items-center justify-center space-x-3">
+                        <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+                        <span className="text-blue-800 font-medium">Creando orden...</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {!isCreatingOrder && orderNumber && paymentInfo?.method === 'mercadopago' && customerInfo && (
                     <MercadoPagoPayment
                       amount={total}
                       orderId={orderNumber}
@@ -542,35 +561,13 @@ const Checkout = () => {
                     />
                   )}
 
-                  {paymentInfo?.method === 'mercadopago' && customerInfo && !orderNumber && (
-                    <div className="mt-6 p-6 bg-yellow-50 border border-yellow-200 rounded-lg">
-                      <h3 className="text-lg font-semibold text-yellow-900 mb-4">MercadoPago</h3>
-                      <div className="space-y-3 text-yellow-800">
-                        <p><strong>Monto a pagar:</strong> ${total.toLocaleString()}</p>
-                        <p>Haz clic en "Finalizar Compra" para proceder con el pago seguro a través de MercadoPago.</p>
+                  {!isCreatingOrder && !orderNumber && (
+                    <div className="mt-6 p-6 bg-red-50 border border-red-200 rounded-lg">
+                      <div className="text-center">
+                        <p className="text-red-800 font-medium">Error: No se pudo crear la orden</p>
+                        <p className="text-red-600 text-sm mt-2">Por favor, regresa al paso anterior e intenta de nuevo.</p>
                       </div>
                     </div>
-                  )}
-
-                  {paymentInfo?.method === 'mercadopago' && !orderNumber && (
-                    <button
-                      onClick={() => handlePaymentSubmit(paymentInfo!)}
-                      disabled={!paymentInfo?.method || isCreatingOrder}
-                      className="w-full btn-primary mt-6 py-4 text-lg font-semibold flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed hover:bg-brown-900 transition-colors"
-                    >
-                      {isCreatingOrder ? (
-                        <>
-                          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                          Creando Orden...
-                        </>
-                      ) : (
-                        <>
-                          <CreditCard className="w-5 h-5 mr-2" />
-                          Finalizar Compra
-                          <ArrowRight className="w-5 h-5 ml-2" />
-                        </>
-                      )}
-                    </button>
                   )}
                 </div>
               </div>
