@@ -77,10 +77,10 @@ const productDatabase = new Map();
 // Initialize products with default data
 const defaultProducts = [
   {
-    id: 'test-1000',
-    name: 'Producto de Prueba - 1000 COP',
-    description: 'Este es un producto de prueba muy económico para probar el sistema de pagos. Perfecto para realizar transacciones de prueba con un valor mínimo.',
-    price: 1000,
+    id: 'test-5000',
+    name: 'Producto de Prueba - 5000 COP',
+    description: 'Este es un producto de prueba económico para probar el sistema de pagos. Perfecto para realizar transacciones de prueba con un valor bajo.',
+    price: 5000,
     category: 'test',
     subcategory: 'prueba',
     images: ['/logo.png'],
