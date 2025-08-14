@@ -73,8 +73,9 @@ const Checkout = () => {
       const orderResult = await processOrder()
       console.log('🔍 Order creation result:', orderResult)
       
-      if (orderResult && orderNumber) {
-        console.log('✅ Order created successfully:', orderNumber)
+      if (orderResult.success && orderResult.orderNumber) {
+        console.log('✅ Order created successfully:', orderResult.orderNumber)
+        setOrderNumber(orderResult.orderNumber)
         setIsCreatingOrder(false)
         // Force re-render to show MercadoPago component
         setCurrentStep('payment')
@@ -157,28 +158,37 @@ const Checkout = () => {
       console.log('🔍 API Response:', result)
       
       if (result.success && result.order) {
-        setOrderNumber(result.order.orderNumber)
         console.log('✅ Order created successfully:', result.order.orderNumber)
-        return true
+        return {
+          success: true,
+          orderNumber: result.order.orderNumber
+        }
       } else {
         console.error('❌ API failed to create order:', result)
         // Create a fallback order number and continue anyway
         const fallbackOrderNumber = `CP-${Date.now()}`
-        setOrderNumber(fallbackOrderNumber)
         console.log('⚠️ Using fallback order number:', fallbackOrderNumber)
-        return true // Return true to continue with payment
+        return {
+          success: true,
+          orderNumber: fallbackOrderNumber
+        }
       }
       
     } catch (error) {
       console.error('Error creating order:', error)
       // Fallback to local order number
       const fallbackOrderNumber = `CP-${Date.now()}`
-      setOrderNumber(fallbackOrderNumber)
-      return false
+      return {
+        success: false,
+        orderNumber: fallbackOrderNumber
+      }
     }
     
     clearCart()
-    return false
+    return {
+      success: false,
+      orderNumber: null
+    }
   }
 
   const paymentMethods = [
