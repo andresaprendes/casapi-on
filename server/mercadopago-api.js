@@ -596,10 +596,18 @@ app.post('/api/mercadopago/webhook', express.json(), async (req, res) => {
           webhook_verified: true
         });
         
-        // Update order if approved
-        if (payment.status === 'approved' && payment.external_reference) {
-          updateOrderPaymentStatus(payment.external_reference, 'paid', payment.id);
-          console.log('✅ Order updated:', payment.external_reference);
+        // Update order based on payment status
+        if (payment.external_reference) {
+          if (payment.status === 'approved') {
+            updateOrderPaymentStatus(payment.external_reference, 'paid', payment.id);
+            console.log('✅ Order updated to paid:', payment.external_reference);
+          } else if (payment.status === 'rejected') {
+            updateOrderPaymentStatus(payment.external_reference, 'failed', payment.id);
+            console.log('❌ Order updated to failed:', payment.external_reference);
+          } else if (payment.status === 'pending') {
+            updateOrderPaymentStatus(payment.external_reference, 'pending', payment.id);
+            console.log('⏳ Order updated to pending:', payment.external_reference);
+          }
         }
         
       } catch (error) {
