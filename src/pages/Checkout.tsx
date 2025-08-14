@@ -75,61 +75,39 @@ const Checkout = () => {
     setCurrentStep('payment')
   }
 
-  const handlePaymentMethodSelect = (method: 'mercadopago') => {
+  const handlePaymentMethodSelect = async (method: 'mercadopago') => {
     setPaymentInfo({ method })
     console.log('✅ Payment method selected:', method)
+    
+    // Automatically create order when MercadoPago is selected
+    if (method === 'mercadopago' && customerInfo && !orderNumber) {
+      console.log('🚀 Auto-creating order for MercadoPago...')
+      setIsCreatingOrder(true)
+      
+      try {
+        const orderResult = await processOrder()
+        console.log('🔍 Auto order creation result:', orderResult)
+        
+        if (orderResult && orderResult.success && orderResult.orderNumber) {
+          console.log('✅ Auto order created successfully:', orderResult.orderNumber)
+          setOrderNumber(orderResult.orderNumber)
+          setIsCreatingOrder(false)
+        } else {
+          console.error('❌ Auto order creation failed')
+          setIsCreatingOrder(false)
+          alert('Error al crear la orden automáticamente. Por favor intenta de nuevo.')
+        }
+      } catch (error) {
+        console.error('❌ Auto order creation error:', error)
+        setIsCreatingOrder(false)
+        alert('Error al crear la orden automáticamente. Por favor intenta de nuevo.')
+      }
+    }
   }
 
   const handleFinalizarCompra = async () => {
-    if (!paymentInfo?.method || !customerInfo) {
-      alert('Por favor selecciona un método de pago')
-      return
-    }
-
-    console.log('🚀 STEP 1: Starting order creation process...')
-    console.log('📋 Order Details:', {
-      customer: `${customerInfo.firstName} ${customerInfo.lastName}`,
-      email: customerInfo.email,
-      total: total,
-      items: items.length,
-      paymentMethod: paymentInfo.method
-    })
-    
-    setIsCreatingOrder(true)
-    
-    try {
-      const orderResult = await processOrder()
-      console.log('🔍 Order creation result:', orderResult)
-      
-      if (orderResult && orderResult.success && orderResult.orderNumber) {
-        console.log('✅ STEP 2: Order created successfully:', orderResult.orderNumber)
-        console.log('📊 Order Summary:', {
-          orderNumber: orderResult.orderNumber,
-          total: total,
-          customer: `${customerInfo.firstName} ${customerInfo.lastName}`,
-          timestamp: new Date().toISOString()
-        })
-        
-        setOrderNumber(orderResult.orderNumber)
-        setIsCreatingOrder(false)
-        
-        console.log('✅ STEP 3: Order state updated, MercadoPago will render with order:', orderResult.orderNumber)
-        
-        // Force re-render to show MercadoPago component
-        setCurrentStep('payment')
-      } else {
-        console.error('❌ STEP 2 FAILED: Order creation failed or orderNumber not set')
-        console.error('❌ Order Result:', orderResult)
-        setIsCreatingOrder(false)
-        alert('Error al crear la orden. Por favor intenta de nuevo.')
-        return
-      }
-    } catch (error) {
-      console.error('❌ STEP 2 ERROR: Error in order creation:', error)
-      setIsCreatingOrder(false)
-      alert('Error al crear la orden. Por favor intenta de nuevo.')
-      return
-    }
+    // This function is no longer needed since MercadoPago will handle order creation
+    console.log('⚠️ handleFinalizarCompra called but should not be used')
   }
 
   const handleMercadoPagoError = (error: any) => {
@@ -598,10 +576,10 @@ const Checkout = () => {
 
                   {!isCreatingOrder && orderNumber && paymentInfo?.method === 'mercadopago' && customerInfo && (
                     <>
-                      {console.log('✅ STEP 4: MercadoPago component rendering with order:', orderNumber)}
+                      {console.log('✅ MercadoPago component rendering with real order:', orderNumber)}
                       <MercadoPagoPayment
                         amount={total}
-                        orderId={orderNumber}
+                        orderId={orderNumber} // Use real order ID
                         customerEmail={customerInfo.email}
                         customerName={`${customerInfo.firstName} ${customerInfo.lastName}`}
                         onError={handleMercadoPagoError}
@@ -614,30 +592,9 @@ const Checkout = () => {
                       <h3 className="text-lg font-semibold text-yellow-900 mb-4">MercadoPago</h3>
                       <div className="space-y-3 text-yellow-800">
                         <p><strong>Monto a pagar:</strong> ${total.toLocaleString()}</p>
-                        <p>Haz clic en "Finalizar Compra" para proceder con el pago seguro a través de MercadoPago.</p>
+                        <p>Selecciona MercadoPago para crear la orden y proceder con el pago.</p>
                       </div>
                     </div>
-                  )}
-
-                  {!isCreatingOrder && !orderNumber && paymentInfo?.method === 'mercadopago' && (
-                    <button
-                      onClick={handleFinalizarCompra}
-                      disabled={!paymentInfo?.method || isCreatingOrder}
-                      className="w-full btn-primary mt-6 py-4 text-lg font-semibold flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed hover:bg-brown-900 transition-colors"
-                    >
-                      {isCreatingOrder ? (
-                        <>
-                          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                          Creando Orden...
-                        </>
-                      ) : (
-                        <>
-                          <CreditCard className="w-5 h-5 mr-2" />
-                          Finalizar Compra
-                          <ArrowRight className="w-5 h-5 ml-2" />
-                        </>
-                      )}
-                    </button>
                   )}
                 </div>
               </div>
