@@ -315,7 +315,7 @@ const productOperations = {
 
   // Get all products
   async getAll() {
-    const query = 'SELECT * FROM products ORDER BY created_at DESC';
+    const query = 'SELECT * FROM products ORDER BY display_order ASC, created_at DESC';
     const result = await pool.query(query);
     return result.rows;
   },

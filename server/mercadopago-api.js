@@ -1196,22 +1196,73 @@ app.delete('/api/products/:id', (req, res) => {
   }
 });
 
-// SYNC DATABASE - Reset to default products (for Railway sync)
-app.post('/api/products/sync', (req, res) => {
+// Update product display order
+app.put('/api/products/:id/order', express.json(), async (req, res) => {
   try {
-    // Clear current database
-    productDatabase.clear();
+    const { id } = req.params;
+    const { displayOrder } = req.body;
     
-    // Re-initialize with default products
-    defaultProducts.forEach(product => {
-      productDatabase.set(product.id, product);
+    if (typeof displayOrder !== 'number') {
+      return res.status(400).json({
+        success: false,
+        error: 'displayOrder must be a number'
+      });
+    }
+    
+    let updatedProduct;
+    if (process.env.DATABASE_URL) {
+      updatedProduct = await productOperations.update(id, { display_order: displayOrder });
+    } else {
+      const existingProduct = productDatabase.get(id);
+      if (!existingProduct) {
+        return res.status(404).json({
+          success: false,
+          error: 'Product not found'
+        });
+      }
+      
+      existingProduct.display_order = displayOrder;
+      productDatabase.set(id, existingProduct);
+      updatedProduct = existingProduct;
+    }
+    
+    console.log('✅ Product order updated:', id, 'to position:', displayOrder);
+    
+    res.json({
+      success: true,
+      product: updatedProduct
     });
+  } catch (error) {
+    console.error('Error updating product order:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Error updating product order'
+    });
+  }
+});
+
+// SYNC DATABASE - Reset to default products (for Railway sync)
+app.post('/api/products/sync', async (req, res) => {
+  try {
+    if (process.env.DATABASE_URL) {
+      // Clear and re-initialize with default products
+      await productOperations.initializeWithDefaults(defaultProducts);
+      console.log('✅ Database synced with default products');
+    } else {
+      // Clear current database
+      productDatabase.clear();
+      
+      // Re-initialize with default products
+      defaultProducts.forEach(product => {
+        productDatabase.set(product.id, product);
+      });
+      
+      console.log('✅ In-memory storage synced with default products');
+    }
     
-    console.log('✅ Database synced with default products');
     res.json({ 
       success: true, 
-      message: 'Database synced successfully',
-      productsCount: productDatabase.size
+      message: 'Database synced successfully'
     });
   } catch (error) {
     console.error('Error syncing database:', error);

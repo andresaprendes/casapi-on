@@ -90,6 +90,7 @@ const initializeDatabase = async () => {
         estimated_delivery VARCHAR(100),
         features JSONB,
         specifications JSONB,
+        display_order INTEGER DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )

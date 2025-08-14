@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
-import { Search, Plus, Edit3, Trash2, Save, X, Upload, LogOut, Package, Package as PackageIcon, BarChart3 } from 'lucide-react'
+import { Search, Plus, Edit3, Trash2, Save, X, Upload, LogOut, Package, Package as PackageIcon, BarChart3, ArrowUpDown } from 'lucide-react'
 import { Product } from '../types'
 import { useAuth } from '../store/AuthContext'
 import { useProducts } from '../hooks/useProducts'
 import { toast } from 'react-hot-toast'
 import { Link } from 'react-router-dom'
+import ProductReorder from '../components/ProductReorder'
 
 const AdminProducts = () => {
   const { products, addProduct, updateProduct, deleteProduct } = useProducts()
@@ -13,6 +14,7 @@ const AdminProducts = () => {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [showEditModal, setShowEditModal] = useState(false)
   const [showAddModal, setShowAddModal] = useState(false)
+  const [showReorderModal, setShowReorderModal] = useState(false)
   const [loading, setLoading] = useState(false)
   const { logout } = useAuth()
 
@@ -266,6 +268,13 @@ const AdminProducts = () => {
               <PackageIcon className="w-4 h-4" />
               <span>Gestionar Pedidos</span>
             </Link>
+            <button
+              onClick={() => setShowReorderModal(true)}
+              className="flex items-center justify-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200"
+            >
+              <ArrowUpDown className="w-4 h-4" />
+              <span>Reordenar</span>
+            </button>
             <button
               onClick={handleAddProduct}
               className="flex items-center justify-center space-x-2 px-4 py-2 bg-brown-600 text-white rounded-lg hover:bg-brown-700 transition-colors duration-200"
@@ -584,6 +593,32 @@ const AdminProducts = () => {
                     </button>
                   </div>
                 </form>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Reorder Products Modal */}
+        {showReorderModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-xl font-semibold text-gray-800">Reordenar Productos</h2>
+                  <button
+                    onClick={() => setShowReorderModal(false)}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+                <ProductReorder 
+                  onReorder={() => {
+                    setShowReorderModal(false)
+                    // Refresh products list
+                    window.location.reload()
+                  }}
+                />
               </div>
             </div>
           </div>
