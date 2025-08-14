@@ -5,6 +5,8 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const { MercadoPagoConfig, Preference, Payment, PaymentMethod } = require('mercadopago');
+const { initializeDatabase } = require('./database');
+const { orderOperations, paymentOperations, productOperations } = require('./dbOperations');
 require('dotenv').config();
 
 const app = express();
@@ -69,10 +71,7 @@ const MERCADOPAGO_ACCESS_TOKEN = process.env.MERCADOPAGO_ACCESS_TOKEN || 'TEST-1
 const WEBHOOK_SECRET = process.env.MERCADOPAGO_WEBHOOK_SECRET || 'your-webhook-secret';
 console.log('Initializing MercadoPago with token:', MERCADOPAGO_ACCESS_TOKEN ? MERCADOPAGO_ACCESS_TOKEN.substring(0, 15) + '...' : 'NONE');
 
-// In-memory storage (in production, use a real database)
-const paymentDatabase = new Map();
-const orderDatabase = new Map();
-const productDatabase = new Map();
+// Database will be initialized on startup
 
 // Initialize products with default data
 const defaultProducts = [
@@ -232,10 +231,7 @@ const defaultProducts = [
   }
 ];
 
-// Initialize product database with default products
-defaultProducts.forEach(product => {
-  productDatabase.set(product.id, product);
-});
+// Products will be initialized in database on startup
 
 // Order utility functions
 function generateOrderNumber() {
@@ -267,55 +263,39 @@ function calculateEstimatedDelivery(shippingZone) {
 }
 
 // Clean up abandoned orders (older than 24 hours)
-function cleanupAbandonedOrders() {
-  const now = new Date();
-  const twentyFourHoursAgo = new Date(now.getTime() - (24 * 60 * 60 * 1000));
-  
-  let cleanedCount = 0;
-  for (const [orderId, order] of orderDatabase.entries()) {
-    if (order.status === 'pending' && 
-        order.paymentStatus === 'pending' && 
-        new Date(order.createdAt) < twentyFourHoursAgo) {
-      orderDatabase.delete(orderId);
-      cleanedCount++;
+async function cleanupAbandonedOrders() {
+  try {
+    const cleanedCount = await orderOperations.cleanupAbandoned(24);
+    if (cleanedCount > 0) {
+      console.log(`🧹 Cleaned up ${cleanedCount} abandoned orders`);
     }
-  }
-  
-  if (cleanedCount > 0) {
-    console.log(`🧹 Cleaned up ${cleanedCount} abandoned orders`);
+  } catch (error) {
+    console.error('Error cleaning up abandoned orders:', error);
   }
 }
 
 // Run cleanup every hour
 setInterval(cleanupAbandonedOrders, 60 * 60 * 1000);
 
-function updateOrderPaymentStatus(orderReference, paymentStatus, paymentId) {
+async function updateOrderPaymentStatus(orderReference, paymentStatus, paymentId) {
   try {
-    // Find order by external reference (order number)
-    let targetOrder = null;
-    for (const [orderId, order] of orderDatabase.entries()) {
-      if (order.orderNumber === orderReference || order.id === orderReference) {
-        targetOrder = { id: orderId, ...order };
-        break;
-      }
-    }
+    // Find order by order number
+    const order = await orderOperations.getByOrderNumber(orderReference);
     
-    if (targetOrder) {
-      const updatedOrder = {
-        ...targetOrder,
+    if (order) {
+      const updates = {
         paymentStatus: paymentStatus,
-        paymentId: paymentId,
-        updatedAt: new Date().toISOString()
+        paymentId: paymentId
       };
       
       // If payment is approved, also update order status to confirmed
-      if (paymentStatus === 'paid' && targetOrder.status === 'pending') {
-        updatedOrder.status = 'confirmed';
+      if (paymentStatus === 'paid' && order.status === 'pending') {
+        updates.status = 'confirmed';
       }
       
-      orderDatabase.set(targetOrder.id, updatedOrder);
+      await orderOperations.update(order.id, updates);
       console.log('✅ Order payment status updated:', {
-        orderId: targetOrder.id,
+        orderId: order.id,
         orderNumber: orderReference,
         paymentStatus: paymentStatus,
         paymentId: paymentId
@@ -498,7 +478,7 @@ app.get('/api/mercadopago/payment-status/:paymentId', async (req, res) => {
     console.log('Checking payment database first...');
 
     // First check our database (webhook verified payments)
-    const storedPayment = paymentDatabase.get(paymentId.toString());
+    const storedPayment = await paymentOperations.getById(paymentId.toString());
     console.log('Database check result:', storedPayment ? 'Found' : 'Not found');
     if (storedPayment && storedPayment.webhook_verified) {
       console.log('✅ Payment found in database (webhook verified):', storedPayment.status);
@@ -536,22 +516,20 @@ app.get('/api/mercadopago/payment-status/:paymentId', async (req, res) => {
     });
 
     // Store in database for future requests
-    const paymentRecord = {
-      id: payment.id,
+    await paymentOperations.upsert({
+      id: payment.id.toString(),
+      orderId: payment.external_reference,
       status: payment.status,
-      status_detail: payment.status_detail,
-      external_reference: payment.external_reference,
-      transaction_amount: payment.transaction_amount,
-      currency_id: payment.currency_id,
-      payment_method_id: payment.payment_method_id,
-      payer_email: payment.payer?.email,
-      date_created: payment.date_created,
-      date_approved: payment.date_approved,
-      last_updated: new Date().toISOString(),
-      webhook_verified: false
-    };
-    
-    paymentDatabase.set(paymentId.toString(), paymentRecord);
+      statusDetail: payment.status_detail,
+      externalReference: payment.external_reference,
+      transactionAmount: payment.transaction_amount,
+      currencyId: payment.currency_id,
+      paymentMethodId: payment.payment_method_id,
+      payerEmail: payment.payer?.email,
+      dateCreated: payment.date_created,
+      dateApproved: payment.date_approved,
+      webhookVerified: false
+    });
 
     const isApproved = payment.status === 'approved';
     const isPending = payment.status === 'pending';
@@ -610,13 +588,20 @@ app.post('/api/mercadopago/webhook', express.json(), async (req, res) => {
         
         console.log('Payment status:', payment.status);
         
-        // Store payment
-        paymentDatabase.set(paymentId.toString(), {
-          id: payment.id,
+        // Store payment in database
+        await paymentOperations.upsert({
+          id: payment.id.toString(),
+          orderId: payment.external_reference,
           status: payment.status,
-          external_reference: payment.external_reference,
-          transaction_amount: payment.transaction_amount,
-          webhook_verified: true
+          statusDetail: payment.status_detail,
+          externalReference: payment.external_reference,
+          transactionAmount: payment.transaction_amount,
+          currencyId: payment.currency_id,
+          paymentMethodId: payment.payment_method_id,
+          payerEmail: payment.payer?.email,
+          dateCreated: payment.date_created,
+          dateApproved: payment.date_approved,
+          webhookVerified: true
         });
         
         // Update order based on payment status
@@ -760,7 +745,7 @@ app.post('/api/mercadopago/trigger-webhook/:paymentId', async (req, res) => {
 // 6. Order Management Endpoints
 
 // Create a new order
-app.post('/api/orders', express.json(), (req, res) => {
+app.post('/api/orders', express.json(), async (req, res) => {
   try {
     const { customer, items, subtotal, shipping, tax, total, shippingZone, paymentMethod, notes } = req.body;
 
@@ -774,9 +759,9 @@ app.post('/api/orders', express.json(), (req, res) => {
 
     // Generate order
     const orderId = generateOrderNumber();
-    const now = new Date().toISOString();
+    const estimatedDelivery = calculateEstimatedDelivery(shippingZone);
     
-    const order = {
+    const orderData = {
       id: orderId,
       orderNumber: orderId,
       customer,
@@ -785,22 +770,14 @@ app.post('/api/orders', express.json(), (req, res) => {
       shipping: shipping || 0,
       tax: tax || 0,
       total,
-      status: 'pending',
-      paymentStatus: 'pending',
-      paymentMethod: paymentMethod || 'mercadopago',
-      createdAt: now,
-      updatedAt: now,
-      estimatedDelivery: calculateEstimatedDelivery(shippingZone),
       shippingZone,
+      paymentMethod: paymentMethod || 'mercadopago',
       notes: notes || '',
-      // Add tracking fields
-      abandonedAt: null,
-      retryCount: 0,
-      lastPaymentAttempt: null
+      estimatedDelivery
     };
 
-    // Store order
-    orderDatabase.set(orderId, order);
+    // Store order in database
+    const order = await orderOperations.create(orderData);
     
     console.log('✅ Order created:', orderId);
     
@@ -1188,22 +1165,39 @@ process.on('unhandledRejection', (reason, promise) => {
   console.error('Unhandled Rejection at:', promise, 'reason:', reason);
 });
 
-app.listen(PORT, () => {
-  console.log(`MercadoPago API server running on port ${PORT}`);
-  console.log(`Available endpoints:`);
-  console.log(`- POST /api/mercadopago/create-preference`);
-  console.log(`- GET  /api/mercadopago/payment-status/:paymentId`);
-  console.log(`- POST /api/mercadopago/webhook`);
-  console.log(`- GET  /api/mercadopago/payment-methods`);
-  console.log(`- GET  /api/mercadopago/test`);
-  console.log(`- GET  /api/mercadopago/webhook-test`);
-  console.log(`- POST /api/upload/image`);
-  console.log(`- GET  /api/products`);
-  console.log(`- GET  /api/products/:id`);
-  console.log(`- POST /api/products`);
-  console.log(`- PUT  /api/products/:id`);
-  console.log(`- DELETE /api/products/:id`);
-  console.log(`- POST /api/products/sync`);
-});
+// Initialize database and start server
+async function startServer() {
+  try {
+    // Initialize database tables
+    await initializeDatabase();
+    
+    // Initialize with default products
+    await productOperations.initializeWithDefaults(defaultProducts);
+    
+    // Start server
+    app.listen(PORT, () => {
+      console.log(`MercadoPago API server running on port ${PORT}`);
+      console.log(`Available endpoints:`);
+      console.log(`- POST /api/mercadopago/create-preference`);
+      console.log(`- GET  /api/mercadopago/payment-status/:paymentId`);
+      console.log(`- POST /api/mercadopago/webhook`);
+      console.log(`- GET  /api/mercadopago/payment-methods`);
+      console.log(`- GET  /api/mercadopago/test`);
+      console.log(`- GET  /api/mercadopago/webhook-test`);
+      console.log(`- POST /api/upload/image`);
+      console.log(`- GET  /api/products`);
+      console.log(`- GET  /api/products/:id`);
+      console.log(`- POST /api/products`);
+      console.log(`- PUT  /api/products/:id`);
+      console.log(`- DELETE /api/products/:id`);
+      console.log(`- POST /api/products/sync`);
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+}
+
+startServer();
 
 module.exports = app;
