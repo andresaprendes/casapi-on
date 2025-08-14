@@ -913,10 +913,10 @@ app.get('/api/orders', async (req, res) => {
     if (search) {
       const searchLower = search.toLowerCase();
       orders = orders.filter(order => 
-        order.orderNumber.toLowerCase().includes(searchLower) ||
-        order.customer.name.toLowerCase().includes(searchLower) ||
-        order.customer.email.toLowerCase().includes(searchLower) ||
-        (order.customer.phone && order.customer.phone.includes(search))
+        (order.orderNumber || order.order_number || '').toLowerCase().includes(searchLower) ||
+        (order.customerName || order.customer_name || '').toLowerCase().includes(searchLower) ||
+        (order.customerEmail || order.customer_email || '').toLowerCase().includes(searchLower) ||
+        (order.customerPhone || order.customer_phone || '').includes(search)
       );
     }
 
@@ -940,10 +940,10 @@ app.get('/api/orders', async (req, res) => {
     // Calculate stats
     const stats = {
       totalOrders: orders.length,
-      totalRevenue: orders.filter(o => o.paymentStatus === 'paid').reduce((sum, o) => sum + o.total, 0),
+      totalRevenue: orders.filter(o => (o.paymentStatus || o.payment_status) === 'paid').reduce((sum, o) => sum + parseFloat(o.total || 0), 0),
       pendingOrders: orders.filter(o => o.status === 'pending').length,
       completedOrders: orders.filter(o => o.status === 'delivered').length,
-      averageOrderValue: orders.length > 0 ? orders.reduce((sum, o) => sum + o.total, 0) / orders.length : 0
+      averageOrderValue: orders.length > 0 ? orders.reduce((sum, o) => sum + parseFloat(o.total || 0), 0) / orders.length : 0
     };
 
     // Transform database fields to match frontend expectations
