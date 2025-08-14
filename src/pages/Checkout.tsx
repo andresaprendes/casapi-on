@@ -548,7 +548,6 @@ const Checkout = () => {
                       orderId={`CP-${Date.now()}`}
                       customerEmail={customerInfo.email}
                       customerName={`${customerInfo.firstName} ${customerInfo.lastName}`}
-                      onSuccess={handleMercadoPagoSuccess}
                       onError={handleMercadoPagoError}
                     />
                   )}
