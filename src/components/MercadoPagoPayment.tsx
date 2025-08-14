@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { CreditCard, Building2, DollarSign, Lock, CheckCircle, AlertCircle } from 'lucide-react'
 
 interface MercadoPagoPaymentProps {
@@ -21,17 +21,7 @@ const MercadoPagoPayment = ({
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle')
   const [errorMessage, setErrorMessage] = useState('')
 
-  // Auto-trigger payment when component mounts (only once)
-  useEffect(() => {
-    if (orderId && !isProcessing && paymentStatus === 'idle') {
-      console.log('🚀 Auto-triggering MercadoPago payment for order:', orderId)
-      // Add a small delay to prevent multiple triggers
-      const timer = setTimeout(() => {
-        handlePayment()
-      }, 100)
-      return () => clearTimeout(timer)
-    }
-  }, [orderId, isProcessing, paymentStatus])
+  // No auto-trigger - let user choose when to pay
 
   // Manual payment trigger function
   const handleManualPayment = () => {
@@ -145,12 +135,23 @@ const MercadoPagoPayment = ({
             <p><strong>Email:</strong> {customerEmail}</p>
           </div>
           
-          {/* Manual payment button as backup */}
+          {/* Payment button */}
           <button
             onClick={handleManualPayment}
-            className="mt-4 w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+            disabled={isProcessing}
+            className="mt-4 w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
           >
-            Proceder al Pago
+            {isProcessing ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <span>Procesando...</span>
+              </>
+            ) : (
+              <>
+                <CreditCard className="w-4 h-4" />
+                <span>Pagar con MercadoPago</span>
+              </>
+            )}
           </button>
         </div>
       )}
