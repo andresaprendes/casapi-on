@@ -581,6 +581,16 @@ const Checkout = () => {
                     />
                   )}
 
+                  {paymentInfo?.method === 'mercadopago' && customerInfo && !orderNumber && (
+                    <div className="mt-6 p-6 bg-yellow-50 border border-yellow-200 rounded-lg">
+                      <h3 className="text-lg font-semibold text-yellow-900 mb-4">MercadoPago</h3>
+                      <div className="space-y-3 text-yellow-800">
+                        <p><strong>Monto a pagar:</strong> ${total.toLocaleString()}</p>
+                        <p>Haz clic en "Finalizar Compra" para proceder con el pago seguro a través de MercadoPago.</p>
+                      </div>
+                    </div>
+                  )}
+
                   {paymentInfo?.method === 'bank_transfer' && (
                     <div className="mt-6 p-6 bg-blue-50 border border-blue-200 rounded-lg">
                       <h3 className="text-lg font-semibold text-blue-900 mb-4">Transferencia Bancaria</h3>
@@ -608,7 +618,7 @@ const Checkout = () => {
                     </div>
                   )}
 
-                  {paymentInfo?.method !== 'epayco' && paymentInfo?.method !== 'mercadopago' && (
+                  {(paymentInfo?.method !== 'epayco' || (paymentInfo?.method === 'mercadopago' && !orderNumber)) && (
                     <button
                       onClick={() => handlePaymentSubmit(paymentInfo!)}
                       disabled={!paymentInfo?.method}
