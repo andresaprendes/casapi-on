@@ -72,7 +72,9 @@ const Checkout = () => {
     if (data.method === 'mercadopago') {
       // For MercadoPago, create order BEFORE redirecting to payment
       // This ensures the order exists when the webhook arrives
-      await processOrder()
+      console.log('🔍 Creating order before MercadoPago redirect...')
+      const orderResult = await processOrder()
+      console.log('🔍 Order creation result:', orderResult)
       return
     }
     if (data.method === 'epayco') {
@@ -106,9 +108,10 @@ const Checkout = () => {
   }
 
   const processOrder = async () => {
+    console.log('🔍 processOrder called with:', { customerInfo, items: items.length })
     if (!customerInfo || !items.length) {
       console.error('Missing customer info or items for order creation')
-      return
+      return false
     }
 
     try {
@@ -161,11 +164,13 @@ const Checkout = () => {
       if (result.success && result.order) {
         setOrderNumber(result.order.orderNumber)
         console.log('✅ Order created successfully:', result.order.orderNumber)
+        return true
       } else {
         // Fallback to local order number if API fails
         const fallbackOrderNumber = `CP-${Date.now()}`
         setOrderNumber(fallbackOrderNumber)
         console.error('Failed to create order in database, using fallback:', fallbackOrderNumber)
+        return false
       }
       
     } catch (error) {
@@ -173,9 +178,11 @@ const Checkout = () => {
       // Fallback to local order number
       const fallbackOrderNumber = `CP-${Date.now()}`
       setOrderNumber(fallbackOrderNumber)
+      return false
     }
     
     clearCart()
+    return false
   }
 
   const paymentMethods = [
