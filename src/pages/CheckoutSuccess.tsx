@@ -15,7 +15,7 @@ interface PaymentVerification {
 
 const CheckoutSuccess: React.FC = () => {
   const [searchParams] = useSearchParams();
-  const { state, clearCart } = useCart();
+  const { clearCart } = useCart();
   const [verification, setVerification] = useState<PaymentVerification>({
     isVerified: false,
     isApproved: false,
