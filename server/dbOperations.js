@@ -58,6 +58,14 @@ const orderOperations = {
       const row = result.rows[0];
       return {
         ...row,
+        orderNumber: row.order_number,
+        paymentStatus: row.payment_status,
+        paymentMethod: row.payment_method,
+        paymentId: row.payment_id,
+        shippingZone: row.shipping_zone,
+        estimatedDelivery: row.estimated_delivery,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
         customer: {
           name: row.customer_name,
           email: row.customer_email,
@@ -77,6 +85,14 @@ const orderOperations = {
       const row = result.rows[0];
       return {
         ...row,
+        orderNumber: row.order_number,
+        paymentStatus: row.payment_status,
+        paymentMethod: row.payment_method,
+        paymentId: row.payment_id,
+        shippingZone: row.shipping_zone,
+        estimatedDelivery: row.estimated_delivery,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
         customer: {
           name: row.customer_name,
           email: row.customer_email,
@@ -146,9 +162,17 @@ const orderOperations = {
 
     const result = await pool.query(query, values);
     
-    // Transform database rows to include customer object
+    // Transform database rows to include customer object and camelCase fields
     return result.rows.map(row => ({
       ...row,
+      orderNumber: row.order_number,
+      paymentStatus: row.payment_status,
+      paymentMethod: row.payment_method,
+      paymentId: row.payment_id,
+      shippingZone: row.shipping_zone,
+      estimatedDelivery: row.estimated_delivery,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
       customer: {
         name: row.customer_name,
         email: row.customer_email,
@@ -183,6 +207,14 @@ const orderOperations = {
       const row = result.rows[0];
       return {
         ...row,
+        orderNumber: row.order_number,
+        paymentStatus: row.payment_status,
+        paymentMethod: row.payment_method,
+        paymentId: row.payment_id,
+        shippingZone: row.shipping_zone,
+        estimatedDelivery: row.estimated_delivery,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
         customer: {
           name: row.customer_name,
           email: row.customer_email,

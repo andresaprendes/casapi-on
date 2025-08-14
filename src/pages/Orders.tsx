@@ -345,8 +345,8 @@ const Orders = () => {
                         <div className="text-xs text-gray-500 sm:hidden">{formatDate(order.createdAt)}</div>
                       </td>
                       <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{order.customer?.name || order.customerName}</div>
-                        <div className="text-xs text-gray-500 truncate max-w-32">{order.customer?.email || order.customerEmail}</div>
+                        <div className="text-sm font-medium text-gray-900">{order.customer?.name}</div>
+                        <div className="text-xs text-gray-500 truncate max-w-32">{order.customer?.email}</div>
                       </td>
                       <td className="px-3 sm:px-6 py-4 whitespace-nowrap hidden sm:table-cell">
                         <div className="text-sm text-gray-900">{formatDate(order.createdAt)}</div>
