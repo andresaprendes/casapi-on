@@ -375,8 +375,8 @@ app.post('/api/mercadopago/create-preference', async (req, res) => {
       external_reference: orderId,
       back_urls: {
         success: `${BASE_URL}/checkout/success?payment_id={payment_id}&status={status}&external_reference={external_reference}`,
-        failure: `${BASE_URL}/checkout?payment_status=failure&external_reference={external_reference}`,
-        pending: `${BASE_URL}/checkout?payment_status=pending&external_reference={external_reference}`
+        failure: `${BASE_URL}/checkout/success?payment_id={payment_id}&status=failure&external_reference={external_reference}`,
+        pending: `${BASE_URL}/checkout/success?payment_id={payment_id}&status=pending&external_reference={external_reference}`
       },
       notification_url: `${API_URL}/api/mercadopago/webhook`,
       auto_return: 'approved',
