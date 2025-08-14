@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { motion } from 'framer-motion'
 import {
@@ -45,6 +45,19 @@ const Checkout = () => {
   const subtotal = items.reduce((sum: number, item: any) => sum + (item.product.price * item.quantity), 0)
   const total = subtotal // No additional taxes or shipping
 
+  // Track order state changes
+  useEffect(() => {
+    if (orderNumber) {
+      console.log('🔄 Order state changed:', {
+        orderNumber,
+        currentStep,
+        isCreatingOrder,
+        hasPaymentInfo: !!paymentInfo,
+        hasCustomerInfo: !!customerInfo
+      })
+    }
+  }, [orderNumber, currentStep, isCreatingOrder, paymentInfo, customerInfo])
+
   const handleCustomerSubmit = (data: CustomerInfo) => {
     setCustomerInfo(data)
     // Save customer info to localStorage for use in success page
@@ -73,7 +86,15 @@ const Checkout = () => {
       return
     }
 
-    console.log('🔍 Creating order before MercadoPago redirect...')
+    console.log('🚀 STEP 1: Starting order creation process...')
+    console.log('📋 Order Details:', {
+      customer: `${customerInfo.firstName} ${customerInfo.lastName}`,
+      email: customerInfo.email,
+      total: total,
+      items: items.length,
+      paymentMethod: paymentInfo.method
+    })
+    
     setIsCreatingOrder(true)
     
     try {
@@ -81,19 +102,30 @@ const Checkout = () => {
       console.log('🔍 Order creation result:', orderResult)
       
       if (orderResult && orderResult.success && orderResult.orderNumber) {
-        console.log('✅ Order created successfully:', orderResult.orderNumber)
+        console.log('✅ STEP 2: Order created successfully:', orderResult.orderNumber)
+        console.log('📊 Order Summary:', {
+          orderNumber: orderResult.orderNumber,
+          total: total,
+          customer: `${customerInfo.firstName} ${customerInfo.lastName}`,
+          timestamp: new Date().toISOString()
+        })
+        
         setOrderNumber(orderResult.orderNumber)
         setIsCreatingOrder(false)
+        
+        console.log('✅ STEP 3: Order state updated, MercadoPago will render with order:', orderResult.orderNumber)
+        
         // Force re-render to show MercadoPago component
         setCurrentStep('payment')
       } else {
-        console.error('❌ Order creation failed or orderNumber not set')
+        console.error('❌ STEP 2 FAILED: Order creation failed or orderNumber not set')
+        console.error('❌ Order Result:', orderResult)
         setIsCreatingOrder(false)
         alert('Error al crear la orden. Por favor intenta de nuevo.')
         return
       }
     } catch (error) {
-      console.error('❌ Error in order creation:', error)
+      console.error('❌ STEP 2 ERROR: Error in order creation:', error)
       setIsCreatingOrder(false)
       alert('Error al crear la orden. Por favor intenta de nuevo.')
       return
@@ -565,13 +597,16 @@ const Checkout = () => {
                   )}
 
                   {!isCreatingOrder && orderNumber && paymentInfo?.method === 'mercadopago' && customerInfo && (
-                    <MercadoPagoPayment
-                      amount={total}
-                      orderId={orderNumber}
-                      customerEmail={customerInfo.email}
-                      customerName={`${customerInfo.firstName} ${customerInfo.lastName}`}
-                      onError={handleMercadoPagoError}
-                    />
+                    <>
+                      {console.log('✅ STEP 4: MercadoPago component rendering with order:', orderNumber)}
+                      <MercadoPagoPayment
+                        amount={total}
+                        orderId={orderNumber}
+                        customerEmail={customerInfo.email}
+                        customerName={`${customerInfo.firstName} ${customerInfo.lastName}`}
+                        onError={handleMercadoPagoError}
+                      />
+                    </>
                   )}
 
                   {!isCreatingOrder && !orderNumber && paymentInfo?.method === 'mercadopago' && customerInfo && (
