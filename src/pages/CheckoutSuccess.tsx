@@ -33,7 +33,8 @@ const CheckoutSuccess: React.FC = () => {
     paymentId,
     externalReference,
     status,
-    searchParams: Object.fromEntries(searchParams.entries())
+    searchParams: Object.fromEntries(searchParams.entries()),
+    fullUrl: window.location.href
   });
 
   useEffect(() => {
@@ -51,18 +52,7 @@ const CheckoutSuccess: React.FC = () => {
         return;
       }
 
-      // Fallback to payment verification if no status parameter
-      if (!paymentId) {
-        setVerification({
-          isVerified: false,
-          isApproved: false,
-          isPending: false,
-          isRejected: true,
-          error: 'No se encontró información del pago'
-        });
-        setIsLoading(false);
-        return;
-      }
+
 
       try {
         const apiUrl = import.meta.env.VITE_API_URL || 'https://casa-pinon-backend-production.up.railway.app';
