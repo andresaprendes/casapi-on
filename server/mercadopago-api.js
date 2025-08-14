@@ -554,7 +554,7 @@ app.get('/api/mercadopago/payment-status/:paymentId', async (req, res) => {
 
     res.json({
       success: true,
-      payment: paymentRecord,
+      payment: payment,
       verification: {
         is_approved: isApproved,
         is_pending: isPending,
