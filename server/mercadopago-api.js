@@ -361,9 +361,9 @@ app.post('/api/mercadopago/create-preference', async (req, res) => {
       ],
       external_reference: orderId,
       back_urls: {
-        success: `${BASE_URL}/checkout/success`,
-        failure: `${BASE_URL}/checkout/success`,
-        pending: `${BASE_URL}/checkout/success`
+        success: `${BASE_URL}/checkout/success?status=success`,
+        failure: `${BASE_URL}/checkout/success?status=failure`,
+        pending: `${BASE_URL}/checkout/success?status=pending`
       },
       auto_return: 'approved'
     };

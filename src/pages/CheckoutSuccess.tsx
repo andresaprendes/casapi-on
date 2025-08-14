@@ -26,16 +26,52 @@ const CheckoutSuccess: React.FC = () => {
 
   const paymentId = searchParams.get('payment_id');
   const externalReference = searchParams.get('external_reference');
+  const status = searchParams.get('status');
   
   // Debug logging
   console.log('🔍 CheckoutSuccess Debug:', {
     paymentId,
     externalReference,
+    status,
     searchParams: Object.fromEntries(searchParams.entries())
   });
 
   useEffect(() => {
     const verifyPayment = async () => {
+      // If we have a status parameter, use it directly
+      if (status) {
+        if (status === 'success') {
+          setVerification({
+            isVerified: true,
+            isApproved: true,
+            isPending: false,
+            isRejected: false,
+            message: 'Pago exitoso'
+          });
+          clearCart();
+          localStorage.removeItem('checkout_customer_info');
+        } else if (status === 'failure') {
+          setVerification({
+            isVerified: true,
+            isApproved: false,
+            isPending: false,
+            isRejected: true,
+            error: 'El pago fue rechazado'
+          });
+        } else if (status === 'pending') {
+          setVerification({
+            isVerified: true,
+            isApproved: false,
+            isPending: true,
+            isRejected: false,
+            message: 'Pago pendiente'
+          });
+        }
+        setIsLoading(false);
+        return;
+      }
+
+      // Fallback to payment verification if no status parameter
       if (!paymentId) {
         setVerification({
           isVerified: false,
