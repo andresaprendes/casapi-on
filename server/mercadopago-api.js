@@ -406,11 +406,12 @@ app.post('/api/mercadopago/create-preference', async (req, res) => {
 
     console.log('Preference object:', JSON.stringify(preference, null, 2));
 
+    let result;
     try {
       const preferenceClient = new Preference(client);
       console.log('Preference client created successfully');
       
-      const result = await preferenceClient.create({ body: preference });
+      result = await preferenceClient.create({ body: preference });
       console.log('Preference creation successful');
       
     } catch (preferenceError) {
