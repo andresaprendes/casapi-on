@@ -846,9 +846,9 @@ app.post('/api/orders', express.json(), async (req, res) => {
     // Transform database response to match frontend expectations
     const orderResponse = {
       ...createdOrder,
-      orderNumber: createdOrder.order_number,
+      orderNumber: createdOrder.order_number || createdOrder.orderNumber || orderId,
       customerInfo: createdOrder.customer || createdOrder.customer_info,
-      createdAt: createdOrder.created_at
+      createdAt: createdOrder.created_at || createdOrder.createdAt
     };
     
     res.json({
