@@ -1,5 +1,4 @@
 const { pool, updateTimestamp } = require('./database');
-const { mapOrderFields, mapPaymentFields, mapProductFields, mapOrderArray, mapPaymentArray, mapProductArray } = require('./utils/fieldMapper');
 
 // Order operations
 const orderOperations = {
@@ -55,14 +54,14 @@ const orderOperations = {
   async getById(orderId) {
     const query = 'SELECT * FROM orders WHERE id = $1';
     const result = await pool.query(query, [orderId]);
-    return mapOrderFields(result.rows[0]);
+    return result.rows[0];
   },
 
   // Get order by order number
   async getByOrderNumber(orderNumber) {
     const query = 'SELECT * FROM orders WHERE order_number = $1';
     const result = await pool.query(query, [orderNumber]);
-    return mapOrderFields(result.rows[0]);
+    return result.rows[0];
   },
 
   // Get all orders with filtering
@@ -122,7 +121,7 @@ const orderOperations = {
     }
 
     const result = await pool.query(query, values);
-    return mapOrderArray(result.rows);
+    return result.rows;
   },
 
   // Update order
@@ -146,7 +145,7 @@ const orderOperations = {
 
     const query = `UPDATE orders SET ${setClause.join(', ')} WHERE id = $${valueIndex} RETURNING *`;
     const result = await pool.query(query, values);
-    return mapOrderFields(result.rows[0]);
+    return result.rows[0];
   },
 
   // Delete order
@@ -250,14 +249,14 @@ const paymentOperations = {
   async getById(paymentId) {
     const query = 'SELECT * FROM payments WHERE id = $1';
     const result = await pool.query(query, [paymentId]);
-    return mapPaymentFields(result.rows[0]);
+    return result.rows[0];
   },
 
   // Get payments by order ID
   async getByOrderId(orderId) {
     const query = 'SELECT * FROM payments WHERE order_id = $1 ORDER BY created_at DESC';
     const result = await pool.query(query, [orderId]);
-    return mapPaymentArray(result.rows);
+    return result.rows;
   }
 };
 
@@ -329,14 +328,14 @@ const productOperations = {
   async getAll() {
     const query = 'SELECT * FROM products ORDER BY display_order ASC, created_at DESC';
     const result = await pool.query(query);
-    return mapProductArray(result.rows);
+    return result.rows;
   },
 
   // Get product by ID
   async getById(productId) {
     const query = 'SELECT * FROM products WHERE id = $1';
     const result = await pool.query(query, [productId]);
-    return mapProductFields(result.rows[0]);
+    return result.rows[0];
   },
 
   // Update product
@@ -361,14 +360,14 @@ const productOperations = {
 
     const query = `UPDATE products SET ${setClause.join(', ')} WHERE id = $${valueIndex} RETURNING *`;
     const result = await pool.query(query, values);
-    return mapProductFields(result.rows[0]);
+    return result.rows[0];
   },
 
   // Delete product
   async delete(productId) {
     const query = 'DELETE FROM products WHERE id = $1 RETURNING *';
     const result = await pool.query(query, [productId]);
-    return mapProductFields(result.rows[0]);
+    return result.rows[0];
   },
 
   // Initialize with default products
