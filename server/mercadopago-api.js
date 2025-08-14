@@ -509,6 +509,9 @@ app.get('/api/mercadopago/payment-status/:paymentId', async (req, res) => {
       });
     }
 
+    // If not found in database, check with MercadoPago API directly
+    console.log('Payment not found in database, checking with MercadoPago API...');
+
     // Fallback: Verify with MercadoPago API directly
     console.log('⚠️ Payment not in database, verifying with MercadoPago API...');
     const paymentClient = new Payment(client);
@@ -715,6 +718,69 @@ app.get('/api/mercadopago/webhook', (req, res) => {
     message: 'Webhook GET endpoint is accessible',
     timestamp: new Date().toISOString()
   });
+});
+
+// 8. Manual webhook trigger for testing
+app.post('/api/mercadopago/trigger-webhook/:paymentId', async (req, res) => {
+  try {
+    const { paymentId } = req.params;
+    console.log('🔔 MANUAL WEBHOOK TRIGGER for payment:', paymentId);
+    
+    // Simulate webhook payload
+    const webhookPayload = {
+      action: 'payment.updated',
+      data: { id: paymentId },
+      type: 'payment'
+    };
+    
+    // Process the webhook manually
+    const paymentClient = new Payment(client);
+    const payment = await paymentClient.get({ id: paymentId });
+    
+    console.log('Manual webhook payment verification:', {
+      id: payment.id,
+      status: payment.status,
+      external_reference: payment.external_reference,
+      transaction_amount: payment.transaction_amount
+    });
+    
+    // Store payment in our database
+    const paymentRecord = {
+      id: payment.id,
+      status: payment.status,
+      status_detail: payment.status_detail,
+      external_reference: payment.external_reference,
+      transaction_amount: payment.transaction_amount,
+      currency_id: payment.currency_id,
+      payment_method_id: payment.payment_method_id,
+      payer_email: payment.payer?.email,
+      date_created: payment.date_created,
+      date_approved: payment.date_approved,
+      last_updated: new Date().toISOString(),
+      webhook_verified: true
+    };
+    
+    paymentDatabase.set(paymentId.toString(), paymentRecord);
+    console.log('✅ Payment stored in database via manual trigger:', paymentId);
+    
+    // Update order payment status if external_reference exists
+    if (payment.external_reference) {
+      updateOrderPaymentStatus(payment.external_reference, payment.status === 'approved' ? 'paid' : 'failed', payment.id);
+    }
+    
+    res.json({
+      success: true,
+      message: 'Manual webhook processed successfully',
+      payment: paymentRecord
+    });
+    
+  } catch (error) {
+    console.error('Manual webhook trigger error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
 });
 
 // 6. Order Management Endpoints
