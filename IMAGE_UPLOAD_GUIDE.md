@@ -2,7 +2,7 @@
 
 ## 🖼️ How to Upload Images for Products
 
-The admin panel now includes a proper image upload feature that saves images to the project folder and makes them visible in products.
+The admin panel now includes a proper image upload feature that converts images to base64 and stores them directly in the database, ensuring they persist across deployments.
 
 ## 📋 Prerequisites
 
@@ -22,7 +22,7 @@ The admin panel now includes a proper image upload feature that saves images to 
 - You'll see all current products in a grid layout
 
 ### 3. Edit a Product
-- Find the "Mesa de Comedor de Piñón" product
+- Find the product you want to edit
 - Click the edit button (pencil icon) on the product card
 - The edit modal will open
 
@@ -32,48 +32,74 @@ The admin panel now includes a proper image upload feature that saves images to 
 - Choose one or multiple image files from your computer
 - The images will be automatically:
   - **Resized** to 800x800px for optimal performance
-  - **Uploaded** to the server
-  - **Saved** to `/public/images/` folder
+  - **Converted** to base64 format
+  - **Stored** directly in the database
   - **Displayed** in the preview area
 
 ### 5. Save the Product
 - Click "Guardar Producto" to save the changes
-- The images will now be permanently associated with the product
+- The images will now be permanently associated with the product in the database
 
 ### 6. View the Results
 - Navigate to the main products page: `http://localhost:3000/productos`
-- The "Mesa de Comedor de Piñón" should now display your uploaded images
+- The product should now display your uploaded images
 - Images will also be visible in the product detail page
 
 ## 🔧 Technical Details
 
 ### Image Processing
 - **Automatic Resizing**: All images are resized to 800x800px
+- **Base64 Conversion**: Images are converted to base64 data URLs
+- **Database Storage**: Images are stored as JSONB in PostgreSQL database
 - **Format Support**: JPG, PNG, WebP, and other image formats
-- **File Size Limit**: 10MB per image
-- **Storage Location**: `/public/images/` folder in the project
+- **File Size Limit**: 10MB per image (before conversion)
 
-### File Naming
-- Images are saved with unique names: `image-timestamp-randomnumber.extension`
-- Example: `image-1691234567890-123456789.jpg`
+### Data URL Format
+- Images are stored as: `data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==`
+- This format includes the MIME type and base64 data
+- No external file dependencies
 
 ### API Endpoint
 - **Upload URL**: `POST http://localhost:3001/api/upload/image`
-- **Response**: Returns the file path for use in the product
+- **Response**: Returns the base64 data URL for use in the product
 
-## 🎯 For "Mesa de Comedor de Piñón"
+## 🎯 Benefits of Base64 Storage
 
-To specifically add images for the "Mesa de Comedor de Piñón":
+### ✅ Advantages:
+- **Persistent**: Images survive deployments and server restarts
+- **Self-contained**: No external file dependencies
+- **Database-backed**: Images are backed up with the database
+- **Version control**: Images are included in git commits
+- **No file system**: No need to manage file uploads or storage
 
-1. **Edit the Product**: Click edit on the Mesa de Comedor product
-2. **Upload Images**: Use the image upload feature
-3. **Save Changes**: The images will be saved and visible immediately
-4. **Verify**: Check the main products page to see the images
+### ⚠️ Considerations:
+- **Database size**: Base64 images increase database size
+- **Performance**: Slightly larger data transfer (but no file I/O)
+- **Memory usage**: Images are loaded into memory
+
+## 🛠️ Converting Existing Images
+
+If you have existing image files that need to be converted to base64:
+
+### 1. Convert Images to Base64
+```bash
+npm run convert-images
+```
+
+### 2. Update Products with Base64 Images
+```bash
+npm run update-products
+```
+
+### 3. Sync to Railway
+```bash
+npm run sync-db
+```
 
 ## 🐛 Troubleshooting
 
 ### Images Not Showing
-- **Check File Path**: Ensure images are saved in `/public/images/`
+- **Check Database**: Verify images are stored in the database
 - **Server Running**: Verify backend server is running on port 3001
 - **Browser Cache**: Clear browser cache or hard refresh (Ctrl+F5)
 
@@ -82,23 +108,22 @@ To specifically add images for the "Mesa de Comedor de Piñón":
 - **File Format**: Use common image formats (JPG, PNG, WebP)
 - **Server Logs**: Check server console for error messages
 
-### Permission Issues
-- **Folder Permissions**: Ensure `/public/images/` folder is writable
-- **Server Permissions**: Check if the server has write access
+### Database Issues
+- **Storage Space**: Ensure database has enough space for base64 images
+- **Connection**: Verify database connection is working
 
 ## 📁 File Structure
 
-After uploading, your project structure should look like:
+After conversion, your project structure includes:
 ```
 casa-pinon-ebanisteria/
-├── public/
-│   ├── images/
-│   │   ├── image-1691234567890-123456789.jpg
-│   │   ├── image-1691234567891-987654321.png
-│   │   └── ... (other uploaded images)
-│   ├── logo.png
-│   └── ...
 ├── src/
+│   └── data/
+│       ├── base64Images.js          # Converted base64 images
+│       └── imageMapping.js          # Image filename mapping
+├── scripts/
+│   ├── convert-images-to-base64.js  # Conversion script
+│   └── update-products-with-base64.js # Update script
 └── ...
 ```
 
@@ -119,8 +144,8 @@ To update images for an existing product:
 3. Upload new images
 4. Save the product
 
-The old images will remain in the `/public/images/` folder but won't be associated with the product anymore.
+The old base64 images will be replaced in the database.
 
 ---
 
-**Note**: This feature saves images permanently to the project folder. In production, consider using cloud storage services like AWS S3 or Cloudinary for better scalability and performance.
+**Note**: This system stores images as base64 in the database, making them persistent across deployments and ensuring they're always available with the product data.

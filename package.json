@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "start": "serve -s ./dist -p ${PORT:-3000}",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "sync-db": "node scripts/sync-database.js"
+    "sync-db": "node scripts/sync-database.js",
+    "convert-images": "node scripts/convert-images-to-base64.js",
+    "update-products": "node scripts/update-products-with-base64.js"
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",
