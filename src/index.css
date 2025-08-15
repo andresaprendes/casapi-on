@@ -85,61 +85,63 @@
   }
   
   .product-description-truncate {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-height: 2.4rem;
-    line-height: 1.2rem;
-    word-wrap: break-word;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-height: 2.4rem !important;
+    line-height: 1.2rem !important;
+    word-wrap: break-word !important;
+    white-space: normal !important;
   }
   
   /* Fallback for browsers that don't support -webkit-line-clamp */
   @supports not (-webkit-line-clamp: 2) {
     .product-description-truncate {
-      max-height: 2.4rem;
-      overflow: hidden;
-      position: relative;
+      max-height: 2.4rem !important;
+      overflow: hidden !important;
+      position: relative !important;
     }
     
     .product-description-truncate::after {
-      content: "...";
-      position: absolute;
-      bottom: 0;
-      right: 0;
-      background: white;
-      padding-left: 4px;
+      content: "..." !important;
+      position: absolute !important;
+      bottom: 0 !important;
+      right: 0 !important;
+      background: white !important;
+      padding-left: 4px !important;
     }
   }
   
   .product-name-truncate {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-height: 3rem;
-    line-height: 1.5rem;
-    letter-spacing: -0.02em;
-    word-wrap: break-word;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-height: 3rem !important;
+    line-height: 1.5rem !important;
+    letter-spacing: -0.02em !important;
+    word-wrap: break-word !important;
+    white-space: normal !important;
   }
   
   /* Fallback for browsers that don't support -webkit-line-clamp */
   @supports not (-webkit-line-clamp: 2) {
     .product-name-truncate {
-      max-height: 3rem;
-      overflow: hidden;
-      position: relative;
+      max-height: 3rem !important;
+      overflow: hidden !important;
+      position: relative !important;
     }
     
     .product-name-truncate::after {
-      content: "...";
-      position: absolute;
-      bottom: 0;
-      right: 0;
-      background: white;
-      padding-left: 4px;
+      content: "..." !important;
+      position: absolute !important;
+      bottom: 0 !important;
+      right: 0 !important;
+      background: white !important;
+      padding-left: 4px !important;
     }
   }
 } 
