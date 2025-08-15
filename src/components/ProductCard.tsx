@@ -139,12 +139,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
           <span className="font-semibold">Entrega:</span> {product.estimatedDelivery}
         </div>
 
-        {/* Design Variations */}
-        {product.designVariations && (
-          <div className="text-sm text-brown-700 bg-cream-50 p-2 rounded-lg font-medium">
-            <span className="font-semibold">Nota:</span> {product.designVariations}
-          </div>
-        )}
+
 
         {/* Actions */}
         <div className="flex space-x-2 pt-2">
