@@ -574,15 +574,18 @@ app.post('/api/mercadopago/create-preference', async (req, res) => {
 app.get('/api/mercadopago/payment-status/:paymentId', async (req, res) => {
   try {
     const { paymentId } = req.params;
+    const { refresh } = req.query;
 
     console.log('Payment verification requested for ID:', paymentId);
     console.log('Checking payment database first...');
 
-    // First check our database (webhook verified payments)
+    // First check our database (any stored payments)
     const storedPayment = await paymentOperations.getById(paymentId.toString());
     console.log('Database check result:', storedPayment ? 'Found' : 'Not found');
-    if (storedPayment && storedPayment.webhook_verified) {
-      console.log('✅ Payment found in database (webhook verified):', storedPayment.status);
+    
+    // If refresh is requested or no stored payment, always check with MercadoPago API
+    if (!refresh && storedPayment) {
+      console.log('✅ Payment found in database:', storedPayment.status, 'webhook_verified:', storedPayment.webhook_verified);
       
       const isApproved = storedPayment.status === 'approved';
       const isPending = storedPayment.status === 'pending';
@@ -596,7 +599,7 @@ app.get('/api/mercadopago/payment-status/:paymentId', async (req, res) => {
           is_pending: isPending,
           is_rejected: isRejected,
           message: getPaymentStatusMessage(storedPayment.status, storedPayment.status_detail),
-          source: 'webhook_verified'
+          source: storedPayment.webhook_verified ? 'webhook_verified' : 'database_stored'
         }
       });
     }

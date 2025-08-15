@@ -58,7 +58,7 @@ const PaymentStatus: React.FC = () => {
       let endpoint = '';
       
       if (paymentId) {
-        endpoint = `${apiUrl}/api/mercadopago/payment-status/${paymentId}`;
+        endpoint = `${apiUrl}/api/mercadopago/payment-status/${paymentId}?refresh=true`;
       } else if (orderNumber) {
         endpoint = `${apiUrl}/api/orders/${orderNumber}`;
       }
