@@ -22,6 +22,7 @@ const PaymentStatus: React.FC = () => {
   });
   const [isLoading, setIsLoading] = useState(true); // Start with loading true
   const [orderNumber, setOrderNumber] = useState(searchParams.get('order') || searchParams.get('external_reference') || '');
+  const [retryCount, setRetryCount] = useState(0);
 
   // Auto-verify payment status when component mounts
   useEffect(() => {
@@ -72,6 +73,7 @@ const PaymentStatus: React.FC = () => {
     }
 
     setIsLoading(true);
+    setRetryCount(retryCount);
     setVerification({
       isVerified: false,
       isApproved: false,
@@ -139,59 +141,89 @@ const PaymentStatus: React.FC = () => {
           message: statusMessage
         });
       } else {
-        // If MercadoPago verification failed, try database check as fallback
-        console.log('⚠️ MercadoPago verification failed, trying database check...');
-        const apiUrl = import.meta.env.VITE_API_URL || 'https://casa-pinon-backend-production.up.railway.app';
-        const endpoint = `${apiUrl}/api/orders/${orderNumber}`;
+        // If MercadoPago verification failed, retry with exponential backoff
+        const maxRetries = 10; // Increased retries for persistence
+        const baseDelay = 2000; // Start with 2 seconds
+        const maxDelay = 30000; // Max 30 seconds between retries
         
-        const response = await fetch(endpoint);
-        const result = await response.json();
-        
-        if (result.success && result.order) {
-          const order = result.order;
+        if (retryCount < maxRetries) {
+          const delay = Math.min(baseDelay * Math.pow(2, retryCount), maxDelay);
+          console.log(`🔄 MercadoPago verification failed, retrying in ${delay/1000} seconds... (attempt ${retryCount + 1}/${maxRetries})`);
           
-          const isPaid = order.paymentStatus === 'paid' || 
-                        order.paymentStatus === 'approved' ||
-                        order.status === 'paid' ||
-                        order.status === 'approved';
-          
-          const isPending = order.paymentStatus === 'pending' || 
-                           order.status === 'pending';
-          
-          const isFailed = order.paymentStatus === 'failed' || 
-                          order.paymentStatus === 'rejected' ||
-                          order.status === 'failed' ||
-                          order.status === 'rejected';
-
-          setVerification({
-            isVerified: true,
-            isApproved: isPaid,
-            isPending: isPending,
-            isRejected: isFailed,
-            paymentDetails: order,
-            message: `Estado del pedido: ${order.paymentStatus || order.status} (verificación de base de datos)`
-          });
+          // Keep showing loading state while retrying
+          setTimeout(() => verifyPayment(retryCount + 1), delay);
+          return;
         } else {
-          setVerification({
-            isVerified: false,
-            isApproved: false,
-            isPending: false,
-            isRejected: true,
-            error: manualResult?.error || 'No se pudo verificar el estado del pago'
-          });
+          // After max retries, try database check as final fallback
+          console.log('⚠️ Max retries reached, trying database check as fallback...');
+          const apiUrl = import.meta.env.VITE_API_URL || 'https://casa-pinon-backend-production.up.railway.app';
+          const endpoint = `${apiUrl}/api/orders/${orderNumber}`;
+          
+          const response = await fetch(endpoint);
+          const result = await response.json();
+          
+          if (result.success && result.order) {
+            const order = result.order;
+            
+            const isPaid = order.paymentStatus === 'paid' || 
+                          order.paymentStatus === 'approved' ||
+                          order.status === 'paid' ||
+                          order.status === 'approved';
+            
+            const isPending = order.paymentStatus === 'pending' || 
+                             order.status === 'pending';
+            
+            const isFailed = order.paymentStatus === 'failed' || 
+                            order.paymentStatus === 'rejected' ||
+                            order.status === 'failed' ||
+                            order.status === 'rejected';
+
+            setVerification({
+              isVerified: true,
+              isApproved: isPaid,
+              isPending: isPending,
+              isRejected: isFailed,
+              paymentDetails: order,
+              message: `Estado del pedido: ${order.paymentStatus || order.status} (verificación de base de datos)`
+            });
+          } else {
+            setVerification({
+              isVerified: false,
+              isApproved: false,
+              isPending: false,
+              isRejected: true,
+              error: manualResult?.error || 'No se pudo verificar el estado del pago después de múltiples intentos'
+            });
+          }
         }
       }
     } catch (error) {
       console.error('Error verifying payment:', error);
-      setVerification({
-        isVerified: false,
-        isApproved: false,
-        isPending: false,
-        isRejected: true,
-        error: 'Error de conexión al verificar el pago'
-      });
+      
+      // If there's a connection error, retry with exponential backoff
+      const maxRetries = 5;
+      const baseDelay = 3000;
+      
+      if (retryCount < maxRetries) {
+        const delay = Math.min(baseDelay * Math.pow(2, retryCount), 15000);
+        console.log(`🔄 Connection error, retrying in ${delay/1000} seconds... (attempt ${retryCount + 1}/${maxRetries})`);
+        
+        setTimeout(() => verifyPayment(retryCount + 1), delay);
+        return;
+      } else {
+        setVerification({
+          isVerified: false,
+          isApproved: false,
+          isPending: false,
+          isRejected: true,
+          error: 'Error de conexión al verificar el pago después de múltiples intentos'
+        });
+      }
     } finally {
-      setIsLoading(false);
+      // Only stop loading if we have a final result
+      if (verification.isVerified || verification.error) {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -353,6 +385,10 @@ const PaymentStatus: React.FC = () => {
             <Loader2 className="w-8 h-8 animate-spin text-brown-600 mx-auto mb-4" />
             <p className="text-brown-600">Verificando el estado de tu pago con MercadoPago...</p>
             <p className="text-sm text-brown-500 mt-2">Obteniendo información actualizada</p>
+            {retryCount > 0 && (
+              <p className="text-xs text-brown-400 mt-1">Intento {retryCount + 1} de verificación</p>
+            )}
+            <p className="text-xs text-brown-400 mt-1">Esto puede tomar unos momentos</p>
           </div>
         )}
 
