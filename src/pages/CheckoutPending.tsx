@@ -148,23 +148,23 @@ const CheckoutPending: React.FC = () => {
 
   const verifyPaymentStatusFallback = async () => {
     try {
-      // Try to get order status directly
       const apiUrl = import.meta.env.VITE_API_URL || 'https://casa-pinon-backend-production.up.railway.app';
-      const orderEndpoint = externalReference 
+      // Try to find order by payment ID first, then by external reference
+      const orderEndpoint = externalReference
         ? `${apiUrl}/api/orders/${externalReference}`
-        : `${apiUrl}/api/orders/payment/${paymentId}`;
-      
+        : `${apiUrl}/api/orders-status-check?payment_id=${paymentId}`;
+
       console.log('🔍 Trying fallback verification at:', orderEndpoint);
-      
+
       const response = await fetch(orderEndpoint);
       if (response.ok) {
         const result = await response.json();
         console.log('🔍 Fallback verification result:', result);
-        
+
         if (result.success && result.order) {
           const orderStatus = result.order.paymentStatus || result.order.status;
           console.log('🔍 Order payment status:', orderStatus);
-          
+
           if (orderStatus === 'paid' || orderStatus === 'approved') {
             setVerificationStatus('approved');
             setTimeout(() => {
