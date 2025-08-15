@@ -30,6 +30,10 @@ const createOrderConfirmationEmail = (order, customerInfo) => {
     }).format(item.price)}`
   ).join('\n');
 
+  // Create payment status link (will be updated when payment is processed)
+  const baseUrl = process.env.BASE_URL || 'https://casapi-on-production.up.railway.app';
+  const paymentStatusLink = `${baseUrl}/payment-status?order=${order.orderNumber}`;
+
   return {
     subject: `Confirmación de Pedido #${order.orderNumber} - Casa Piñón Ebanistería`,
     html: `
@@ -91,6 +95,22 @@ const createOrderConfirmationEmail = (order, customerInfo) => {
           </div>
         ` : ''}
 
+        <div style="background-color: #e3f2fd; border: 1px solid #bbdefb; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+          <h4 style="color: #1565c0; margin-top: 0;">🔗 Verificar Estado del Pago</h4>
+          <p style="color: #1565c0; margin-bottom: 10px;">
+            Puedes verificar el estado actual de tu pago en cualquier momento:
+          </p>
+          <div style="text-align: center;">
+            <a href="${paymentStatusLink}" 
+               style="display: inline-block; background-color: #1565c0; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+              Verificar Estado del Pago
+            </a>
+          </div>
+          <p style="color: #1565c0; margin-top: 10px; margin-bottom: 0; font-size: 12px;">
+            O copia este enlace: <a href="${paymentStatusLink}" style="color: #1565c0;">${paymentStatusLink}</a>
+          </p>
+        </div>
+
         <div style="background-color: #e8f5e8; border: 1px solid #c3e6c3; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
           <h4 style="color: #155724; margin-top: 0;">📞 Contacto</h4>
           <p style="color: #155724; margin-bottom: 5px;">
@@ -118,6 +138,10 @@ const createPaymentStatusEmail = (order, customerInfo, paymentDetails, paymentSt
       minimumFractionDigits: 0
     }).format(item.price)}`
   ).join('\n');
+
+  // Create real payment status link
+  const baseUrl = process.env.BASE_URL || 'https://casapi-on-production.up.railway.app';
+  const paymentStatusLink = `${baseUrl}/payment-status?payment_id=${paymentDetails.id}`;
 
   // Email content based on payment status
   const getStatusContent = () => {
@@ -237,6 +261,22 @@ const createPaymentStatusEmail = (order, customerInfo, paymentDetails, paymentSt
           <h4 style="color: #155724; margin-top: 0;">📦 Próximos Pasos</h4>
           <p style="color: #155724; margin-bottom: 0;">
             ${statusContent.nextSteps}
+          </p>
+        </div>
+
+        <div style="background-color: #e3f2fd; border: 1px solid #bbdefb; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+          <h4 style="color: #1565c0; margin-top: 0;">🔗 Verificar Estado del Pago</h4>
+          <p style="color: #1565c0; margin-bottom: 10px;">
+            Puedes verificar el estado actual de tu pago en cualquier momento:
+          </p>
+          <div style="text-align: center;">
+            <a href="${paymentStatusLink}" 
+               style="display: inline-block; background-color: #1565c0; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+              Verificar Estado del Pago
+            </a>
+          </div>
+          <p style="color: #1565c0; margin-top: 10px; margin-bottom: 0; font-size: 12px;">
+            O copia este enlace: <a href="${paymentStatusLink}" style="color: #1565c0;">${paymentStatusLink}</a>
           </p>
         </div>
 
