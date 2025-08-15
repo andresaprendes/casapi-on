@@ -87,62 +87,57 @@ const PaymentStatus: React.FC = () => {
       if (manualResult && manualResult.success) {
         console.log('✅ MercadoPago verification successful:', manualResult.data);
         
-        // Now get the updated order details
+        // Use the MercadoPago status directly
+        const mpStatus = manualResult.data.paymentStatus;
+        const orderStatus = manualResult.data.orderStatus;
+        
+        console.log('🔍 MercadoPago status:', mpStatus, 'Order status:', orderStatus);
+        console.log('🔍 Full manual result data:', manualResult.data);
+        
+        // Determine the final status based on MercadoPago response
+        const isPaid = mpStatus === 'approved' || orderStatus === 'paid';
+        const isPending = mpStatus === 'pending' || orderStatus === 'pending';
+        const isFailed = mpStatus === 'rejected' || mpStatus === 'cancelled' || orderStatus === 'failed';
+        
+        console.log('🔍 Final status determination:', {
+          isPaid,
+          isPending,
+          isFailed,
+          mpStatus,
+          orderStatus
+        });
+        
+        // Get order details for display
         const apiUrl = import.meta.env.VITE_API_URL || 'https://casa-pinon-backend-production.up.railway.app';
         const endpoint = `${apiUrl}/api/orders/${orderNumber}`;
         
         const response = await fetch(endpoint);
         const result = await response.json();
         
-        if (result.success && result.order) {
-          const order = result.order;
-          console.log('🔍 Updated order details:', {
-            orderNumber: order.orderNumber,
-            paymentStatus: order.paymentStatus,
-            paymentId: order.paymentId,
-            status: order.status
-          });
-
-          // Check multiple possible payment status fields
-          const isPaid = order.paymentStatus === 'paid' || 
-                        order.paymentStatus === 'approved' ||
-                        order.status === 'paid' ||
-                        order.status === 'approved';
-          
-          const isPending = order.paymentStatus === 'pending' || 
-                           order.status === 'pending';
-          
-          const isFailed = order.paymentStatus === 'failed' || 
-                          order.paymentStatus === 'rejected' ||
-                          order.status === 'failed' ||
-                          order.status === 'rejected';
-
-          console.log('🔍 Final payment status analysis:', {
-            isPaid,
-            isPending,
-            isFailed,
-            originalPaymentStatus: order.paymentStatus,
-            originalStatus: order.status
-          });
-
-          setVerification({
-            isVerified: true,
-            isApproved: isPaid,
-            isPending: isPending,
-            isRejected: isFailed,
-            paymentDetails: order,
-            message: `Estado del pedido: ${order.paymentStatus || order.status}`
-          });
+        const orderDetails = result.success ? result.order : null;
+        
+        // Create a clear status message
+        let statusMessage = '';
+        if (mpStatus === 'approved') {
+          statusMessage = 'Pago Aprobado';
+        } else if (mpStatus === 'rejected') {
+          statusMessage = 'Pago Rechazado';
+        } else if (mpStatus === 'cancelled') {
+          statusMessage = 'Pago Cancelado';
+        } else if (mpStatus === 'pending') {
+          statusMessage = 'Pago Pendiente';
         } else {
-          // If order not found, show error
-          setVerification({
-            isVerified: false,
-            isApproved: false,
-            isPending: false,
-            isRejected: true,
-            error: 'No se encontró información del pedido'
-          });
+          statusMessage = `Estado: ${mpStatus}`;
         }
+        
+        setVerification({
+          isVerified: true,
+          isApproved: isPaid,
+          isPending: isPending,
+          isRejected: isFailed,
+          paymentDetails: orderDetails,
+          message: statusMessage
+        });
       } else {
         // If MercadoPago verification failed, try database check as fallback
         console.log('⚠️ MercadoPago verification failed, trying database check...');
