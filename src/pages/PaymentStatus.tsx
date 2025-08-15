@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { CheckCircle, XCircle, Clock, Loader2, Search } from 'lucide-react';
 
@@ -20,8 +20,34 @@ const PaymentStatus: React.FC = () => {
     isPending: false,
     isRejected: false
   });
-  const [isLoading, setIsLoading] = useState(false);
-  const [orderNumber, setOrderNumber] = useState(searchParams.get('order') || '');
+  const [isLoading, setIsLoading] = useState(true); // Start with loading true
+  const [orderNumber, setOrderNumber] = useState(searchParams.get('order') || searchParams.get('external_reference') || '');
+
+  // Auto-verify payment status when component mounts
+  useEffect(() => {
+    if (orderNumber) {
+      // First try regular verification
+      verifyPayment(0);
+    } else {
+      // If no order number, check for MercadoPago parameters
+      const paymentId = searchParams.get('payment_id');
+      const status = searchParams.get('status');
+      const externalReference = searchParams.get('external_reference');
+      
+      if (paymentId || externalReference) {
+        console.log('🔍 Found MercadoPago parameters:', { paymentId, status, externalReference });
+        if (externalReference) {
+          setOrderNumber(externalReference);
+          verifyPayment(0);
+        } else if (paymentId) {
+          // Try to find order by payment ID
+          verifyPaymentByPaymentId(paymentId);
+        }
+      } else {
+        setIsLoading(false);
+      }
+    }
+  }, []);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('es-CO', {
@@ -94,6 +120,21 @@ const PaymentStatus: React.FC = () => {
           originalStatus: order.status
         });
 
+        // If status is pending and this is the first verification attempt, try manual verification
+        if (isPending && retryCount === 0) {
+          console.log('🔄 Status is pending, trying manual verification with MercadoPago...');
+          try {
+            const manualResult = await handleManualVerification();
+            if (manualResult && manualResult.success) {
+              // Manual verification succeeded, re-verify after a short delay
+              setTimeout(() => verifyPayment(retryCount + 1), 1000);
+              return;
+            }
+          } catch (manualError) {
+            console.log('Manual verification failed, continuing with current status');
+          }
+        }
+
         setVerification({
           isVerified: true,
           isApproved: isPaid,
@@ -136,12 +177,52 @@ const PaymentStatus: React.FC = () => {
     }
   };
 
+  const verifyPaymentByPaymentId = async (paymentId: string) => {
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'https://casa-pinon-backend-production.up.railway.app';
+      const endpoint = `${apiUrl}/api/mercadopago/payment/${paymentId}`;
+      
+      console.log('🔍 Checking payment by ID:', endpoint);
+      
+      const response = await fetch(endpoint);
+      const result = await response.json();
+      
+      if (result.success && result.payment) {
+        const payment = result.payment;
+        const orderNumber = payment.external_reference;
+        setOrderNumber(orderNumber);
+        
+        // Now verify the order
+        verifyPayment(0);
+      } else {
+        setVerification({
+          isVerified: false,
+          isApproved: false,
+          isPending: false,
+          isRejected: true,
+          error: 'No se encontró información del pago'
+        });
+        setIsLoading(false);
+      }
+    } catch (error) {
+      console.error('Error verifying payment by ID:', error);
+      setVerification({
+        isVerified: false,
+        isApproved: false,
+        isPending: false,
+        isRejected: true,
+        error: 'Error al verificar el pago'
+      });
+      setIsLoading(false);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     verifyPayment(0);
   };
 
-  const handleManualVerification = async () => {
+  const handleManualVerification = async (): Promise<any> => {
     if (!orderNumber) {
       setVerification({
         isVerified: false,
@@ -150,16 +231,8 @@ const PaymentStatus: React.FC = () => {
         isRejected: true,
         error: 'Por favor ingresa el número de orden'
       });
-      return;
+      return { success: false, error: 'No order number provided' };
     }
-
-    setIsLoading(true);
-    setVerification({
-      isVerified: false,
-      isApproved: false,
-      isPending: false,
-      isRejected: false
-    });
 
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'https://casa-pinon-backend-production.up.railway.app';
@@ -179,8 +252,7 @@ const PaymentStatus: React.FC = () => {
       console.log('🔍 Manual verification result:', result);
 
       if (result.success) {
-        // Re-verify the payment status after manual verification
-        setTimeout(() => verifyPayment(0), 1000);
+        return { success: true, data: result };
       } else {
         setVerification({
           isVerified: false,
@@ -189,6 +261,7 @@ const PaymentStatus: React.FC = () => {
           isRejected: true,
           error: result.error || 'Error en la verificación manual del pago'
         });
+        return { success: false, error: result.error };
       }
     } catch (error) {
       console.error('Error in manual verification:', error);
@@ -199,8 +272,7 @@ const PaymentStatus: React.FC = () => {
         isRejected: true,
         error: 'Error de conexión en la verificación manual'
       });
-    } finally {
-      setIsLoading(false);
+      return { success: false, error: 'Connection error' };
     }
   };
 
@@ -218,61 +290,52 @@ const PaymentStatus: React.FC = () => {
           </p>
         </div>
 
-        {/* Search Form */}
-        <form onSubmit={handleSubmit} className="mb-6">
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Número de Orden
-              </label>
-              <input
-                type="text"
-                value={orderNumber}
-                onChange={(e) => setOrderNumber(e.target.value)}
-                placeholder="Ej: ORD-1755216698839-VD3AQXWY4"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brown-500 focus:border-transparent"
-                required
-              />
+        {/* Search Form - Only show if no order number from URL */}
+        {!searchParams.get('order') && !searchParams.get('external_reference') && !searchParams.get('payment_id') && (
+          <form onSubmit={handleSubmit} className="mb-6">
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Número de Orden
+                </label>
+                <input
+                  type="text"
+                  value={orderNumber}
+                  onChange={(e) => setOrderNumber(e.target.value)}
+                  placeholder="Ej: ORD-1755216698839-VD3AQXWY4"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brown-500 focus:border-transparent"
+                  required
+                />
+              </div>
+              
+              <button
+                type="submit"
+                disabled={isLoading || !orderNumber}
+                className="w-full bg-brown-900 text-white py-3 px-6 rounded-lg hover:bg-brown-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Verificando...</span>
+                  </>
+                ) : (
+                  <>
+                    <Search className="w-4 h-4" />
+                    <span>Verificar Estado</span>
+                  </>
+                )}
+              </button>
             </div>
-            
-            <button
-              type="submit"
-              disabled={isLoading || !orderNumber}
-              className="w-full bg-brown-900 text-white py-3 px-6 rounded-lg hover:bg-brown-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Verificando...</span>
-                </>
-              ) : (
-                <>
-                  <Search className="w-4 h-4" />
-                  <span>Verificar Estado</span>
-                </>
-              )}
-            </button>
-            
-            <button
-              type="button"
-              onClick={handleManualVerification}
-              disabled={isLoading || !orderNumber}
-              className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Verificando con MercadoPago...</span>
-                </>
-              ) : (
-                <>
-                  <Search className="w-4 h-4" />
-                  <span>Verificar con MercadoPago</span>
-                </>
-              )}
-            </button>
+          </form>
+        )}
+
+        {/* Loading State - Show when auto-verifying */}
+        {isLoading && (searchParams.get('order') || searchParams.get('external_reference') || searchParams.get('payment_id')) && (
+          <div className="mb-6 text-center">
+            <Loader2 className="w-8 h-8 animate-spin text-brown-600 mx-auto mb-4" />
+            <p className="text-brown-600">Verificando el estado de tu pago...</p>
           </div>
-        </form>
+        )}
 
         {/* Results */}
         {verification.isVerified && (
