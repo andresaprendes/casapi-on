@@ -109,6 +109,16 @@ const PaymentStatus: React.FC = () => {
           orderStatus
         });
         
+        // If MercadoPago says pending, keep retrying until we get a final status
+        if (mpStatus === 'pending' && retryCount < 15) { // Increased max retries for pending status
+          const delay = Math.min(3000 * Math.pow(1.5, retryCount), 45000); // Longer delays for pending status
+          console.log(`🔄 Payment still pending on MercadoPago, retrying in ${delay/1000} seconds... (attempt ${retryCount + 1}/15)`);
+          
+          // Keep showing loading state while retrying
+          setTimeout(() => verifyPayment(retryCount + 1), delay);
+          return;
+        }
+        
         // Get order details for display
         const apiUrl = import.meta.env.VITE_API_URL || 'https://casa-pinon-backend-production.up.railway.app';
         const endpoint = `${apiUrl}/api/orders/${orderNumber}`;
@@ -118,7 +128,7 @@ const PaymentStatus: React.FC = () => {
         
         const orderDetails = result.success ? result.order : null;
         
-        // Create a clear status message
+        // Create a clear status message - never show pending as final result
         let statusMessage = '';
         if (mpStatus === 'approved') {
           statusMessage = 'Pago Aprobado';
@@ -127,7 +137,8 @@ const PaymentStatus: React.FC = () => {
         } else if (mpStatus === 'cancelled') {
           statusMessage = 'Pago Cancelado';
         } else if (mpStatus === 'pending') {
-          statusMessage = 'Pago Pendiente';
+          // If we reach here, it means we've exhausted retries for pending status
+          statusMessage = 'Verificación en Progreso - Contacta Soporte';
         } else {
           statusMessage = `Estado: ${mpStatus}`;
         }
@@ -135,7 +146,7 @@ const PaymentStatus: React.FC = () => {
         setVerification({
           isVerified: true,
           isApproved: isPaid,
-          isPending: isPending,
+          isPending: false, // Never show pending as final result
           isRejected: isFailed,
           paymentDetails: orderDetails,
           message: statusMessage
@@ -181,10 +192,12 @@ const PaymentStatus: React.FC = () => {
             setVerification({
               isVerified: true,
               isApproved: isPaid,
-              isPending: isPending,
-              isRejected: isFailed,
+              isPending: false, // Never show pending as final result
+              isRejected: isFailed || isPending, // If database shows pending, treat as failed
               paymentDetails: order,
-              message: `Estado del pedido: ${order.paymentStatus || order.status} (verificación de base de datos)`
+              message: isPending ? 
+                'Verificación en Progreso - Contacta Soporte' : 
+                `Estado del pedido: ${order.paymentStatus || order.status} (verificación de base de datos)`
             });
           } else {
             setVerification({
@@ -388,7 +401,7 @@ const PaymentStatus: React.FC = () => {
             {retryCount > 0 && (
               <p className="text-xs text-brown-400 mt-1">Intento {retryCount + 1} de verificación</p>
             )}
-            <p className="text-xs text-brown-400 mt-1">Esto puede tomar unos momentos</p>
+            <p className="text-xs text-brown-400 mt-1">Esto puede tomar unos momentos - No se mostrará "Pendiente"</p>
           </div>
         )}
 
