@@ -447,7 +447,14 @@ const productOperations = {
       if (key !== 'id' && key !== 'created_at') {
         const dbKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
         setClause.push(`${dbKey} = $${valueIndex}`);
-        values.push(updates[key]);
+        
+        // Handle JSON fields properly
+        if (['images', 'materials', 'dimensions', 'features', 'specifications'].includes(key)) {
+          values.push(JSON.stringify(updates[key]));
+        } else {
+          values.push(updates[key]);
+        }
+        
         valueIndex++;
       }
     });
