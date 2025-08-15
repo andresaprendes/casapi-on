@@ -101,7 +101,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
           <h3 className="font-display font-bold text-lg text-brown-900 mb-1 product-name-truncate">
             {product.name}
           </h3>
-          <p className="text-base text-brown-800 font-body product-description-truncate font-medium">
+          <p className="text-sm text-brown-800 font-body product-description-truncate font-normal">
             {product.description}
           </p>
         </div>

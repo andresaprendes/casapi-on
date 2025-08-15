@@ -45,10 +45,10 @@ export default {
         }
       },
       fontFamily: {
-        'serif': ['Cormorant Garamond', 'serif'],
-        'body': ['Cormorant', 'serif'],
-        'sans': ['Montserrat', 'sans-serif'],
-        'display': ['Cormorant Garamond', 'serif'],
+        'serif': ['Libre Baskerville', 'serif'],
+        'body': ['Source Sans Pro', 'sans-serif'],
+        'sans': ['Inter', 'sans-serif'],
+        'display': ['Libre Baskerville', 'serif'],
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-in-out',
