@@ -98,10 +98,16 @@ const ProductCard = ({ product }: ProductCardProps) => {
       {/* Product Info */}
       <div className="space-y-3">
         <div>
-          <h3 className="font-display font-bold text-lg text-brown-900 mb-1 product-name-truncate">
+          <h3 className="font-display font-bold text-lg text-brown-900 mb-1">
             {product.name}
           </h3>
-          <p className="text-sm text-brown-800 font-body product-description-truncate font-normal">
+          <p className="text-sm text-brown-800 font-body font-normal" style={{
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis'
+          }}>
             {product.description}
           </p>
         </div>
