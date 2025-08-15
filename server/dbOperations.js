@@ -261,6 +261,27 @@ const orderOperations = {
     `;
     const result = await pool.query(query);
     return result.rowCount;
+  },
+
+  // Get pending payments that have timed out
+  async getPendingPaymentsForTimeout() {
+    const query = `
+      SELECT p.*, o.payment_method
+      FROM payments p
+      JOIN orders o ON p.external_reference = o.order_number
+      WHERE p.status = 'pending'
+        AND o.payment_status = 'pending'
+        AND (
+          -- PSE payments: 45 minutes timeout (longer processing time)
+          (o.payment_method = 'pse' AND p.date_created < NOW() - INTERVAL '45 minutes')
+          OR
+          -- Other payments: 20 minutes timeout
+          (o.payment_method != 'pse' AND p.date_created < NOW() - INTERVAL '20 minutes')
+        )
+        AND o.abandoned_at IS NULL
+    `;
+    const result = await pool.query(query);
+    return result.rows;
   }
 };
 

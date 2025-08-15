@@ -280,20 +280,103 @@ function calculateEstimatedDelivery(shippingZone) {
   return baseDate.toISOString();
 }
 
-// Clean up abandoned orders (older than 24 hours)
+// Clean up abandoned orders and handle payment timeouts
 async function cleanupAbandonedOrders() {
   try {
+    // Clean up orders abandoned for more than 24 hours
     const cleanedCount = await orderOperations.cleanupAbandoned(24);
     if (cleanedCount > 0) {
       console.log(`🧹 Cleaned up ${cleanedCount} abandoned orders`);
     }
+    
+    // Handle pending payment timeouts (30 minutes for PSE, 15 minutes for others)
+    const timeoutCount = await handlePendingPaymentTimeouts();
+    if (timeoutCount > 0) {
+      console.log(`⏰ Timed out ${timeoutCount} pending payments`);
+    }
   } catch (error) {
-    console.error('Error cleaning up abandoned orders:', error);
+    console.error('Error in cleanup process:', error);
   }
 }
 
-// Run cleanup every hour
-setInterval(cleanupAbandonedOrders, 60 * 60 * 1000);
+// Handle pending payment timeouts - mark as rejected if can't be verified
+async function handlePendingPaymentTimeouts() {
+  try {
+    // Get pending payments that have timed out
+    const pendingPayments = await orderOperations.getPendingPaymentsForTimeout();
+    let timeoutCount = 0;
+    
+    for (const payment of pendingPayments) {
+      // Try to verify payment with MercadoPago one last time
+      try {
+        const paymentClient = new Payment(client);
+        const currentPayment = await paymentClient.get({ id: payment.id });
+        
+        // If payment is still pending after timeout, mark as rejected
+        if (currentPayment.status === 'pending') {
+          console.log(`⏰ Payment ${payment.id} timed out, marking as rejected`);
+          
+          // Update payment status to rejected
+          await paymentOperations.upsert({
+            id: payment.id,
+            orderId: payment.order_id,
+            status: 'rejected',
+            statusDetail: 'payment_timeout',
+            externalReference: payment.external_reference,
+            transactionAmount: payment.transaction_amount,
+            currencyId: payment.currency_id,
+            paymentMethodId: payment.payment_method_id,
+            payerEmail: payment.payer_email,
+            dateCreated: payment.date_created,
+            dateApproved: null,
+            webhookVerified: true
+          });
+          
+          // Update order status to failed
+          await updateOrderPaymentStatus(payment.external_reference, 'failed', payment.id);
+          
+          // Send rejection email
+          const order = await orderOperations.getByOrderNumber(payment.external_reference);
+          if (order) {
+            const customerInfo = order.customer || {
+              name: order.customer_name,
+              email: order.customer_email,
+              phone: order.customer_phone,
+              address: order.customer_address
+            };
+            
+            sendPaymentStatusEmail(order, customerInfo, currentPayment, 'rejected')
+              .then(emailResult => {
+                if (emailResult.success) {
+                  console.log(`✅ Payment rejection email sent for order:`, payment.external_reference);
+                } else {
+                  console.log(`⚠️ Failed to send rejection email:`, emailResult.error);
+                }
+              })
+              .catch(emailError => {
+                console.log(`⚠️ Error sending rejection email:`, emailError.message);
+              });
+          }
+          
+          timeoutCount++;
+        }
+      } catch (verifyError) {
+        console.log(`⚠️ Could not verify payment ${payment.id}:`, verifyError.message);
+        // If we can't verify, still mark as rejected
+        await updateOrderPaymentStatus(payment.external_reference, 'failed', payment.id);
+        timeoutCount++;
+      }
+    }
+    
+    return timeoutCount;
+  } catch (error) {
+    console.error('Error handling payment timeouts:', error);
+    return 0;
+  }
+}
+
+// Run cleanup every 15 minutes (more frequent for better timeout handling)
+setInterval(cleanupAbandonedOrders, 15 * 60 * 1000);
 
 async function updateOrderPaymentStatus(orderReference, paymentStatus, paymentId) {
   try {
