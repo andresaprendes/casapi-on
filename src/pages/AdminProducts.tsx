@@ -68,6 +68,7 @@ const AdminProducts = () => {
       materials: [...product.materials],
       madeToOrder: product.madeToOrder,
       isCustom: product.isCustom,
+      designVariations: product.designVariations || '',
       estimatedDelivery: product.estimatedDelivery,
       features: [...product.features],
       specifications: { ...product.specifications }
@@ -87,6 +88,7 @@ const AdminProducts = () => {
       materials: [],
       madeToOrder: true,
       isCustom: false,
+      designVariations: '',
       estimatedDelivery: '',
       features: [],
       specifications: {}
