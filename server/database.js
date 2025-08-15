@@ -85,8 +85,9 @@ const initializeDatabase = async () => {
         materials JSONB,
         dimensions JSONB,
         weight DECIMAL(8,2),
-        in_stock BOOLEAN DEFAULT TRUE,
+        made_to_order BOOLEAN DEFAULT TRUE,
         is_custom BOOLEAN DEFAULT FALSE,
+        design_variations TEXT,
         estimated_delivery VARCHAR(100),
         features JSONB,
         specifications JSONB,
@@ -101,6 +102,16 @@ const initializeDatabase = async () => {
       await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS display_order INTEGER DEFAULT 0`);
     } catch (error) {
       // Column might already exist
+    }
+    
+    // Migrate in_stock to made_to_order
+    try {
+      await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS made_to_order BOOLEAN DEFAULT TRUE`);
+      await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS design_variations TEXT`);
+      // Update existing records to set made_to_order = true (since you work under order)
+      await pool.query(`UPDATE products SET made_to_order = TRUE WHERE made_to_order IS NULL`);
+    } catch (error) {
+      // Columns might already exist
     }
 
     // Create payments table
@@ -136,8 +147,9 @@ const initializeDatabase = async () => {
         materials JSONB,
         dimensions JSONB,
         weight DECIMAL(8,2),
-        in_stock BOOLEAN DEFAULT TRUE,
+        made_to_order BOOLEAN DEFAULT TRUE,
         is_custom BOOLEAN DEFAULT FALSE,
+        design_variations TEXT,
         estimated_delivery VARCHAR(100),
         features JSONB,
         specifications JSONB,

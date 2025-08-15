@@ -13,8 +13,9 @@ export interface Product {
     height: number
   }
   weight?: number
-  inStock: boolean
+  madeToOrder: boolean
   isCustom: boolean
+  designVariations?: string
   estimatedDelivery: string
   features: string[]
   specifications: Record<string, string>

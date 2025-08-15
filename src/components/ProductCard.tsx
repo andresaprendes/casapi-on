@@ -81,9 +81,14 @@ const ProductCard = ({ product }: ProductCardProps) => {
         </div>
 
         {/* Badges */}
-        <div className="absolute top-3 left-3">
+        <div className="absolute top-3 left-3 space-y-1">
+          {product.madeToOrder && (
+            <span className="bg-orange-600 text-white text-xs px-2 py-1 rounded-full block">
+              Por Pedido
+            </span>
+          )}
           {product.isCustom && (
-            <span className="bg-brown-800 text-cream-50 text-xs px-2 py-1 rounded-full">
+            <span className="bg-brown-800 text-cream-50 text-xs px-2 py-1 rounded-full block">
               Personalizado
             </span>
           )}
@@ -133,6 +138,13 @@ const ProductCard = ({ product }: ProductCardProps) => {
         <div className="text-sm text-brown-600">
           <span className="font-medium">Entrega:</span> {product.estimatedDelivery}
         </div>
+
+        {/* Design Variations */}
+        {product.designVariations && (
+          <div className="text-xs text-brown-500 bg-cream-50 p-2 rounded-lg">
+            <span className="font-medium">Nota:</span> {product.designVariations}
+          </div>
+        )}
 
         {/* Actions */}
         <div className="flex space-x-2 pt-2">
