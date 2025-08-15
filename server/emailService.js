@@ -1,13 +1,22 @@
 const nodemailer = require('nodemailer');
 
-// Email configuration
+// Email configuration - optimized for speed
 const createTransporter = () => {
   return nodemailer.createTransport({
     service: 'gmail',
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASSWORD // Use app password for Gmail
-    }
+    },
+    // Optimize for speed
+    pool: true,
+    maxConnections: 5,
+    maxMessages: 100,
+    rateLimit: 5, // 5 emails per second
+    // Faster timeout
+    connectionTimeout: 10000,
+    greetingTimeout: 5000,
+    socketTimeout: 10000
   });
 };
 
