@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { CheckCircle, XCircle, Clock, Loader2 } from 'lucide-react';
-import { useCart } from '../store/CartContext';
 
 interface PaymentVerification {
   isVerified: boolean;
@@ -15,7 +14,6 @@ interface PaymentVerification {
 
 const CheckoutSuccess: React.FC = () => {
   const [searchParams] = useSearchParams();
-  const { clearCart } = useCart();
   const [verification, setVerification] = useState<PaymentVerification>({
     isVerified: false,
     isApproved: false,
@@ -23,7 +21,6 @@ const CheckoutSuccess: React.FC = () => {
     isRejected: false
   });
   const [isLoading, setIsLoading] = useState(true);
-  const [retryCount, setRetryCount] = useState(0);
 
   const paymentId = searchParams.get('payment_id');
   const externalReference = searchParams.get('external_reference');
@@ -63,7 +60,6 @@ const CheckoutSuccess: React.FC = () => {
     }
 
     setIsLoading(true);
-    setRetryCount(retryCount);
     setVerification({
       isVerified: false,
       isApproved: false,
