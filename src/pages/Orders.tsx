@@ -134,45 +134,7 @@ const Orders = () => {
     }
   }
 
-  const verifyPaymentWithMercadoPago = async (orderNumber: string) => {
-    try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'https://casa-pinon-backend-production.up.railway.app'
-      const endpoint = `${apiUrl}/api/mercadopago/verify-payment/${orderNumber}`
-      
-      console.log('🔍 Verifying payment with MercadoPago for order:', orderNumber)
-      
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      })
-      
-      const result = await response.json()
-      
-      if (result.success) {
-        console.log('✅ Payment verification successful:', result)
-        // Refresh orders to get updated status
-        fetchOrders()
-        // Update selected order if it's the one being verified
-        if (selectedOrder?.orderNumber === orderNumber) {
-          // Refresh the selected order data
-          const orderResponse = await fetch(`${apiUrl}/api/orders/${orderNumber}`)
-          const orderData = await orderResponse.json()
-          if (orderData.success) {
-            setSelectedOrder(orderData.order)
-          }
-        }
-        alert('Estado del pago verificado exitosamente con MercadoPago')
-      } else {
-        console.error('❌ Payment verification failed:', result.error)
-        alert('Error al verificar el pago: ' + (result.error || 'Error desconocido'))
-      }
-    } catch (error) {
-      console.error('❌ Error verifying payment:', error)
-      alert('Error de conexión al verificar el pago')
-    }
-  }
+
 
   useEffect(() => {
     fetchOrders()
