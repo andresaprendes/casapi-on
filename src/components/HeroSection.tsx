@@ -86,20 +86,18 @@ const HeroSection = () => {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="relative"
           >
-            <div className="bg-cream-200 rounded-lg p-8 shadow-2xl">
-              <div className="aspect-square bg-gradient-to-br from-brown-100 to-brown-200 rounded-lg flex items-center justify-center">
-                <div className="text-center">
-                  <img
-                    src="/logo-white.png"
-                    alt="Casa Piñón Ebanistería"
-                    className="h-24 w-auto mx-auto mb-6"
-                  />
-                  <div className="mt-4 text-sm text-brown-600">
-                    <p>• Muebles premium de madera real</p>
-                    <p>• 6 cuotas sin intereses</p>
-                    <p>• Envío a domicilio</p>
-                    <p>• Garantía total</p>
-                  </div>
+            <div className="bg-cream-200 rounded-lg p-6 shadow-2xl overflow-hidden">
+              <div className="aspect-square rounded-lg overflow-hidden">
+                <img
+                  src="/images/image-1755135305383-454296344.png"
+                  alt="Mesa de Comedor Premium de Madera Real - Casa Piñón Ebanistería"
+                  className="w-full h-full object-cover object-center"
+                />
+              </div>
+              <div className="mt-4 text-center">
+                <div className="inline-flex items-center space-x-2 bg-brown-800 text-cream-50 px-4 py-2 rounded-full text-sm font-medium">
+                  <span>✨</span>
+                  <span>Muebles Premium de Madera Real</span>
                 </div>
               </div>
             </div>
