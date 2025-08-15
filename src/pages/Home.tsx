@@ -5,6 +5,7 @@ import { ArrowRight, Shield, Truck, Clock, Award } from 'lucide-react'
 import HeroSection from '../components/HeroSection'
 import ProductCard from '../components/ProductCard'
 import TestimonialCard from '../components/TestimonialCard'
+import PaymentStatusWidget from '../components/PaymentStatusWidget'
 import { products, testimonials } from '../data/mockData'
 
 const Home = () => {
@@ -44,6 +45,9 @@ const Home = () => {
       </Helmet>
 
       <HeroSection />
+
+      {/* Payment Status Widget */}
+      <PaymentStatusWidget />
 
       {/* Features Section */}
       <section className="section-padding bg-cream-50">
