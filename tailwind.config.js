@@ -45,10 +45,8 @@ export default {
         }
       },
       fontFamily: {
-        'serif': ['Crimson Text', 'serif'],
-        'body': ['Merriweather', 'serif'],
-        'sans': ['Open Sans', 'sans-serif'],
-        'display': ['Crimson Text', 'serif'],
+        'serif': ['Playfair Display', 'serif'],
+        'sans': ['Inter', 'sans-serif'],
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-in-out',
