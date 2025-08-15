@@ -45,8 +45,10 @@ export default {
         }
       },
       fontFamily: {
-        'serif': ['Playfair Display', 'serif'],
-        'sans': ['Inter', 'sans-serif'],
+        'serif': ['Cormorant Garamond', 'serif'],
+        'body': ['Cormorant', 'serif'],
+        'sans': ['Montserrat', 'sans-serif'],
+        'display': ['Cormorant Garamond', 'serif'],
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-in-out',
