@@ -26,7 +26,7 @@ const PaymentStatus: React.FC = () => {
   // Auto-verify payment status when component mounts
   useEffect(() => {
     if (orderNumber) {
-      // First try regular verification
+      // Always verify directly with MercadoPago
       verifyPayment(0);
     } else {
       // If no order number, check for MercadoPago parameters
@@ -38,7 +38,8 @@ const PaymentStatus: React.FC = () => {
         console.log('🔍 Found MercadoPago parameters:', { paymentId, status, externalReference });
         if (externalReference) {
           setOrderNumber(externalReference);
-          verifyPayment(0);
+          // Verify directly with MercadoPago
+          setTimeout(() => verifyPayment(0), 500);
         } else if (paymentId) {
           // Try to find order by payment ID
           verifyPaymentByPaymentId(paymentId);
@@ -79,89 +80,111 @@ const PaymentStatus: React.FC = () => {
     });
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'https://casa-pinon-backend-production.up.railway.app';
-      const endpoint = `${apiUrl}/api/orders/${orderNumber}`;
+      // Always verify directly with MercadoPago first
+      console.log('🔍 Verifying payment directly with MercadoPago for order:', orderNumber);
+      const manualResult = await handleManualVerification();
       
-      console.log('🔍 Checking payment status:', endpoint);
-      
-      const response = await fetch(endpoint);
-      const result = await response.json();
-      
-      console.log('🔍 Payment status result:', result);
-
-      if (result.success && result.order) {
-        const order = result.order;
-        console.log('🔍 Order details:', {
-          orderNumber: order.orderNumber,
-          paymentStatus: order.paymentStatus,
-          paymentId: order.paymentId,
-          status: order.status
-        });
-
-        // Check multiple possible payment status fields
-        const isPaid = order.paymentStatus === 'paid' || 
-                      order.paymentStatus === 'approved' ||
-                      order.status === 'paid' ||
-                      order.status === 'approved';
+      if (manualResult && manualResult.success) {
+        console.log('✅ MercadoPago verification successful:', manualResult.data);
         
-        const isPending = order.paymentStatus === 'pending' || 
-                         order.status === 'pending';
+        // Now get the updated order details
+        const apiUrl = import.meta.env.VITE_API_URL || 'https://casa-pinon-backend-production.up.railway.app';
+        const endpoint = `${apiUrl}/api/orders/${orderNumber}`;
         
-        const isFailed = order.paymentStatus === 'failed' || 
-                        order.paymentStatus === 'rejected' ||
-                        order.status === 'failed' ||
-                        order.status === 'rejected';
+        const response = await fetch(endpoint);
+        const result = await response.json();
+        
+        if (result.success && result.order) {
+          const order = result.order;
+          console.log('🔍 Updated order details:', {
+            orderNumber: order.orderNumber,
+            paymentStatus: order.paymentStatus,
+            paymentId: order.paymentId,
+            status: order.status
+          });
 
-        console.log('🔍 Payment status analysis:', {
-          isPaid,
-          isPending,
-          isFailed,
-          originalPaymentStatus: order.paymentStatus,
-          originalStatus: order.status
-        });
+          // Check multiple possible payment status fields
+          const isPaid = order.paymentStatus === 'paid' || 
+                        order.paymentStatus === 'approved' ||
+                        order.status === 'paid' ||
+                        order.status === 'approved';
+          
+          const isPending = order.paymentStatus === 'pending' || 
+                           order.status === 'pending';
+          
+          const isFailed = order.paymentStatus === 'failed' || 
+                          order.paymentStatus === 'rejected' ||
+                          order.status === 'failed' ||
+                          order.status === 'rejected';
 
-        // If status is pending and this is the first verification attempt, try manual verification
-        if (isPending && retryCount === 0) {
-          console.log('🔄 Status is pending, trying manual verification with MercadoPago...');
-          try {
-            const manualResult = await handleManualVerification();
-            if (manualResult && manualResult.success) {
-              // Manual verification succeeded, re-verify after a short delay
-              setTimeout(() => verifyPayment(retryCount + 1), 1000);
-              return;
-            }
-          } catch (manualError) {
-            console.log('Manual verification failed, continuing with current status');
-          }
+          console.log('🔍 Final payment status analysis:', {
+            isPaid,
+            isPending,
+            isFailed,
+            originalPaymentStatus: order.paymentStatus,
+            originalStatus: order.status
+          });
+
+          setVerification({
+            isVerified: true,
+            isApproved: isPaid,
+            isPending: isPending,
+            isRejected: isFailed,
+            paymentDetails: order,
+            message: `Estado del pedido: ${order.paymentStatus || order.status}`
+          });
+        } else {
+          // If order not found, show error
+          setVerification({
+            isVerified: false,
+            isApproved: false,
+            isPending: false,
+            isRejected: true,
+            error: 'No se encontró información del pedido'
+          });
         }
-
-        setVerification({
-          isVerified: true,
-          isApproved: isPaid,
-          isPending: isPending,
-          isRejected: isFailed,
-          paymentDetails: order,
-          message: `Estado del pedido: ${order.paymentStatus || order.status}`
-        });
       } else {
-        // If payment not found and we haven't exceeded retries, try again
-        const maxRetries = 3;
-        const retryDelay = 2000;
+        // If MercadoPago verification failed, try database check as fallback
+        console.log('⚠️ MercadoPago verification failed, trying database check...');
+        const apiUrl = import.meta.env.VITE_API_URL || 'https://casa-pinon-backend-production.up.railway.app';
+        const endpoint = `${apiUrl}/api/orders/${orderNumber}`;
         
-        if (retryCount < maxRetries && result.error?.includes('not found')) {
-          console.log(`🔄 Payment not found, retrying in ${retryDelay/1000} seconds... (attempt ${retryCount + 1}/${maxRetries})`);
-          setTimeout(() => verifyPayment(retryCount + 1), retryDelay);
-          return;
+        const response = await fetch(endpoint);
+        const result = await response.json();
+        
+        if (result.success && result.order) {
+          const order = result.order;
+          
+          const isPaid = order.paymentStatus === 'paid' || 
+                        order.paymentStatus === 'approved' ||
+                        order.status === 'paid' ||
+                        order.status === 'approved';
+          
+          const isPending = order.paymentStatus === 'pending' || 
+                           order.status === 'pending';
+          
+          const isFailed = order.paymentStatus === 'failed' || 
+                          order.paymentStatus === 'rejected' ||
+                          order.status === 'failed' ||
+                          order.status === 'rejected';
+
+          setVerification({
+            isVerified: true,
+            isApproved: isPaid,
+            isPending: isPending,
+            isRejected: isFailed,
+            paymentDetails: order,
+            message: `Estado del pedido: ${order.paymentStatus || order.status} (verificación de base de datos)`
+          });
+        } else {
+          setVerification({
+            isVerified: false,
+            isApproved: false,
+            isPending: false,
+            isRejected: true,
+            error: manualResult?.error || 'No se pudo verificar el estado del pago'
+          });
         }
-        
-        setVerification({
-          isVerified: false,
-          isApproved: false,
-          isPending: true,
-          isRejected: false,
-          message: 'El pago está siendo procesado o no se encontró información.',
-          error: result.error || 'No se pudo verificar el estado del pago'
-        });
       }
     } catch (error) {
       console.error('Error verifying payment:', error);
@@ -333,7 +356,8 @@ const PaymentStatus: React.FC = () => {
         {isLoading && (searchParams.get('order') || searchParams.get('external_reference') || searchParams.get('payment_id')) && (
           <div className="mb-6 text-center">
             <Loader2 className="w-8 h-8 animate-spin text-brown-600 mx-auto mb-4" />
-            <p className="text-brown-600">Verificando el estado de tu pago...</p>
+            <p className="text-brown-600">Verificando el estado de tu pago con MercadoPago...</p>
+            <p className="text-sm text-brown-500 mt-2">Obteniendo información actualizada</p>
           </div>
         )}
 
