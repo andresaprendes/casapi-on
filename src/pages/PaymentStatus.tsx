@@ -458,6 +458,34 @@ const PaymentStatus: React.FC = () => {
           </div>
         )}
 
+        {/* Order Number Display */}
+        {orderNumber && (
+          <div className="border-t pt-6">
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h3 className="text-sm font-medium text-gray-700 mb-2 text-center">
+                Número de Orden para Verificación Futura
+              </h3>
+              <div className="flex items-center justify-center space-x-2">
+                <code className="bg-white px-3 py-2 rounded border text-sm font-mono text-gray-800 select-all">
+                  {orderNumber}
+                </code>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(orderNumber);
+                    // You could add a toast notification here if you want
+                  }}
+                  className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-sm"
+                >
+                  Copiar
+                </button>
+              </div>
+              <p className="text-xs text-gray-500 mt-2 text-center">
+                Guarda este número para verificar el estado de tu pago más tarde
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Navigation */}
         <div className="border-t pt-6 space-y-3">
           <Link
