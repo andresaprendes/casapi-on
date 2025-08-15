@@ -14,20 +14,19 @@ interface PaymentVerification {
 
 const PaymentStatusWidget = () => {
   const [orderNumber, setOrderNumber] = useState('');
-  const [paymentId, setPaymentId] = useState('');
   const [verification, setVerification] = useState<PaymentVerification | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const verifyPayment = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!orderNumber && !paymentId) {
+    if (!orderNumber) {
       setVerification({
         isVerified: false,
         isApproved: false,
         isPending: false,
         isRejected: true,
-        error: 'Por favor ingresa un ID de pago o número de orden'
+        error: 'Por favor ingresa el número de orden'
       });
       return;
     }
@@ -37,39 +36,21 @@ const PaymentStatusWidget = () => {
 
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'https://casa-pinon-backend-production.up.railway.app';
-      let endpoint = '';
-      
-      if (paymentId) {
-        endpoint = `${apiUrl}/api/mercadopago/payment-status/${paymentId}?refresh=true`;
-      } else if (orderNumber) {
-        endpoint = `${apiUrl}/api/orders/${orderNumber}`;
-      }
+      const endpoint = `${apiUrl}/api/orders/${orderNumber}`;
       
       const response = await fetch(endpoint);
       const result = await response.json();
 
       if (result.success) {
-        if (paymentId) {
-          // Payment status endpoint
-          setVerification({
-            isVerified: true,
-            isApproved: result.verification.is_approved,
-            isPending: result.verification.is_pending,
-            isRejected: result.verification.is_rejected,
-            paymentDetails: result.payment,
-            message: result.verification.message
-          });
-        } else {
-          // Order endpoint
-          setVerification({
-            isVerified: true,
-            isApproved: result.order.paymentStatus === 'paid',
-            isPending: result.order.paymentStatus === 'pending',
-            isRejected: result.order.paymentStatus === 'failed',
-            paymentDetails: result.order,
-            message: `Estado del pedido: ${result.order.paymentStatus}`
-          });
-        }
+        // Order endpoint
+        setVerification({
+          isVerified: true,
+          isApproved: result.order.paymentStatus === 'paid',
+          isPending: result.order.paymentStatus === 'pending',
+          isRejected: result.order.paymentStatus === 'failed',
+          paymentDetails: result.order,
+          message: `Estado del pedido: ${result.order.paymentStatus}`
+        });
       } else {
         setVerification({
           isVerified: false,
@@ -140,42 +121,29 @@ const PaymentStatusWidget = () => {
     <section className="bg-cream-50 py-16">
       <div className="container-custom">
         <div className="max-w-2xl mx-auto">
-          <div className="text-center mb-8">
-            <h2 className="text-3xl font-serif font-bold text-brown-900 mb-4">
-              Verificar Estado del Pago
-            </h2>
-            <p className="text-brown-600">
-              Ingresa tu ID de pago o número de orden para verificar el estado actual
-            </p>
-          </div>
+                      <div className="text-center mb-8">
+              <h2 className="text-3xl font-serif font-bold text-brown-900 mb-4">
+                Verificar Estado del Pago
+              </h2>
+              <p className="text-brown-600">
+                Ingresa tu número de orden para verificar el estado actual
+              </p>
+            </div>
 
           <div className="bg-white rounded-lg shadow-lg p-8">
             <form onSubmit={verifyPayment} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-brown-700 mb-2">
-                    ID de Pago (Opcional)
-                  </label>
-                  <input
-                    type="text"
-                    value={paymentId}
-                    onChange={(e) => setPaymentId(e.target.value)}
-                    placeholder="Ej: 123456789"
-                    className="w-full px-4 py-3 border border-brown-200 rounded-lg focus:ring-2 focus:ring-brown-500 focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-brown-700 mb-2">
-                    Número de Orden (Opcional)
-                  </label>
-                  <input
-                    type="text"
-                    value={orderNumber}
-                    onChange={(e) => setOrderNumber(e.target.value)}
-                    placeholder="Ej: ORD-XXXXX"
-                    className="w-full px-4 py-3 border border-brown-200 rounded-lg focus:ring-2 focus:ring-brown-500 focus:border-transparent"
-                  />
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-brown-700 mb-2">
+                  Número de Orden
+                </label>
+                <input
+                  type="text"
+                  value={orderNumber}
+                  onChange={(e) => setOrderNumber(e.target.value)}
+                  placeholder="Ej: ORD-1755216698839-VD3AQXWY4"
+                  className="w-full px-4 py-3 border border-brown-200 rounded-lg focus:ring-2 focus:ring-brown-500 focus:border-transparent"
+                  required
+                />
               </div>
 
               <button

@@ -21,7 +21,6 @@ const PaymentStatus: React.FC = () => {
     isRejected: false
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [paymentId, setPaymentId] = useState(searchParams.get('payment_id') || '');
   const [orderNumber, setOrderNumber] = useState(searchParams.get('order') || '');
 
   const formatPrice = (price: number) => {
@@ -34,13 +33,13 @@ const PaymentStatus: React.FC = () => {
   };
 
   const verifyPayment = async (retryCount = 0) => {
-    if (!paymentId && !orderNumber) {
+    if (!orderNumber) {
       setVerification({
         isVerified: false,
         isApproved: false,
         isPending: false,
         isRejected: true,
-        error: 'Por favor ingresa un ID de pago o número de orden'
+        error: 'Por favor ingresa el número de orden'
       });
       return;
     }
@@ -55,13 +54,7 @@ const PaymentStatus: React.FC = () => {
 
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'https://casa-pinon-backend-production.up.railway.app';
-      let endpoint = '';
-      
-      if (paymentId) {
-        endpoint = `${apiUrl}/api/mercadopago/payment-status/${paymentId}?refresh=true`;
-      } else if (orderNumber) {
-        endpoint = `${apiUrl}/api/orders/${orderNumber}`;
-      }
+      const endpoint = `${apiUrl}/api/orders/${orderNumber}`;
       
       console.log('🔍 Checking payment status:', endpoint);
       
@@ -71,27 +64,15 @@ const PaymentStatus: React.FC = () => {
       console.log('🔍 Payment status result:', result);
 
       if (result.success) {
-        if (paymentId) {
-          // Payment status endpoint
-          setVerification({
-            isVerified: true,
-            isApproved: result.verification.is_approved,
-            isPending: result.verification.is_pending,
-            isRejected: result.verification.is_rejected,
-            paymentDetails: result.payment,
-            message: result.verification.message
-          });
-        } else {
-          // Order endpoint
-          setVerification({
-            isVerified: true,
-            isApproved: result.order.paymentStatus === 'paid',
-            isPending: result.order.paymentStatus === 'pending',
-            isRejected: result.order.paymentStatus === 'failed',
-            paymentDetails: result.order,
-            message: `Estado del pedido: ${result.order.paymentStatus}`
-          });
-        }
+        // Order endpoint
+        setVerification({
+          isVerified: true,
+          isApproved: result.order.paymentStatus === 'paid',
+          isPending: result.order.paymentStatus === 'pending',
+          isRejected: result.order.paymentStatus === 'failed',
+          paymentDetails: result.order,
+          message: `Estado del pedido: ${result.order.paymentStatus}`
+        });
       } else {
         // If payment not found and we haven't exceeded retries, try again
         const maxRetries = 3;
@@ -142,7 +123,7 @@ const PaymentStatus: React.FC = () => {
             Verificar Estado del Pago
           </h1>
           <p className="text-brown-600">
-            Ingresa tu ID de pago o número de orden para verificar el estado
+            Ingresa tu número de orden para verificar el estado
           </p>
         </div>
 
@@ -151,33 +132,21 @@ const PaymentStatus: React.FC = () => {
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                ID de Pago (Opcional)
-              </label>
-              <input
-                type="text"
-                value={paymentId}
-                onChange={(e) => setPaymentId(e.target.value)}
-                placeholder="Ej: 123456789"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brown-500 focus:border-transparent"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Número de Orden (Opcional)
+                Número de Orden
               </label>
               <input
                 type="text"
                 value={orderNumber}
                 onChange={(e) => setOrderNumber(e.target.value)}
-                placeholder="Ej: CP-123456789"
+                placeholder="Ej: ORD-1755216698839-VD3AQXWY4"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brown-500 focus:border-transparent"
+                required
               />
             </div>
             
             <button
               type="submit"
-              disabled={isLoading || (!paymentId && !orderNumber)}
+              disabled={isLoading || !orderNumber}
               className="w-full bg-brown-900 text-white py-3 px-6 rounded-lg hover:bg-brown-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
             >
               {isLoading ? (
