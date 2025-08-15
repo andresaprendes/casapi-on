@@ -321,19 +321,19 @@ const ProductDetail = () => {
                 {/* Add to Cart Button */}
                 <button
                   onClick={handleAddToCart}
-                  disabled={!product.inStock}
+                  disabled={!product.madeToOrder}
                   className="w-full bg-brown-600 text-white py-4 px-6 rounded-lg font-semibold hover:bg-brown-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                 >
                   <ShoppingCart className="w-5 h-5" />
                   <span>
-                    {product.inStock ? 'Agregar al Carrito' : 'Sin Stock'}
+                    {product.madeToOrder ? 'Agregar al Carrito' : 'Sin Disponibilidad'}
                   </span>
                 </button>
 
                 {/* Buy Now Button */}
                 <button
                   onClick={handleBuyNow}
-                  disabled={!product.inStock}
+                  disabled={!product.madeToOrder}
                   className="w-full bg-brown-800 text-white py-4 px-6 rounded-lg font-semibold hover:bg-brown-900 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                 >
                   <CreditCard className="w-5 h-5" />
