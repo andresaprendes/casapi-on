@@ -1,185 +1,63 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { CheckCircle, XCircle, Clock, Loader2 } from 'lucide-react';
+import { CheckCircle, Download, Mail, Phone, MapPin, Loader2 } from 'lucide-react';
 
-interface PaymentVerification {
-  isVerified: boolean;
-  isApproved: boolean;
-  isPending: boolean;
-  isRejected: boolean;
-  paymentDetails?: any;
-  message?: string;
-  error?: string;
+interface PaymentDetails {
+  paymentId?: string;
+  externalReference?: string;
+  amount?: number;
+  orderNumber?: string;
+  customerEmail?: string;
+  customerName?: string;
 }
 
 const CheckoutSuccess: React.FC = () => {
   const [searchParams] = useSearchParams();
-  const [verification, setVerification] = useState<PaymentVerification>({
-    isVerified: false,
-    isApproved: false,
-    isPending: false,
-    isRejected: false
-  });
   const [isLoading, setIsLoading] = useState(true);
+  const [paymentDetails, setPaymentDetails] = useState<PaymentDetails | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const paymentId = searchParams.get('payment_id');
   const externalReference = searchParams.get('external_reference');
   const status = searchParams.get('status');
-  
-  // Debug logging
-  console.log('🔍 CheckoutSuccess Debug:', {
-    paymentId,
-    externalReference,
-    status,
-    searchParams: Object.fromEntries(searchParams.entries()),
-    fullUrl: window.location.href
-  });
 
-  // Auto-verify payment status when component mounts
   useEffect(() => {
-    if (paymentId || externalReference) {
-      // Always verify directly with MercadoPago
-      verifyPayment();
-    } else {
-      setIsLoading(false);
-    }
+    verifyPayment();
   }, []);
 
   const verifyPayment = async () => {
-    // Always verify payment with MercadoPago API for security
     if (!paymentId && !externalReference) {
-      setVerification({
-        isVerified: false,
-        isApproved: false,
-        isPending: false,
-        isRejected: true,
-        error: 'No se encontró información del pago'
-      });
+      setError('No se encontró información del pago');
       setIsLoading(false);
       return;
     }
 
-    setIsLoading(true);
-    setVerification({
-      isVerified: false,
-      isApproved: false,
-      isPending: false,
-      isRejected: false
-    });
-
     try {
-      // Step 1: Try to get database status first (fast fallback)
-      console.log('🔍 Getting database status for:', paymentId || externalReference);
+      // Verify with MercadoPago API
       const apiUrl = import.meta.env.VITE_API_URL || 'https://casa-pinon-backend-production.up.railway.app';
-      const dbEndpoint = externalReference 
+      const endpoint = externalReference 
         ? `${apiUrl}/api/orders/${externalReference}`
         : `${apiUrl}/api/mercadopago/payment/${paymentId}`;
       
-      const dbResponse = await fetch(dbEndpoint);
-      const dbResult = await dbResponse.json();
-      const dbOrderDetails = dbResult.success ? (dbResult.order || dbResult.payment) : null;
-      
-      // Step 2: Try MercadoPago verification (with timeout)
-      console.log('🔍 Verifying with MercadoPago for:', paymentId || externalReference);
-      let mpResult = null;
-      
-      try {
-        // Set a 10-second timeout for MercadoPago API
-        const mpPromise = handleManualVerification();
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('MercadoPago timeout')), 10000)
-        );
-        
-        mpResult = await Promise.race([mpPromise, timeoutPromise]);
-      } catch (mpError) {
-        console.log('⚠️ MercadoPago verification failed or timed out:', mpError);
-        // Continue with database status
-      }
-      
-      // Step 3: Determine final status
-      let finalStatus = 'unknown';
-      let finalMessage = '';
-      let isPaid = false;
-      let isFailed = false;
-      let orderDetails = dbOrderDetails;
-      
-      if (mpResult && mpResult.success) {
-        // Use MercadoPago status if available
-        console.log('✅ Using MercadoPago status:', mpResult.data);
-        const mpStatus = mpResult.data.paymentStatus;
-        const orderStatus = mpResult.data.orderStatus;
-        
-        isPaid = mpStatus === 'approved' || orderStatus === 'paid';
-        isFailed = mpStatus === 'rejected' || mpStatus === 'cancelled' || orderStatus === 'failed';
-        
-        if (isPaid) {
-          finalStatus = 'approved';
-          finalMessage = 'Pago Aprobado';
-        } else if (isFailed) {
-          finalStatus = 'rejected';
-          finalMessage = 'Pago Rechazado';
-        } else if (mpStatus === 'pending') {
-          finalStatus = 'pending';
-          finalMessage = 'Pago Pendiente - Verificando...';
-        } else {
-          finalStatus = mpStatus;
-          finalMessage = `Estado: ${mpStatus}`;
-        }
-      } else if (dbOrderDetails) {
-        // Fallback to database status
-        console.log('⚠️ Using database status as fallback:', dbOrderDetails);
-        const dbStatus = dbOrderDetails.paymentStatus || dbOrderDetails.status;
-        
-        isPaid = dbStatus === 'paid' || dbStatus === 'approved';
-        isFailed = dbStatus === 'failed' || dbStatus === 'rejected';
-        
-        if (isPaid) {
-          finalStatus = 'approved';
-          finalMessage = 'Pago Aprobado (verificación de base de datos)';
-        } else if (isFailed) {
-          finalStatus = 'rejected';
-          finalMessage = 'Pago Rechazado (verificación de base de datos)';
-        } else if (dbStatus === 'pending') {
-          finalStatus = 'pending';
-          finalMessage = 'Pago Pendiente - Contacta soporte para verificar';
-        } else {
-          finalStatus = dbStatus;
-          finalMessage = `Estado: ${dbStatus} (verificación de base de datos)`;
-        }
+      const response = await fetch(endpoint);
+      const result = await response.json();
+
+      if (result.success) {
+        const orderData = result.order || result.payment;
+        setPaymentDetails({
+          paymentId: paymentId || orderData?.payment_id,
+          externalReference: externalReference || orderData?.external_reference,
+          amount: orderData?.amount || orderData?.total,
+          orderNumber: orderData?.orderNumber || orderData?.external_reference,
+          customerEmail: orderData?.customerEmail,
+          customerName: orderData?.customerName
+        });
       } else {
-        // No data available
-        finalStatus = 'unknown';
-        finalMessage = 'No se pudo verificar el estado del pago';
-        isFailed = true;
+        setError('No se pudo verificar el pago');
       }
-      
-      console.log('🎯 Final status determination:', {
-        finalStatus,
-        finalMessage,
-        isPaid,
-        isFailed,
-        mpResult: !!mpResult,
-        dbOrderDetails: !!dbOrderDetails
-      });
-      
-      setVerification({
-        isVerified: true,
-        isApproved: isPaid,
-        isPending: finalStatus === 'pending',
-        isRejected: isFailed,
-        paymentDetails: orderDetails,
-        message: finalMessage
-      });
-      
     } catch (error) {
-      console.error('❌ Error in payment verification:', error);
-      setVerification({
-        isVerified: false,
-        isApproved: false,
-        isPending: false,
-        isRejected: true,
-        error: 'Error al verificar el pago. Contacta soporte.'
-      });
+      console.error('Error verifying payment:', error);
+      setError('Error al verificar el pago');
     } finally {
       setIsLoading(false);
     }
@@ -194,215 +72,168 @@ const CheckoutSuccess: React.FC = () => {
     }).format(price);
   };
 
-  const handleManualVerification = async (): Promise<any> => {
-    if (!paymentId && !externalReference) {
-      setVerification({
-        isVerified: false,
-        isApproved: false,
-        isPending: false,
-        isRejected: true,
-        error: 'No se encontró información del pago'
-      });
-      return { success: false, error: 'No payment information found' };
-    }
-
-    try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'https://casa-pinon-backend-production.up.railway.app';
-      const endpoint = paymentId 
-        ? `${apiUrl}/api/mercadopago/verify-payment-by-id/${paymentId}`
-        : `${apiUrl}/api/mercadopago/verify-payment/${externalReference}`;
-      
-      console.log('🔍 Manual payment verification:', endpoint);
-      
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
-      
-      const result = await response.json();
-      
-      console.log('🔍 Manual verification result:', result);
-
-      if (result.success) {
-        return { success: true, data: result };
-      } else {
-        setVerification({
-          isVerified: false,
-          isApproved: false,
-          isPending: false,
-          isRejected: true,
-          error: result.error || 'Error en la verificación manual del pago'
-        });
-        return { success: false, error: result.error };
-      }
-    } catch (error) {
-      console.error('Error in manual verification:', error);
-      setVerification({
-        isVerified: false,
-        isApproved: false,
-        isPending: false,
-        isRejected: true,
-        error: 'Error de conexión en la verificación manual'
-      });
-      return { success: false, error: 'Connection error' };
-    }
-  };
-
-
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-cream-50 flex items-center justify-center px-4">
-        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
-          <Loader2 className="w-16 h-16 text-brown-600 mx-auto mb-4 animate-spin" />
-          <h1 className="text-xl font-bold text-brown-900 mb-2">
-            Verificando Pago...
-          </h1>
-          <p className="text-brown-800">
-            Estamos confirmando el estado de tu pago con MercadoPago.
-          </p>
+      <div className="min-h-screen bg-cream-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 text-brown-600 animate-spin mx-auto mb-4" />
+          <p className="text-brown-800">Verificando tu pago...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-cream-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-8 max-w-md mx-auto">
+            <h1 className="text-2xl font-bold text-red-800 mb-4">Error de Verificación</h1>
+            <p className="text-red-700 mb-6">{error}</p>
+            <Link 
+              to="/payment-status" 
+              className="btn-primary"
+            >
+              Verificar Estado del Pago
+            </Link>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-cream-50 flex items-center justify-center px-4">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
-        <div className="mb-6">
-          {verification.isApproved && (
-            <>
-              <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-              <h1 className="text-2xl font-bold text-brown-900 mb-2">
-                ¡Orden Confirmada!
-              </h1>
-              <p className="text-brown-800 mb-4">
-                Tu pago ha sido procesado exitosamente y tu orden ha sido confirmada.
-              </p>
-              {verification.paymentDetails && (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
-                  <div className="text-sm text-green-800 space-y-1">
-                    <div><strong>Orden:</strong> {externalReference}</div>
-                    <div><strong>Monto:</strong> {formatPrice(verification.paymentDetails.transaction_amount)}</div>
-                    <div><strong>ID Pago:</strong> {verification.paymentDetails.id}</div>
-                    <div><strong>Método:</strong> {verification.paymentDetails.payment_method_id}</div>
-                  </div>
-                </div>
-              )}
-              <p className="text-sm text-brown-600">
-                Gracias por tu compra. Nos pondremos en contacto contigo pronto para coordinar la entrega.
-              </p>
-            </>
-          )}
-
-          {verification.isPending && (
-            <>
-              <Clock className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
-              <h1 className="text-2xl font-bold text-brown-900 mb-2">
-                Pago Pendiente
-              </h1>
-              <p className="text-brown-800 mb-4">
-                {verification.message}
-              </p>
-              
-              {/* Show additional info if verification failed */}
-              {verification.error && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                  <h4 className="text-sm font-medium text-blue-800 mb-2">Información Adicional</h4>
-                  <p className="text-sm text-blue-700">
-                    {verification.error}
-                  </p>
-                </div>
-              )}
-              
-              {/* PSE Specific Instructions */}
-              {verification.paymentDetails?.payment_method_id === 'pse' && (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-                  <h4 className="text-sm font-medium text-yellow-800 mb-2">Pago PSE en Proceso</h4>
-                  <ul className="text-sm text-yellow-700 space-y-1">
-                    <li>• Tu banco está procesando el pago</li>
-                    <li>• El proceso puede tomar hasta 15 minutos</li>
-                    <li>• Recibirás confirmación por email</li>
-                    <li>• Puedes cerrar esta ventana</li>
-                  </ul>
-                </div>
-              )}
-              
-              <p className="text-sm text-brown-600">
-                Tu pago está siendo procesado. Te notificaremos cuando se confirme.
-              </p>
-            </>
-          )}
-
-          {verification.isRejected && (
-            <>
-              <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-              <h1 className="text-2xl font-bold text-brown-900 mb-2">
-                Orden No Completada
-              </h1>
-              <p className="text-brown-800 mb-4">
-                {verification.error || verification.message || 'El pago no pudo ser procesado y tu orden no ha sido confirmada.'}
-              </p>
-              <p className="text-sm text-brown-600">
-                Puedes intentar realizar el pago nuevamente desde tu carrito.
-              </p>
-            </>
-          )}
+    <div className="min-h-screen bg-cream-50 py-12 px-4">
+      <div className="max-w-2xl mx-auto">
+        {/* Success Header */}
+        <div className="text-center mb-8">
+          <CheckCircle className="w-20 h-20 text-green-500 mx-auto mb-6" />
+          <h1 className="text-3xl font-bold text-brown-900 mb-4">
+            ¡Pago Exitoso!
+          </h1>
+          <p className="text-lg text-brown-700">
+            Tu orden ha sido confirmada y está siendo procesada
+          </p>
         </div>
-        
-        <div className="space-y-4">
-          <Link
-            to="/"
-            className="block w-full bg-brown-900 text-white py-3 px-6 rounded-lg hover:bg-brown-800 transition-colors"
-          >
-            Volver al Inicio
-          </Link>
+
+        {/* Order Details Card */}
+        <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
+          <h2 className="text-xl font-semibold text-brown-900 mb-6">Detalles de la Orden</h2>
           
-          {verification.isRejected && (
-            <Link
-              to="/checkout"
-              className="block w-full border border-brown-900 text-brown-900 py-3 px-6 rounded-lg hover:bg-brown-50 transition-colors"
-            >
-              Intentar Nuevamente
-            </Link>
-          )}
-          
-          <Link
-            to="/productos"
-            className="block w-full border border-brown-900 text-brown-900 py-3 px-6 rounded-lg hover:bg-brown-50 transition-colors"
-          >
-            Ver Más Productos
-          </Link>
-          
-          {/* Payment Status Checker */}
-          {paymentId && (
-            <div className="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-              <h4 className="text-sm font-medium text-gray-800 mb-2">¿Necesitas verificar tu pago más tarde?</h4>
-              <p className="text-xs text-gray-600 mb-3">
-                Guarda este enlace o usa el verificador de pagos:
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <p className="text-sm text-brown-600 mb-1">Número de Orden</p>
+              <p className="font-semibold text-brown-900">{paymentDetails?.orderNumber}</p>
+            </div>
+            
+            <div>
+              <p className="text-sm text-brown-600 mb-1">ID de Pago</p>
+              <p className="font-semibold text-brown-900">{paymentDetails?.paymentId}</p>
+            </div>
+            
+            <div>
+              <p className="text-sm text-brown-600 mb-1">Total Pagado</p>
+              <p className="font-semibold text-brown-900 text-lg">
+                {paymentDetails?.amount ? formatPrice(paymentDetails.amount) : 'N/A'}
               </p>
-              <div className="bg-white border border-gray-300 rounded p-2 mb-3">
-                <code className="text-xs text-gray-700 break-all">
-                  {window.location.href}
-                </code>
+            </div>
+            
+            <div>
+              <p className="text-sm text-brown-600 mb-1">Estado</p>
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                Confirmado
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Next Steps */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
+          <h3 className="text-lg font-semibold text-blue-900 mb-4">Próximos Pasos</h3>
+          <div className="space-y-3">
+            <div className="flex items-start space-x-3">
+              <div className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold mt-0.5">
+                1
               </div>
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => navigator.clipboard.writeText(window.location.href)}
-                  className="text-xs bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition-colors"
-                >
-                  Copiar Enlace
-                </button>
-                <Link
-                  to={`/payment-status?payment_id=${paymentId}`}
-                  className="text-xs bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 transition-colors"
-                >
-                  Verificar Estado
-                </Link>
+              <div>
+                <p className="font-medium text-blue-900">Confirmación por Email</p>
+                <p className="text-sm text-blue-700">
+                  Recibirás un email de confirmación en los próximos minutos
+                </p>
               </div>
             </div>
-          )}
+            
+            <div className="flex items-start space-x-3">
+              <div className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold mt-0.5">
+                2
+              </div>
+              <div>
+                <p className="font-medium text-blue-900">Procesamiento</p>
+                <p className="text-sm text-blue-700">
+                  Tu orden será procesada en 1-2 días hábiles
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-start space-x-3">
+              <div className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold mt-0.5">
+                3
+              </div>
+              <div>
+                <p className="font-medium text-blue-900">Contacto</p>
+                <p className="text-sm text-blue-700">
+                  Te contactaremos para coordinar la entrega
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Contact Information */}
+        <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
+          <h3 className="text-lg font-semibold text-brown-900 mb-4">¿Necesitas Ayuda?</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex items-center space-x-3">
+              <Phone className="w-5 h-5 text-brown-600" />
+              <div>
+                <p className="font-medium text-brown-900">Teléfono</p>
+                <p className="text-sm text-brown-600">+57 300 123 4567</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-3">
+              <Mail className="w-5 h-5 text-brown-600" />
+              <div>
+                <p className="font-medium text-brown-900">Email</p>
+                <p className="text-sm text-brown-600">info@casapinon.com</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-3 md:col-span-2">
+              <MapPin className="w-5 h-5 text-brown-600" />
+              <div>
+                <p className="font-medium text-brown-900">Ubicación</p>
+                <p className="text-sm text-brown-600">Medellín, Antioquia, Colombia</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row gap-4">
+          <Link 
+            to="/productos" 
+            className="btn-secondary flex-1 text-center"
+          >
+            Seguir Comprando
+          </Link>
+          
+          <Link 
+            to="/contacto" 
+            className="btn-primary flex-1 text-center"
+          >
+            Contactar Soporte
+          </Link>
         </div>
       </div>
     </div>
