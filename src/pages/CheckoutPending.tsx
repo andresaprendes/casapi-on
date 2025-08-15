@@ -19,6 +19,8 @@ const CheckoutPending: React.FC = () => {
   const [pendingDetails, setPendingDetails] = useState<PendingDetails | null>(null);
   const [verificationStatus, setVerificationStatus] = useState<'pending' | 'approved' | 'rejected' | 'checking'>('pending');
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const [maxRetries] = useState(20); // Maximum 20 retries (10 minutes for PSE)
 
   const paymentId = searchParams.get('payment_id');
   const externalReference = searchParams.get('external_reference');
@@ -26,9 +28,19 @@ const CheckoutPending: React.FC = () => {
   useEffect(() => {
     getPendingDetails();
     // Start periodic verification
-    const interval = setInterval(verifyPaymentStatus, 30000); // Check every 30 seconds
+    const interval = setInterval(() => {
+      if (retryCount < maxRetries) {
+        verifyPaymentStatus();
+        setRetryCount(prev => prev + 1);
+      } else {
+        // Stop checking after max retries
+        console.log('⏰ Max retries reached, stopping automatic verification');
+        clearInterval(interval);
+      }
+    }, 30000); // Check every 30 seconds
+    
     return () => clearInterval(interval);
-  }, []);
+  }, [retryCount, maxRetries]);
 
   const getPendingDetails = async () => {
     if (!paymentId && !externalReference) {
@@ -83,15 +95,24 @@ const CheckoutPending: React.FC = () => {
         ? `${apiUrl}/api/mercadopago/verify-payment/${externalReference}`
         : `${apiUrl}/api/mercadopago/verify-payment-by-id/${paymentId}`;
       
+      console.log('🔍 Verifying payment at:', endpoint);
+      
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
       
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       const result = await response.json();
+      console.log('🔍 Verification result:', result);
       
       if (result.success) {
         const paymentStatus = result.paymentStatus || result.status;
+        console.log('🔍 Payment status:', paymentStatus);
+        
         if (paymentStatus === 'approved') {
           setVerificationStatus('approved');
           // Redirect to success page after 3 seconds
@@ -104,14 +125,74 @@ const CheckoutPending: React.FC = () => {
           setTimeout(() => {
             window.location.href = `/checkout/failure?payment_id=${paymentId}&external_reference=${externalReference}&error=${paymentStatus}`;
           }, 3000);
+        } else if (paymentStatus === 'pending') {
+          setVerificationStatus('pending');
+          // For PSE payments, keep checking but with longer intervals
+          console.log('🔄 Payment still pending, will check again in 30 seconds');
+        } else {
+          // Unknown status, treat as pending
+          setVerificationStatus('pending');
+          console.log('❓ Unknown payment status:', paymentStatus);
+        }
+      } else {
+        // API returned success: false, try fallback method
+        console.log('❌ API verification failed, trying fallback method');
+        await verifyPaymentStatusFallback();
+      }
+    } catch (error) {
+      console.error('❌ Error verifying payment status:', error);
+      // Try fallback method on error
+      await verifyPaymentStatusFallback();
+    }
+  };
+
+  const verifyPaymentStatusFallback = async () => {
+    try {
+      // Try to get order status directly
+      const apiUrl = import.meta.env.VITE_API_URL || 'https://casa-pinon-backend-production.up.railway.app';
+      const orderEndpoint = externalReference 
+        ? `${apiUrl}/api/orders/${externalReference}`
+        : `${apiUrl}/api/orders/payment/${paymentId}`;
+      
+      console.log('🔍 Trying fallback verification at:', orderEndpoint);
+      
+      const response = await fetch(orderEndpoint);
+      if (response.ok) {
+        const result = await response.json();
+        console.log('🔍 Fallback verification result:', result);
+        
+        if (result.success && result.order) {
+          const orderStatus = result.order.paymentStatus || result.order.status;
+          console.log('🔍 Order payment status:', orderStatus);
+          
+          if (orderStatus === 'paid' || orderStatus === 'approved') {
+            setVerificationStatus('approved');
+            setTimeout(() => {
+              window.location.href = `/checkout/success?payment_id=${paymentId}&external_reference=${externalReference}`;
+            }, 3000);
+          } else if (orderStatus === 'failed' || orderStatus === 'rejected') {
+            setVerificationStatus('rejected');
+            setTimeout(() => {
+              window.location.href = `/checkout/failure?payment_id=${paymentId}&external_reference=${externalReference}&error=${orderStatus}`;
+            }, 3000);
+          } else {
+            setVerificationStatus('pending');
+          }
         } else {
           setVerificationStatus('pending');
         }
+      } else {
+        setVerificationStatus('pending');
       }
     } catch (error) {
-      console.error('Error verifying payment status:', error);
+      console.error('❌ Fallback verification also failed:', error);
       setVerificationStatus('pending');
     }
+  };
+
+  const handleManualVerification = async () => {
+    if (verificationStatus === 'checking') return; // Prevent multiple simultaneous checks
+    await verifyPaymentStatus();
   };
 
   const getEstimatedTime = (paymentMethod: string): string => {
@@ -322,10 +403,29 @@ const CheckoutPending: React.FC = () => {
           </div>
         </div>
 
+        {/* Auto-refresh Notice */}
+        <div className="mt-6 text-center">
+          <p className="text-sm text-brown-600">
+            Esta página se actualiza automáticamente cada 30 segundos
+          </p>
+          {retryCount > 0 && (
+            <p className="text-sm text-brown-500 mt-1">
+              Verificaciones realizadas: {retryCount}/{maxRetries}
+            </p>
+          )}
+          {retryCount >= maxRetries && (
+            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-sm text-yellow-800">
+                ⚠️ La verificación automática se ha detenido. Puedes verificar manualmente o contactar soporte.
+              </p>
+            </div>
+          )}
+        </div>
+
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-4">
           <button 
-            onClick={verifyPaymentStatus}
+            onClick={handleManualVerification}
             disabled={verificationStatus === 'checking'}
             className="btn-primary flex-1 text-center flex items-center justify-center disabled:opacity-50"
           >
@@ -339,13 +439,6 @@ const CheckoutPending: React.FC = () => {
           >
             Verificar Más Tarde
           </Link>
-        </div>
-
-        {/* Auto-refresh Notice */}
-        <div className="mt-6 text-center">
-          <p className="text-sm text-brown-600">
-            Esta página se actualiza automáticamente cada 30 segundos
-          </p>
         </div>
       </div>
     </div>
