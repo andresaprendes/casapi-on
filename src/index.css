@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Source+Sans+Pro:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600;1,700&family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300;1,400;1,700&family=Open+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700;1,800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -10,34 +10,35 @@
   }
   
   body {
-    font-family: 'Source Sans Pro', sans-serif;
+    font-family: 'Merriweather', serif;
     background-color: #fdf8f6;
     color: #43302b;
     font-weight: 400;
-    line-height: 1.6;
+    line-height: 1.7;
     font-size: 1rem;
   }
   
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Libre Baskerville', serif;
-    font-weight: 700;
+    font-family: 'Crimson Text', serif;
+    font-weight: 600;
     color: #43302b;
+    letter-spacing: -0.02em;
   }
   
   h1 {
     font-weight: 700;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.03em;
     color: #43302b;
   }
   
   h2 {
-    font-weight: 700;
-    letter-spacing: -0.01em;
+    font-weight: 600;
+    letter-spacing: -0.02em;
     color: #43302b;
   }
   
   h3 {
-    font-weight: 700;
+    font-weight: 600;
     color: #43302b;
   }
 }

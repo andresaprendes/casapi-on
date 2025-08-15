@@ -45,10 +45,10 @@ export default {
         }
       },
       fontFamily: {
-        'serif': ['Libre Baskerville', 'serif'],
-        'body': ['Source Sans Pro', 'sans-serif'],
-        'sans': ['Inter', 'sans-serif'],
-        'display': ['Libre Baskerville', 'serif'],
+        'serif': ['Crimson Text', 'serif'],
+        'body': ['Merriweather', 'serif'],
+        'sans': ['Open Sans', 'sans-serif'],
+        'display': ['Crimson Text', 'serif'],
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-in-out',
