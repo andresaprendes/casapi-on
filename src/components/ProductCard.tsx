@@ -98,17 +98,10 @@ const ProductCard = ({ product }: ProductCardProps) => {
       {/* Product Info */}
       <div className="space-y-3">
         <div>
-          <h3 
-            className="font-display font-bold text-lg text-brown-900 mb-1 product-name-truncate" 
-            style={{
-              letterSpacing: '-0.02em'
-            }}
-          >
+          <h3 className="font-display font-bold text-lg text-brown-900 mb-1 product-name-truncate">
             {product.name}
           </h3>
-          <p 
-            className="text-base text-brown-800 font-body product-description-truncate font-medium"
-          >
+          <p className="text-base text-brown-800 font-body product-description-truncate font-medium">
             {product.description}
           </p>
         </div>
