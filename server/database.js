@@ -24,9 +24,9 @@ const initializeDatabase = async () => {
     console.log('🔧 Initializing database tables...');
     
     // Drop and recreate orders table to fix schema issues
-    await pool.query(`DROP TABLE IF EXISTS orders CASCADE`);
+    // Create orders table if it doesn't exist
     await pool.query(`
-      CREATE TABLE orders (
+      CREATE TABLE IF NOT EXISTS orders (
         id VARCHAR(50) PRIMARY KEY,
         order_number VARCHAR(50) UNIQUE NOT NULL,
         customer_name VARCHAR(255) NOT NULL,
@@ -53,10 +53,28 @@ const initializeDatabase = async () => {
       )
     `);
 
-    // Drop and recreate products table to add display_order column
-    await pool.query(`DROP TABLE IF EXISTS products CASCADE`);
+    // Add missing columns to orders table if they don't exist
+    try {
+      await pool.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS abandoned_at TIMESTAMP`);
+    } catch (error) {
+      // Column might already exist
+    }
+    
+    try {
+      await pool.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS retry_count INTEGER DEFAULT 0`);
+    } catch (error) {
+      // Column might already exist
+    }
+    
+    try {
+      await pool.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS last_payment_attempt TIMESTAMP`);
+    } catch (error) {
+      // Column might already exist
+    }
+
+    // Create products table if it doesn't exist
     await pool.query(`
-      CREATE TABLE products (
+      CREATE TABLE IF NOT EXISTS products (
         id VARCHAR(50) PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
         description TEXT,
@@ -77,6 +95,13 @@ const initializeDatabase = async () => {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+
+    // Add missing columns to products table if they don't exist
+    try {
+      await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS display_order INTEGER DEFAULT 0`);
+    } catch (error) {
+      // Column might already exist
+    }
 
     // Create payments table
     await pool.query(`
