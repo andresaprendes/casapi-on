@@ -99,31 +99,15 @@ const ProductCard = ({ product }: ProductCardProps) => {
       <div className="space-y-3">
         <div>
           <h3 
-            className="font-display font-semibold text-lg text-brown-900 mb-1 overflow-hidden" 
+            className="font-display font-semibold text-lg text-brown-900 mb-1 product-name-truncate" 
             style={{
-              display: '-webkit-box',
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: 'vertical',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              maxHeight: '3rem',
-              lineHeight: '1.5rem',
               letterSpacing: '-0.02em'
             }}
           >
             {product.name}
           </h3>
           <p 
-            className="text-sm text-brown-600 overflow-hidden font-body" 
-            style={{
-              display: '-webkit-box',
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: 'vertical',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              maxHeight: '2.5rem',
-              lineHeight: '1.25rem'
-            }}
+            className="text-sm text-brown-600 font-body product-description-truncate"
           >
             {product.description}
           </p>

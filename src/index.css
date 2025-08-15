@@ -75,4 +75,24 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
+  
+  .product-description-truncate {
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-height: 2.5rem !important;
+    line-height: 1.25rem !important;
+  }
+  
+  .product-name-truncate {
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-height: 3rem !important;
+    line-height: 1.5rem !important;
+  }
 } 
