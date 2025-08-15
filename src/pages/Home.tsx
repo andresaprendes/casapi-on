@@ -6,9 +6,11 @@ import HeroSection from '../components/HeroSection'
 import ProductCard from '../components/ProductCard'
 import TestimonialCard from '../components/TestimonialCard'
 import PaymentStatusWidget from '../components/PaymentStatusWidget'
-import { products, testimonials } from '../data/mockData'
+import { testimonials } from '../data/mockData'
+import { useProducts } from '../hooks/useProducts'
 
 const Home = () => {
+  const { products } = useProducts()
   const featuredProducts = products.slice(0, 6)
   const featuredTestimonials = testimonials.slice(0, 3)
 
