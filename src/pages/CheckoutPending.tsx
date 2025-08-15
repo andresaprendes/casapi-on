@@ -161,24 +161,35 @@ const CheckoutPending: React.FC = () => {
         const result = await response.json();
         console.log('🔍 Fallback verification result:', result);
 
-        if (result.success && result.order) {
-          const orderStatus = result.order.paymentStatus || result.order.status;
-          console.log('🔍 Order payment status:', orderStatus);
+        if (result.success && result.orders && result.orders.length > 0) {
+          // Find the order with matching payment ID
+          const matchingOrder = result.orders.find((order: any) => 
+            order.payment_id === paymentId || order.external_reference === externalReference
+          );
+          
+          if (matchingOrder) {
+            const orderStatus = matchingOrder.payment_status || matchingOrder.payment_status_mp;
+            console.log('🔍 Order payment status:', orderStatus);
 
-          if (orderStatus === 'paid' || orderStatus === 'approved') {
-            setVerificationStatus('approved');
-            setTimeout(() => {
-              window.location.href = `/checkout/success?payment_id=${paymentId}&external_reference=${externalReference}`;
-            }, 3000);
-          } else if (orderStatus === 'failed' || orderStatus === 'rejected') {
-            setVerificationStatus('rejected');
-            setTimeout(() => {
-              window.location.href = `/checkout/failure?payment_id=${paymentId}&external_reference=${externalReference}&error=${orderStatus}`;
-            }, 3000);
+            if (orderStatus === 'paid' || orderStatus === 'approved') {
+              setVerificationStatus('approved');
+              setTimeout(() => {
+                window.location.href = `/checkout/success?payment_id=${paymentId}&external_reference=${externalReference}`;
+              }, 3000);
+            } else if (orderStatus === 'failed' || orderStatus === 'rejected') {
+              setVerificationStatus('rejected');
+              setTimeout(() => {
+                window.location.href = `/checkout/failure?payment_id=${paymentId}&external_reference=${externalReference}&error=${orderStatus}`;
+              }, 3000);
+            } else {
+              setVerificationStatus('pending');
+            }
           } else {
+            console.log('🔍 No matching order found for payment ID:', paymentId);
             setVerificationStatus('pending');
           }
         } else {
+          console.log('🔍 No orders found in response');
           setVerificationStatus('pending');
         }
       } else {
