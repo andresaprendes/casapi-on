@@ -115,9 +115,9 @@ const CheckoutPending: React.FC = () => {
         
         if (paymentStatus === 'approved') {
           setVerificationStatus('approved');
-          // Redirect to success page after 3 seconds
+          // Redirect to home page after 3 seconds
           setTimeout(() => {
-            window.location.href = `/checkout/success?payment_id=${paymentId}&external_reference=${externalReference}`;
+            window.location.href = `/`;
           }, 3000);
         } else if (paymentStatus === 'rejected' || paymentStatus === 'cancelled') {
           setVerificationStatus('rejected');
@@ -174,7 +174,7 @@ const CheckoutPending: React.FC = () => {
             if (orderStatus === 'paid' || orderStatus === 'approved') {
               setVerificationStatus('approved');
               setTimeout(() => {
-                window.location.href = `/checkout/success?payment_id=${paymentId}&external_reference=${externalReference}`;
+                window.location.href = `/`;
               }, 3000);
             } else if (orderStatus === 'failed' || orderStatus === 'rejected') {
               setVerificationStatus('rejected');
@@ -300,7 +300,7 @@ const CheckoutPending: React.FC = () => {
           
           <p className="text-lg text-brown-700">
             {verificationStatus === 'checking' && 'Verificando el estado de tu pago...'}
-            {verificationStatus === 'approved' && 'Tu pago ha sido confirmado. Redirigiendo...'}
+            {verificationStatus === 'approved' && '¡Tu pago ha sido confirmado! Redirigiendo a la página principal...'}
             {verificationStatus === 'rejected' && 'El pago no pudo ser procesado. Redirigiendo...'}
             {verificationStatus === 'pending' && 'Tu pago está siendo procesado por el banco'}
           </p>
