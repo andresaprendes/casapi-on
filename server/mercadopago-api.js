@@ -1116,6 +1116,29 @@ app.get('/api/orders-status-check', async (req, res) => {
   }
 });
 
+// 5.3. Manual cleanup trigger endpoint
+app.post('/api/trigger-cleanup', async (req, res) => {
+  try {
+    console.log('🧹 Manual cleanup triggered...');
+    
+    // Run the cleanup process
+    await cleanupAbandonedOrders();
+    
+    res.json({
+      success: true,
+      message: 'Cleanup process completed',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('❌ Error in manual cleanup:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // 6. Webhook test endpoint
 app.get('/api/mercadopago/webhook-test', (req, res) => {
   res.json({
