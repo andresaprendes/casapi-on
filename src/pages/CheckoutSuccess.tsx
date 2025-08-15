@@ -23,7 +23,7 @@ const CheckoutSuccess: React.FC = () => {
     isRejected: false
   });
   const [isLoading, setIsLoading] = useState(true);
-
+  const [retryCount, setRetryCount] = useState(0);
 
   const paymentId = searchParams.get('payment_id');
   const externalReference = searchParams.get('external_reference');
@@ -38,35 +38,19 @@ const CheckoutSuccess: React.FC = () => {
     fullUrl: window.location.href
   });
 
-  // Listen for webhook notifications (if implemented)
+  // Auto-verify payment status when component mounts
   useEffect(() => {
-    if (paymentId) {
-      // Set up EventSource for real-time webhook notifications
-      const eventSource = new EventSource(`/api/mercadopago/payment-events/${paymentId}`);
-      
-      eventSource.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        if (data.paymentId === paymentId) {
-          console.log('🔔 Webhook notification received:', data);
-          // Re-verify payment immediately
-          verifyPayment(0);
-        }
-      };
-      
-      eventSource.onerror = (error) => {
-        console.log('EventSource error:', error);
-        eventSource.close();
-      };
-      
-      return () => {
-        eventSource.close();
-      };
+    if (paymentId || externalReference) {
+      // Always verify directly with MercadoPago
+      verifyPayment(0);
+    } else {
+      setIsLoading(false);
     }
-  }, [paymentId]);
+  }, []);
 
   const verifyPayment = async (retryCount = 0) => {
     // Always verify payment with MercadoPago API for security
-    if (!paymentId) {
+    if (!paymentId && !externalReference) {
       setVerification({
         isVerified: false,
         isApproved: false,
@@ -78,88 +62,177 @@ const CheckoutSuccess: React.FC = () => {
       return;
     }
 
-    try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'https://casa-pinon-backend-production.up.railway.app';
-      console.log('🔍 Calling payment verification API:', `${apiUrl}/api/mercadopago/payment-status/${paymentId}`);
-      
-      const response = await fetch(`${apiUrl}/api/mercadopago/payment-status/${paymentId}`);
-      const result = await response.json();
-      
-      console.log('🔍 Payment verification result:', result);
+    setIsLoading(true);
+    setRetryCount(retryCount);
+    setVerification({
+      isVerified: false,
+      isApproved: false,
+      isPending: false,
+      isRejected: false
+    });
 
-      if (result.success) {
-        console.log('✅ Payment verification successful:', {
-          is_approved: result.verification.is_approved,
-          is_pending: result.verification.is_pending,
-          is_rejected: result.verification.is_rejected,
-          message: result.verification.message
+    try {
+      // Always verify directly with MercadoPago first
+      console.log('🔍 Verifying payment directly with MercadoPago for:', paymentId || externalReference);
+      const manualResult = await handleManualVerification();
+      
+      if (manualResult && manualResult.success) {
+        console.log('✅ MercadoPago verification successful:', manualResult.data);
+        
+        // Use the MercadoPago status directly
+        const mpStatus = manualResult.data.paymentStatus;
+        const orderStatus = manualResult.data.orderStatus;
+        
+        console.log('🔍 MercadoPago status:', mpStatus, 'Order status:', orderStatus);
+        console.log('🔍 Full manual result data:', manualResult.data);
+        
+        // Determine the final status based on MercadoPago response
+        const isPaid = mpStatus === 'approved' || orderStatus === 'paid';
+        const isPending = mpStatus === 'pending' || orderStatus === 'pending';
+        const isFailed = mpStatus === 'rejected' || mpStatus === 'cancelled' || orderStatus === 'failed';
+        
+        console.log('🔍 Final status determination:', {
+          isPaid,
+          isPending,
+          isFailed,
+          mpStatus,
+          orderStatus
         });
+        
+        // If MercadoPago says pending, keep retrying until we get a final status
+        if (mpStatus === 'pending' && retryCount < 15) { // Increased max retries for pending status
+          const delay = Math.min(3000 * Math.pow(1.5, retryCount), 45000); // Longer delays for pending status
+          console.log(`🔄 Payment still pending on MercadoPago, retrying in ${delay/1000} seconds... (attempt ${retryCount + 1}/15)`);
+          
+          // Keep showing loading state while retrying
+          setTimeout(() => verifyPayment(retryCount + 1), delay);
+          return;
+        }
+        
+        // Get order details for display
+        const apiUrl = import.meta.env.VITE_API_URL || 'https://casa-pinon-backend-production.up.railway.app';
+        const endpoint = externalReference 
+          ? `${apiUrl}/api/orders/${externalReference}`
+          : `${apiUrl}/api/mercadopago/payment/${paymentId}`;
+        
+        const response = await fetch(endpoint);
+        const result = await response.json();
+        
+        const orderDetails = result.success ? (result.order || result.payment) : null;
+        
+        // Create a clear status message - never show pending as final result
+        let statusMessage = '';
+        if (mpStatus === 'approved') {
+          statusMessage = 'Pago Aprobado';
+        } else if (mpStatus === 'rejected') {
+          statusMessage = 'Pago Rechazado';
+        } else if (mpStatus === 'cancelled') {
+          statusMessage = 'Pago Cancelado';
+        } else if (mpStatus === 'pending') {
+          // If we reach here, it means we've exhausted retries for pending status
+          statusMessage = 'Verificación en Progreso - Contacta Soporte';
+        } else {
+          statusMessage = `Estado: ${mpStatus}`;
+        }
         
         setVerification({
           isVerified: true,
-          isApproved: result.verification.is_approved,
-          isPending: result.verification.is_pending,
-          isRejected: result.verification.is_rejected,
-          paymentDetails: result.payment,
-          message: result.verification.message
+          isApproved: isPaid,
+          isPending: false, // Never show pending as final result
+          isRejected: isFailed,
+          paymentDetails: orderDetails,
+          message: statusMessage
         });
+      } else {
+        // If MercadoPago verification failed, retry with exponential backoff
+        const maxRetries = 10; // Increased retries for persistence
+        const baseDelay = 2000; // Start with 2 seconds
+        const maxDelay = 30000; // Max 30 seconds between retries
         
-                  // Order is already created before payment, just clear cart if approved
-          if (result.verification.is_approved) {
-            clearCart();
-            localStorage.removeItem('checkout_customer_info');
-          }
+        if (retryCount < maxRetries) {
+          const delay = Math.min(baseDelay * Math.pow(2, retryCount), maxDelay);
+          console.log(`🔄 MercadoPago verification failed, retrying in ${delay/1000} seconds... (attempt ${retryCount + 1}/${maxRetries})`);
           
-          // Save payment info to localStorage for later checking
-          if (paymentId && externalReference) {
-            localStorage.setItem('last_payment_info', JSON.stringify({
-              paymentId,
-              externalReference,
-              timestamp: new Date().toISOString(),
-              status: result.verification.is_approved ? 'approved' : 
-                     result.verification.is_pending ? 'pending' : 'rejected'
-            }));
-          }
-              } else {
-          // If payment not found and we haven't exceeded retries, try again
-          // For PSE payments, retry more times with longer intervals
-          const maxRetries = verification.paymentDetails?.payment_method_id === 'pse' ? 10 : 3;
-          const retryDelay = verification.paymentDetails?.payment_method_id === 'pse' ? 5000 : 2000;
+          // Keep showing loading state while retrying
+          setTimeout(() => verifyPayment(retryCount + 1), delay);
+          return;
+        } else {
+          // After max retries, try database check as final fallback
+          console.log('⚠️ Max retries reached, trying database check as fallback...');
+          const apiUrl = import.meta.env.VITE_API_URL || 'https://casa-pinon-backend-production.up.railway.app';
+          const endpoint = externalReference 
+            ? `${apiUrl}/api/orders/${externalReference}`
+            : `${apiUrl}/api/mercadopago/payment/${paymentId}`;
           
-          if (retryCount < maxRetries && result.error?.includes('not found')) {
-            console.log(`🔄 Payment not found, retrying in ${retryDelay/1000} seconds... (attempt ${retryCount + 1}/${maxRetries})`);
-            setTimeout(() => verifyPayment(retryCount + 1), retryDelay);
-            return;
-          }
+          const response = await fetch(endpoint);
+          const result = await response.json();
           
-          // After all retries failed, show pending instead of rejected
-          // The payment might be successful but webhook delayed
-          setVerification({
-            isVerified: false,
-            isApproved: false,
-            isPending: true,
-            isRejected: false,
-            message: 'El pago está siendo procesado. Te notificaremos cuando se confirme.',
-            error: 'No se pudo verificar el estado del pago inmediatamente'
-          });
+          if (result.success && (result.order || result.payment)) {
+            const order = result.order || result.payment;
+            
+            const isPaid = order.paymentStatus === 'paid' || 
+                          order.paymentStatus === 'approved' ||
+                          order.status === 'paid' ||
+                          order.status === 'approved';
+            
+            const isPending = order.paymentStatus === 'pending' || 
+                             order.status === 'pending';
+            
+            const isFailed = order.paymentStatus === 'failed' || 
+                            order.paymentStatus === 'rejected' ||
+                            order.status === 'failed' ||
+                            order.status === 'rejected';
+
+            setVerification({
+              isVerified: true,
+              isApproved: isPaid,
+              isPending: false, // Never show pending as final result
+              isRejected: isFailed || isPending, // If database shows pending, treat as failed
+              paymentDetails: order,
+              message: isPending ? 
+                'Verificación en Progreso - Contacta Soporte' : 
+                `Estado del pedido: ${order.paymentStatus || order.status} (verificación de base de datos)`
+            });
+          } else {
+            setVerification({
+              isVerified: false,
+              isApproved: false,
+              isPending: false,
+              isRejected: true,
+              error: manualResult?.error || 'No se pudo verificar el estado del pago después de múltiples intentos'
+            });
+          }
         }
+      }
     } catch (error) {
       console.error('Error verifying payment:', error);
-      setVerification({
-        isVerified: false,
-        isApproved: false,
-        isPending: false,
-        isRejected: true,
-        error: 'Error de conexión al verificar el pago'
-      });
+      
+      // If there's a connection error, retry with exponential backoff
+      const maxRetries = 5;
+      const baseDelay = 3000;
+      
+      if (retryCount < maxRetries) {
+        const delay = Math.min(baseDelay * Math.pow(2, retryCount), 15000);
+        console.log(`🔄 Connection error, retrying in ${delay/1000} seconds... (attempt ${retryCount + 1}/${maxRetries})`);
+        
+        setTimeout(() => verifyPayment(retryCount + 1), delay);
+        return;
+      } else {
+        setVerification({
+          isVerified: false,
+          isApproved: false,
+          isPending: false,
+          isRejected: true,
+          error: 'Error de conexión al verificar el pago después de múltiples intentos'
+        });
+      }
     } finally {
-      setIsLoading(false);
+      // Only stop loading if we have a final result
+      if (verification.isVerified || verification.error) {
+        setIsLoading(false);
+      }
     }
   };
-
-  useEffect(() => {
-    verifyPayment(0);
-  }, [paymentId]);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('es-CO', {
@@ -170,6 +243,61 @@ const CheckoutSuccess: React.FC = () => {
     }).format(price);
   };
 
+  const handleManualVerification = async (): Promise<any> => {
+    if (!paymentId && !externalReference) {
+      setVerification({
+        isVerified: false,
+        isApproved: false,
+        isPending: false,
+        isRejected: true,
+        error: 'No se encontró información del pago'
+      });
+      return { success: false, error: 'No payment information found' };
+    }
+
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'https://casa-pinon-backend-production.up.railway.app';
+      const endpoint = paymentId 
+        ? `${apiUrl}/api/mercadopago/verify-payment-by-id/${paymentId}`
+        : `${apiUrl}/api/mercadopago/verify-payment/${externalReference}`;
+      
+      console.log('🔍 Manual payment verification:', endpoint);
+      
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      const result = await response.json();
+      
+      console.log('🔍 Manual verification result:', result);
+
+      if (result.success) {
+        return { success: true, data: result };
+      } else {
+        setVerification({
+          isVerified: false,
+          isApproved: false,
+          isPending: false,
+          isRejected: true,
+          error: result.error || 'Error en la verificación manual del pago'
+        });
+        return { success: false, error: result.error };
+      }
+    } catch (error) {
+      console.error('Error in manual verification:', error);
+      setVerification({
+        isVerified: false,
+        isApproved: false,
+        isPending: false,
+        isRejected: true,
+        error: 'Error de conexión en la verificación manual'
+      });
+      return { success: false, error: 'Connection error' };
+    }
+  };
 
 
   if (isLoading) {
