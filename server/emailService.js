@@ -31,8 +31,8 @@ const createOrderConfirmationEmail = (order, customerInfo) => {
   ).join('\n');
 
   // Create payment status link (will be updated when payment is processed)
-  const baseUrl = process.env.BASE_URL || 'https://casapi-on-production.up.railway.app';
-  const paymentStatusLink = `${baseUrl}/payment-status?order=${order.orderNumber}`;
+  const frontendUrl = 'https://casapi-on-production.up.railway.app';
+  const paymentStatusLink = `${frontendUrl}/payment-status?order=${order.orderNumber}`;
 
   return {
     subject: `Confirmación de Pedido #${order.orderNumber} - Casa Piñón Ebanistería`,
@@ -139,9 +139,9 @@ const createPaymentStatusEmail = (order, customerInfo, paymentDetails, paymentSt
     }).format(item.price)}`
   ).join('\n');
 
-  // Create real payment status link
-  const baseUrl = process.env.BASE_URL || 'https://casapi-on-production.up.railway.app';
-  const paymentStatusLink = `${baseUrl}/payment-status?payment_id=${paymentDetails.id}`;
+  // Create real payment status link - use frontend URL
+  const frontendUrl = 'https://casapi-on-production.up.railway.app';
+  const paymentStatusLink = `${frontendUrl}/payment-status?payment_id=${paymentDetails.id}`;
 
   // Email content based on payment status
   const getStatusContent = () => {
