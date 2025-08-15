@@ -294,6 +294,12 @@ async function cleanupAbandonedOrders() {
     if (timeoutCount > 0) {
       console.log(`⏰ Timed out ${timeoutCount} pending payments`);
     }
+    
+    // Handle orders that were created but never initiated payment (30 minutes timeout)
+    const abandonedCount = await handleAbandonedOrders();
+    if (abandonedCount > 0) {
+      console.log(`🚫 Marked ${abandonedCount} abandoned orders as rejected`);
+    }
   } catch (error) {
     console.error('Error in cleanup process:', error);
   }
@@ -371,6 +377,104 @@ async function handlePendingPaymentTimeouts() {
     return timeoutCount;
   } catch (error) {
     console.error('Error handling payment timeouts:', error);
+    return 0;
+  }
+}
+
+// Handle orders that were created but never initiated payment
+async function handleAbandonedOrders() {
+  try {
+    // Get orders that were created but never had a payment initiated (30 minutes timeout)
+    const query = `
+      SELECT o.*
+      FROM orders o
+      LEFT JOIN payments p ON o.order_number = p.external_reference
+      WHERE o.payment_status = 'pending'
+        AND p.id IS NULL
+        AND o.created_at < NOW() - INTERVAL '30 minutes'
+        AND o.abandoned_at IS NULL
+    `;
+    
+    let result;
+    if (process.env.DATABASE_URL) {
+      result = await orderOperations.pool.query(query);
+    } else {
+      // Fallback to in-memory storage
+      const orders = Array.from(orderDatabase.values());
+      const payments = Array.from(paymentDatabase.values());
+      const now = new Date();
+      
+      result = {
+        rows: orders.filter(order => {
+          const hasPayment = payments.some(p => p.externalReference === order.orderNumber);
+          const createdTime = new Date(order.createdAt);
+          const minutesSinceCreation = (now - createdTime) / (1000 * 60);
+          
+          return order.paymentStatus === 'pending' && 
+                 !hasPayment && 
+                 minutesSinceCreation > 30 &&
+                 !order.abandonedAt;
+        })
+      };
+    }
+    
+    let abandonedCount = 0;
+    
+    for (const order of result.rows) {
+      console.log(`🚫 Order ${order.order_number} abandoned (no payment initiated), marking as rejected`);
+      
+      // Update order status to failed
+      await updateOrderPaymentStatus(order.order_number, 'failed', null);
+      
+      // Mark as abandoned
+      if (process.env.DATABASE_URL) {
+        await orderOperations.pool.query(
+          'UPDATE orders SET abandoned_at = CURRENT_TIMESTAMP WHERE order_number = $1',
+          [order.order_number]
+        );
+      } else {
+        // Update in-memory storage
+        const orderToUpdate = orderDatabase.get(order.order_number);
+        if (orderToUpdate) {
+          orderToUpdate.abandonedAt = new Date().toISOString();
+          orderToUpdate.paymentStatus = 'failed';
+          orderDatabase.set(order.order_number, orderToUpdate);
+        }
+      }
+      
+      // Send abandonment email
+      const customerInfo = order.customer || {
+        name: order.customer_name,
+        email: order.customer_email,
+        phone: order.customer_phone,
+        address: order.customer_address
+      };
+      
+      const fakePayment = {
+        id: 'ABANDONED-' + order.order_number,
+        payment_method_id: 'abandoned',
+        transaction_amount: order.total,
+        date_created: order.created_at
+      };
+      
+      sendPaymentStatusEmail(order, customerInfo, fakePayment, 'rejected')
+        .then(emailResult => {
+          if (emailResult.success) {
+            console.log(`✅ Abandonment email sent for order:`, order.order_number);
+          } else {
+            console.log(`⚠️ Failed to send abandonment email:`, emailResult.error);
+          }
+        })
+        .catch(emailError => {
+          console.log(`⚠️ Error sending abandonment email:`, emailError.message);
+        });
+      
+      abandonedCount++;
+    }
+    
+    return abandonedCount;
+  } catch (error) {
+    console.error('Error handling abandoned orders:', error);
     return 0;
   }
 }
