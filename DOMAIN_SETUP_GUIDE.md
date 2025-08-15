@@ -4,7 +4,7 @@
 
 ### **Frontend Service (React App)**
 - **Current URL**: `https://casapi-on-production.up.railway.app`
-- **New Domain**: `https://casapiñon.co`
+- **New Domain**: `https://xn--casapion-i3a.co` (punycode for casapiñon.co)
 
 ### **Backend Service (API)**
 - **Current URL**: `https://casa-pinon-backend-production.up.railway.app`
@@ -27,7 +27,7 @@ Update in Railway Dashboard → Backend Service → Variables:
 
 ```env
 # Update BASE_URL in backend service
-BASE_URL=https://casapiñon.co
+BASE_URL=https://xn--casapion-i3a.co
 ```
 
 ## **DNS Configuration**
@@ -52,16 +52,16 @@ TTL: 3600 (or default)
 ### **1. Email Service (server/emailService.js)**
 ```javascript
 // Update frontend URL in emails
-const frontendUrl = 'https://casapiñon.co';
+const frontendUrl = 'https://xn--casapion-i3a.co';
 ```
 
 ### **2. MercadoPago Configuration (server/mercadopago-api.js)**
 ```javascript
 // Update back_urls in MercadoPago preference
 back_urls: {
-  success: 'https://casapiñon.co/checkout-success',
-  failure: 'https://casapiñon.co/checkout-success',
-  pending: 'https://casapiñon.co/checkout-success'
+  success: 'https://xn--casapion-i3a.co/checkout-success',
+  failure: 'https://xn--casapion-i3a.co/checkout-success',
+  pending: 'https://xn--casapion-i3a.co/checkout-success'
 }
 ```
 
@@ -70,8 +70,8 @@ back_urls: {
 app.use(cors({
   origin: [
     'http://localhost:3000',
-    'https://casapiñon.co',
-    'https://www.casapiñon.co',
+    'https://xn--casapion-i3a.co',
+    'https://www.xn--casapion-i3a.co',
     'https://*.railway.app'
   ],
   // ... rest of config
