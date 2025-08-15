@@ -1020,7 +1020,13 @@ app.get('/api/orders-status-check', async (req, res) => {
     
     let result;
     if (process.env.DATABASE_URL) {
-      result = await orderOperations.pool.query(query);
+      const { Pool } = require('pg');
+      const pool = new Pool({
+        connectionString: process.env.DATABASE_URL,
+        ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+      });
+      result = await pool.query(query);
+      await pool.end();
     } else {
       // Fallback to in-memory storage
       const orders = Array.from(orderDatabase.values());
