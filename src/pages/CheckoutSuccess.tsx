@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { CheckCircle, Download, Mail, Phone, MapPin, Loader2 } from 'lucide-react';
+import { CheckCircle, Mail, Phone, MapPin, Loader2 } from 'lucide-react';
 
 interface PaymentDetails {
   paymentId?: string;
@@ -19,7 +19,6 @@ const CheckoutSuccess: React.FC = () => {
 
   const paymentId = searchParams.get('payment_id');
   const externalReference = searchParams.get('external_reference');
-  const status = searchParams.get('status');
 
   useEffect(() => {
     verifyPayment();

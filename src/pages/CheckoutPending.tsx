@@ -22,7 +22,6 @@ const CheckoutPending: React.FC = () => {
 
   const paymentId = searchParams.get('payment_id');
   const externalReference = searchParams.get('external_reference');
-  const status = searchParams.get('status');
 
   useEffect(() => {
     getPendingDetails();

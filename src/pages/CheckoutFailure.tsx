@@ -15,11 +15,9 @@ const CheckoutFailure: React.FC = () => {
   const [searchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(true);
   const [failureDetails, setFailureDetails] = useState<FailureDetails | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   const paymentId = searchParams.get('payment_id');
   const externalReference = searchParams.get('external_reference');
-  const status = searchParams.get('status');
   const errorCode = searchParams.get('error');
 
   useEffect(() => {
@@ -52,14 +50,14 @@ const CheckoutFailure: React.FC = () => {
           paymentId: paymentId || orderData?.payment_id,
           externalReference: externalReference || orderData?.external_reference,
           errorCode: errorCode || orderData?.error_code || 'payment_failed',
-          errorMessage: getErrorMessage(errorCode || orderData?.error_code),
+          errorMessage: getErrorMessage(errorCode || orderData?.error_code || 'unknown'),
           amount: orderData?.amount || orderData?.total,
           orderNumber: orderData?.orderNumber || orderData?.external_reference
         });
       } else {
         setFailureDetails({
-          paymentId,
-          externalReference,
+          paymentId: paymentId || undefined,
+          externalReference: externalReference || undefined,
           errorCode: errorCode || 'verification_failed',
           errorMessage: 'No se pudo verificar los detalles del pago'
         });
@@ -67,8 +65,8 @@ const CheckoutFailure: React.FC = () => {
     } catch (error) {
       console.error('Error getting failure details:', error);
       setFailureDetails({
-        paymentId,
-        externalReference,
+        paymentId: paymentId || undefined,
+        externalReference: externalReference || undefined,
         errorCode: errorCode || 'connection_error',
         errorMessage: 'Error de conexión al verificar el pago'
       });
@@ -93,7 +91,6 @@ const CheckoutFailure: React.FC = () => {
       'cc_rejected_invalid_installments': 'Cuotas no válidas',
       'cc_rejected_max_attempts': 'Máximo de intentos alcanzado',
       'cc_rejected_other_reason': 'Tarjeta rechazada',
-      'cc_rejected_bad_filled_card_number': 'Número de tarjeta incorrecto',
       'pse_rejected_bad_filled_bank': 'Banco no válido',
       'pse_rejected_bad_filled_entity': 'Entidad bancaria no válida',
       'pse_rejected_bad_filled_person_type': 'Tipo de persona no válido',
