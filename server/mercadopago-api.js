@@ -21,6 +21,8 @@ const app = express();
 app.use(cors({
   origin: [
     'http://localhost:3000',
+    'https://casapiñon.co',
+    'https://www.casapiñon.co',
     'https://casapi-on-production.up.railway.app',
     'https://casa-pinon-backend-production.up.railway.app',
     'https://*.railway.app'
@@ -569,9 +571,9 @@ app.post('/api/mercadopago/create-preference', async (req, res) => {
       ],
       external_reference: orderId,
       back_urls: {
-        success: `${BASE_URL}/checkout/success?payment_id={payment_id}&status={status}&external_reference={external_reference}`,
-        failure: `${BASE_URL}/checkout/success?payment_id={payment_id}&status={status}&external_reference={external_reference}`,
-        pending: `${BASE_URL}/checkout/success?payment_id={payment_id}&status={status}&external_reference={external_reference}`
+        success: 'https://casapiñon.co/checkout/success?payment_id={payment_id}&status={status}&external_reference={external_reference}',
+        failure: 'https://casapiñon.co/checkout/success?payment_id={payment_id}&status={status}&external_reference={external_reference}',
+        pending: 'https://casapiñon.co/checkout/success?payment_id={payment_id}&status={status}&external_reference={external_reference}'
       },
       auto_return: 'all'
     };

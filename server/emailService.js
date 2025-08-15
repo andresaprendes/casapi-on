@@ -140,7 +140,7 @@ const createPaymentStatusEmail = (order, customerInfo, paymentDetails, paymentSt
   ).join('\n');
 
   // Create real payment status link - use frontend URL
-  const frontendUrl = 'https://casapi-on-production.up.railway.app';
+  const frontendUrl = 'https://casapiñon.co';
   const paymentStatusLink = `${frontendUrl}/payment-status?order=${order.orderNumber}`;
 
   // Email content based on payment status
