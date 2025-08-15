@@ -63,15 +63,44 @@ const PaymentStatus: React.FC = () => {
       
       console.log('🔍 Payment status result:', result);
 
-      if (result.success) {
-        // Order endpoint
+      if (result.success && result.order) {
+        const order = result.order;
+        console.log('🔍 Order details:', {
+          orderNumber: order.orderNumber,
+          paymentStatus: order.paymentStatus,
+          paymentId: order.paymentId,
+          status: order.status
+        });
+
+        // Check multiple possible payment status fields
+        const isPaid = order.paymentStatus === 'paid' || 
+                      order.paymentStatus === 'approved' ||
+                      order.status === 'paid' ||
+                      order.status === 'approved';
+        
+        const isPending = order.paymentStatus === 'pending' || 
+                         order.status === 'pending';
+        
+        const isFailed = order.paymentStatus === 'failed' || 
+                        order.paymentStatus === 'rejected' ||
+                        order.status === 'failed' ||
+                        order.status === 'rejected';
+
+        console.log('🔍 Payment status analysis:', {
+          isPaid,
+          isPending,
+          isFailed,
+          originalPaymentStatus: order.paymentStatus,
+          originalStatus: order.status
+        });
+
         setVerification({
           isVerified: true,
-          isApproved: result.order.paymentStatus === 'paid',
-          isPending: result.order.paymentStatus === 'pending',
-          isRejected: result.order.paymentStatus === 'failed',
-          paymentDetails: result.order,
-          message: `Estado del pedido: ${result.order.paymentStatus}`
+          isApproved: isPaid,
+          isPending: isPending,
+          isRejected: isFailed,
+          paymentDetails: order,
+          message: `Estado del pedido: ${order.paymentStatus || order.status}`
         });
       } else {
         // If payment not found and we haven't exceeded retries, try again
@@ -112,6 +141,68 @@ const PaymentStatus: React.FC = () => {
     verifyPayment(0);
   };
 
+  const handleManualVerification = async () => {
+    if (!orderNumber) {
+      setVerification({
+        isVerified: false,
+        isApproved: false,
+        isPending: false,
+        isRejected: true,
+        error: 'Por favor ingresa el número de orden'
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    setVerification({
+      isVerified: false,
+      isApproved: false,
+      isPending: false,
+      isRejected: false
+    });
+
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'https://casa-pinon-backend-production.up.railway.app';
+      const endpoint = `${apiUrl}/api/mercadopago/verify-payment/${orderNumber}`;
+      
+      console.log('🔍 Manual payment verification:', endpoint);
+      
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      const result = await response.json();
+      
+      console.log('🔍 Manual verification result:', result);
+
+      if (result.success) {
+        // Re-verify the payment status after manual verification
+        setTimeout(() => verifyPayment(0), 1000);
+      } else {
+        setVerification({
+          isVerified: false,
+          isApproved: false,
+          isPending: false,
+          isRejected: true,
+          error: result.error || 'Error en la verificación manual del pago'
+        });
+      }
+    } catch (error) {
+      console.error('Error in manual verification:', error);
+      setVerification({
+        isVerified: false,
+        isApproved: false,
+        isPending: false,
+        isRejected: true,
+        error: 'Error de conexión en la verificación manual'
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
 
   return (
@@ -158,6 +249,25 @@ const PaymentStatus: React.FC = () => {
                 <>
                   <Search className="w-4 h-4" />
                   <span>Verificar Estado</span>
+                </>
+              )}
+            </button>
+            
+            <button
+              type="button"
+              onClick={handleManualVerification}
+              disabled={isLoading || !orderNumber}
+              className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Verificando con MercadoPago...</span>
+                </>
+              ) : (
+                <>
+                  <Search className="w-4 h-4" />
+                  <span>Verificar con MercadoPago</span>
                 </>
               )}
             </button>
