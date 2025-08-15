@@ -1075,6 +1075,39 @@ app.post('/api/orders', express.json(), async (req, res) => {
   }
 });
 
+// Get order by order number
+app.get('/api/orders/:orderNumber', async (req, res) => {
+  try {
+    const { orderNumber } = req.params;
+    
+    let order;
+    if (process.env.DATABASE_URL) {
+      order = await orderOperations.getByOrderNumber(orderNumber);
+    } else {
+      // Fallback to in-memory storage
+      order = Array.from(orderDatabase.values()).find(o => o.orderNumber === orderNumber);
+    }
+    
+    if (order) {
+      res.json({
+        success: true,
+        order: order
+      });
+    } else {
+      res.status(404).json({
+        success: false,
+        error: 'Order not found'
+      });
+    }
+  } catch (error) {
+    console.error('Get order by number error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Error retrieving order'
+    });
+  }
+});
+
 // Get all orders with filtering and pagination
 app.get('/api/orders', async (req, res) => {
   try {
