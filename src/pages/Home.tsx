@@ -15,7 +15,7 @@ const Home = () => {
   const features = [
     {
       icon: Shield,
-      title: 'Calidad Garantizada',
+      title: 'Calidad Premium',
       description: 'Muebles de madera real con acabados de primera calidad'
     },
     {
@@ -25,13 +25,13 @@ const Home = () => {
     },
     {
       icon: Clock,
-      title: 'Entrega Puntual',
-      description: 'Cumplimos con los tiempos de entrega acordados'
+      title: '6 Cuotas Sin Intereses',
+      description: 'Paga con tu tarjeta de crédito en cuotas mensuales'
     },
     {
       icon: Award,
-      title: 'Artesanía Fina',
-      description: 'Precisión y detalle en cada pieza'
+      title: 'Garantía Total',
+      description: 'Respaldamos la calidad de todos nuestros productos'
     }
   ]
 
@@ -62,8 +62,8 @@ const Home = () => {
               ¿Por qué elegir Casa Piñón?
             </h2>
             <p className="text-lg text-brown-600 max-w-2xl mx-auto">
-              Más de 15 años de experiencia en carpintería fina, 
-              especializados en muebles de madera real para hogares en Medellín y Oriente Antioqueño.
+              Muebles premium de madera real con la facilidad de pago en 6 cuotas sin intereses. 
+              Transforma tu hogar con elegancia y comodidad financiera.
             </p>
           </motion.div>
 
@@ -104,8 +104,8 @@ const Home = () => {
               Productos Destacados
             </h2>
             <p className="text-lg text-brown-600 max-w-2xl mx-auto">
-              Descubre nuestra colección de muebles de madera real, 
-              diseñados y fabricados con precisión artesanal.
+              Descubre nuestra colección de muebles premium de madera real, 
+              elegantes y funcionales para transformar tu hogar.
             </p>
           </motion.div>
 
@@ -234,8 +234,8 @@ const Home = () => {
               ¿Listo para transformar tu hogar?
             </h2>
             <p className="text-lg text-cream-200 mb-8 max-w-2xl mx-auto">
-              Contáctanos para obtener una cotización personalizada. 
-              Atendemos Medellín, Rionegro, El Retiro y toda la región del Oriente Antioqueño.
+              Obtén muebles premium con la facilidad de pago en 6 cuotas sin intereses. 
+              Envío a domicilio en Medellín, Rionegro, El Retiro y toda la región del Oriente Antioqueño.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link

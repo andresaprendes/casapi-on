@@ -21,15 +21,27 @@ const HeroSection = () => {
             transition={{ duration: 0.8 }}
           >
             <h1 className="text-4xl md:text-6xl font-serif font-bold mb-6 leading-tight">
-              Muebles de Madera Real
-              <span className="block text-cream-200">con Precisión Artesanal</span>
+              Muebles Premium de Madera Real
+              <span className="block text-cream-200">para tu Hogar</span>
             </h1>
             <p className="text-xl text-cream-200 mb-8 leading-relaxed">
-              Descubre la excelencia en ebanistería con Álvaro "Sapo Tieso". 
-              28 años de experiencia creando muebles únicos, puertas y ventanas 
-              que transforman tu espacio en un hogar extraordinario.
+              Transforma tu hogar con muebles elegantes y de alta calidad. 
+              Paga en 6 cuotas sin intereses con tu tarjeta de crédito. 
+              Envío a domicilio en Medellín y Oriente Antioqueño.
             </p>
             
+            {/* Payment Highlight */}
+            <div className="bg-cream-200 bg-opacity-10 rounded-lg p-4 mb-8 border border-cream-200 border-opacity-20">
+              <div className="flex items-center justify-center space-x-2 mb-2">
+                <Star className="w-5 h-5 text-cream-200" />
+                <span className="text-lg font-semibold text-cream-50">¡6 CUOTAS SIN INTERESES!</span>
+                <Star className="w-5 h-5 text-cream-200" />
+              </div>
+              <p className="text-center text-cream-200 text-sm">
+                Paga con tu tarjeta de crédito en cuotas mensuales sin intereses
+              </p>
+            </div>
+
             {/* Features */}
             <div className="grid grid-cols-2 gap-4 mb-8">
               <div className="flex items-center space-x-2">
@@ -83,10 +95,10 @@ const HeroSection = () => {
                     className="h-24 w-auto mx-auto mb-6"
                   />
                   <div className="mt-4 text-sm text-brown-600">
-                    <p>• Muebles de madera real</p>
-                    <p>• Puertas y ventanas</p>
-                    <p>• Diseños personalizados</p>
+                    <p>• Muebles premium de madera real</p>
+                    <p>• 6 cuotas sin intereses</p>
                     <p>• Envío a domicilio</p>
+                    <p>• Garantía total</p>
                   </div>
                 </div>
               </div>
