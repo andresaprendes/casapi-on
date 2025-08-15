@@ -99,7 +99,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
       <div className="space-y-3">
         <div>
           <h3 
-            className="font-display font-semibold text-lg text-brown-900 mb-1 product-name-truncate" 
+            className="font-display font-bold text-lg text-brown-900 mb-1 product-name-truncate" 
             style={{
               letterSpacing: '-0.02em'
             }}
@@ -107,7 +107,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
             {product.name}
           </h3>
           <p 
-            className="text-sm text-brown-600 font-body product-description-truncate"
+            className="text-base text-brown-800 font-body product-description-truncate font-medium"
           >
             {product.description}
           </p>
@@ -137,19 +137,19 @@ const ProductCard = ({ product }: ProductCardProps) => {
           </div>
           <div className="flex items-center space-x-1">
             <Star className="w-4 h-4 fill-current text-yellow-400" />
-            <span className="text-sm text-brown-600">4.9</span>
+            <span className="text-sm font-medium text-brown-700">4.9</span>
           </div>
         </div>
 
         {/* Delivery Info */}
-        <div className="text-sm text-brown-600">
-          <span className="font-medium">Entrega:</span> {product.estimatedDelivery}
+        <div className="text-sm font-medium text-brown-700">
+          <span className="font-semibold">Entrega:</span> {product.estimatedDelivery}
         </div>
 
         {/* Design Variations */}
         {product.designVariations && (
-          <div className="text-xs text-brown-500 bg-cream-50 p-2 rounded-lg">
-            <span className="font-medium">Nota:</span> {product.designVariations}
+          <div className="text-sm text-brown-700 bg-cream-50 p-2 rounded-lg font-medium">
+            <span className="font-semibold">Nota:</span> {product.designVariations}
           </div>
         )}
 
