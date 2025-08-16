@@ -60,10 +60,18 @@ const CheckoutFailure: React.FC = () => {
         let finalErrorCode = errorCode || orderData?.error_code || 'payment_failed';
         let finalErrorMessage = getErrorMessage(finalErrorCode);
         
-        // If no specific error code and no payment ID, likely a user cancellation
-        if (!paymentId && !orderData?.payment_id && !errorCode) {
-          finalErrorCode = 'return_to_site';
-          finalErrorMessage = getErrorMessage('return_to_site');
+        // IMPROVED: Better detection of user cancellations
+        // If no payment ID and no specific error code, this is likely a user cancellation
+        if (!paymentId && !orderData?.payment_id && (!errorCode || errorCode === 'unknown')) {
+          finalErrorCode = 'user_cancelled';
+          finalErrorMessage = getErrorMessage('user_cancelled');
+          
+          // Trigger cancellation email immediately
+          if (externalReference || orderData?.external_reference) {
+            const orderNumber = externalReference || orderData?.external_reference;
+            console.log('🚫 Detected user cancellation, triggering email for order:', orderNumber);
+            triggerCancellationEmail(orderNumber);
+          }
         }
         
         setFailureDetails({
@@ -77,7 +85,7 @@ const CheckoutFailure: React.FC = () => {
       } else {
         // If API call fails, assume user cancellation if no payment ID
         const isUserCancellation = !paymentId;
-        const finalErrorCode = isUserCancellation ? 'return_to_site' : 'verification_failed';
+        const finalErrorCode = isUserCancellation ? 'user_cancelled' : 'verification_failed';
         
         setFailureDetails({
           paymentId: paymentId || undefined,
@@ -85,13 +93,19 @@ const CheckoutFailure: React.FC = () => {
           errorCode: finalErrorCode,
           errorMessage: getErrorMessage(finalErrorCode)
         });
+        
+        // Trigger cancellation email if this is a user cancellation
+        if (isUserCancellation && externalReference) {
+          console.log('🚫 API call failed, but detected user cancellation for order:', externalReference);
+          triggerCancellationEmail(externalReference);
+        }
       }
     } catch (error) {
       console.error('Error getting failure details:', error);
       
       // If connection fails, assume user cancellation if no payment ID
       const isUserCancellation = !paymentId;
-      const finalErrorCode = isUserCancellation ? 'return_to_site' : 'connection_error';
+      const finalErrorCode = isUserCancellation ? 'user_cancelled' : 'connection_error';
       
       setFailureDetails({
         paymentId: paymentId || undefined,
@@ -99,6 +113,12 @@ const CheckoutFailure: React.FC = () => {
         errorCode: finalErrorCode,
         errorMessage: getErrorMessage(finalErrorCode)
       });
+      
+      // Trigger cancellation email if this is a user cancellation
+      if (isUserCancellation && externalReference) {
+        console.log('🚫 Connection failed, but detected user cancellation for order:', externalReference);
+        triggerCancellationEmail(externalReference);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -106,10 +126,14 @@ const CheckoutFailure: React.FC = () => {
 
   // Function to trigger cancellation email when user cancels payment
   const triggerCancellationEmail = async (orderNumber: string) => {
+    console.log('📧 Starting cancellation email process for order:', orderNumber);
+    
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'https://casa-pinon-backend-production.up.railway.app';
+      console.log('🌐 Using API URL:', apiUrl);
       
       // Get order details to extract customer info
+      console.log('🔍 Fetching order details from:', `${apiUrl}/api/orders/${orderNumber}`);
       const orderResponse = await fetch(`${apiUrl}/api/orders/${orderNumber}`);
       const orderResult = await orderResponse.json();
       
@@ -125,6 +149,9 @@ const CheckoutFailure: React.FC = () => {
         };
         
         // Call the cancellation endpoint to send email
+        console.log('📤 Sending cancellation email request to:', `${apiUrl}/api/mercadopago/payment-cancelled`);
+        console.log('📋 Request payload:', { orderNumber, customerInfo, reason: 'user_cancelled' });
+        
         const emailResponse = await fetch(`${apiUrl}/api/mercadopago/payment-cancelled`, {
           method: 'POST',
           headers: {
@@ -137,7 +164,9 @@ const CheckoutFailure: React.FC = () => {
           })
         });
         
+        console.log('📥 Email API response status:', emailResponse.status);
         const emailResult = await emailResponse.json();
+        console.log('📥 Email API response:', emailResult);
         
         if (emailResult.success) {
           console.log('✅ Cancellation email triggered successfully');
