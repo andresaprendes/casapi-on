@@ -6,6 +6,7 @@ import { useProducts } from '../hooks/useProducts'
 import { toast } from 'react-hot-toast'
 import { Link } from 'react-router-dom'
 import ProductReorder from '../components/ProductReorder'
+import { getImageUrl } from '../utils/imageUtils'
 
 const AdminProducts = () => {
   const { products, addProduct, updateProduct, deleteProduct } = useProducts()
@@ -317,7 +318,7 @@ const AdminProducts = () => {
               <div className="relative aspect-square bg-cream-100">
                 {product.images && product.images.length > 0 ? (
                   <img
-                    src={product.images[0]}
+                    src={getImageUrl(product.images[0])}
                     alt={product.name}
                     className="w-full h-full object-cover"
                     onError={(e) => {

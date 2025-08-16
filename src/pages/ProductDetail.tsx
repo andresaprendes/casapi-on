@@ -19,6 +19,7 @@ import {
 import { useProducts } from '../hooks/useProducts'
 import { useCart } from '../store/CartContext'
 import { toast } from 'react-hot-toast'
+import { getImageUrl } from '../utils/imageUtils'
 
 const ProductDetail = () => {
   const { id } = useParams()
@@ -141,7 +142,7 @@ const ProductDetail = () => {
                 {product.images && product.images.length > 0 ? (
                   <>
                     <img
-                      src={product.images[selectedImageIndex]}
+                      src={getImageUrl(product.images[selectedImageIndex])}
                       alt={product.name}
                       className="w-full h-full object-cover"
                     />
@@ -188,7 +189,7 @@ const ProductDetail = () => {
                       }`}
                     >
                       <img
-                        src={image}
+                        src={getImageUrl(image)}
                         alt={`${product.name} ${index + 1}`}
                         className="w-full h-full object-cover"
                       />

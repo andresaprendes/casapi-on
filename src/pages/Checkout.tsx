@@ -12,6 +12,7 @@ import {
 import { useCart } from '../store/CartContext'
 import { shippingZones } from '../data/mockData'
 import MercadoPagoPayment from '../components/MercadoPagoPayment'
+import { getImageUrl } from '../utils/imageUtils'
 
 interface CustomerInfo {
   firstName: string
@@ -324,7 +325,7 @@ const Checkout = () => {
                     {items.map((item) => (
                       <div key={item.product.id} className="flex items-center space-x-4 p-4 border border-brown-100 rounded-lg">
                         <img 
-                          src={item.product.images[0]} 
+                          src={getImageUrl(item.product.images[0])} 
                           alt={item.product.name}
                           className="w-16 h-16 object-cover rounded-lg"
                         />

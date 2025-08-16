@@ -4,6 +4,7 @@ import { ShoppingCart, Eye, Star } from 'lucide-react'
 import { Product } from '../types'
 import { useCart } from '../store/CartContext'
 import { toast } from 'react-hot-toast'
+import { getImageUrl } from '../utils/imageUtils'
 
 interface ProductCardProps {
   product: Product
@@ -35,7 +36,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
       <div className="relative aspect-square bg-cream-100 rounded-lg overflow-hidden mb-4">
         {product.images && product.images.length > 0 ? (
           <img
-            src={product.images[0]}
+            src={getImageUrl(product.images[0])}
             alt={product.name}
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
             onError={(e) => {
