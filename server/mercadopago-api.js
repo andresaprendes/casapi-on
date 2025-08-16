@@ -2640,7 +2640,7 @@ app.post('/api/test-email', express.json(), async (req, res) => {
     
     const testCustomerInfo = {
       name: 'Test User',
-      email: 'pagos@casapinon.co', // Use your Zoho email for testing
+      email: 'camm89@hotmail.com', // Testing with Hotmail address
       phone: '3001234567',
       address: { city: 'Test City' }
     };
