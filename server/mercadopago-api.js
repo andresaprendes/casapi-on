@@ -2576,7 +2576,7 @@ app.post('/api/mercadopago/payment-cancelled', express.json(), async (req, res) 
     console.log('🚫 Payment cancelled by user:', { orderNumber, reason });
 
     // Get the order from database
-    const order = await dbOperations.orderOperations.getByOrderNumber(orderNumber);
+    const order = await orderOperations.getByOrderNumber(orderNumber);
     if (!order) {
       console.error('❌ Order not found for cancelled payment:', orderNumber);
       return res.status(404).json({
