@@ -2185,8 +2185,12 @@ app.post('/api/products', express.json(), async (req, res) => {
     let newProduct;
     
     if (process.env.DATABASE_URL) {
-      // Use PostgreSQL database
-      newProduct = await productOperations.create(productData);
+      // Use PostgreSQL database - generate ID for new products
+      const productDataWithId = {
+        ...productData,
+        id: productData.id || `product_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      };
+      newProduct = await productOperations.create(productDataWithId);
     } else {
       // Use in-memory database
       const newId = Date.now().toString();
