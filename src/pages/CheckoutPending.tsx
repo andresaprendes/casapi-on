@@ -37,7 +37,7 @@ const CheckoutPending: React.FC = () => {
         console.log('⏰ Max retries reached, stopping automatic verification');
         clearInterval(interval);
       }
-    }, 30000); // Check every 30 seconds
+    }, 5000); // Check every 5 seconds
     
     return () => clearInterval(interval);
   }, [retryCount, maxRetries]);
@@ -115,20 +115,16 @@ const CheckoutPending: React.FC = () => {
         
         if (paymentStatus === 'approved') {
           setVerificationStatus('approved');
-          // Redirect to home page after 3 seconds
-          setTimeout(() => {
-            window.location.href = `/`;
-          }, 3000);
+          // Payment approved - show success message and manual navigation options
+          console.log('✅ Payment approved - user can navigate manually using the action buttons below');
         } else if (paymentStatus === 'rejected' || paymentStatus === 'cancelled') {
           setVerificationStatus('rejected');
-          // Redirect to failure page after 3 seconds
-          setTimeout(() => {
-            window.location.href = `/checkout/failure?payment_id=${paymentId}&external_reference=${externalReference}&error=${paymentStatus}`;
-          }, 3000);
+          // Payment rejected - show failure message and manual navigation options
+          console.log('❌ Payment rejected - user can navigate manually using the action buttons below');
         } else if (paymentStatus === 'pending') {
           setVerificationStatus('pending');
           // For PSE payments, keep checking but with longer intervals
-          console.log('🔄 Payment still pending, will check again in 30 seconds');
+          console.log('🔄 Payment still pending, will check again in 5 seconds');
         } else {
           // Unknown status, treat as pending
           setVerificationStatus('pending');
@@ -173,14 +169,12 @@ const CheckoutPending: React.FC = () => {
 
             if (orderStatus === 'paid' || orderStatus === 'approved') {
               setVerificationStatus('approved');
-              setTimeout(() => {
-                window.location.href = `/`;
-              }, 3000);
+              // Payment approved - show success message and manual navigation options
+              console.log('✅ Payment approved via fallback - user can navigate manually using the action buttons below');
             } else if (orderStatus === 'failed' || orderStatus === 'rejected') {
               setVerificationStatus('rejected');
-              setTimeout(() => {
-                window.location.href = `/checkout/failure?payment_id=${paymentId}&external_reference=${externalReference}&error=${orderStatus}`;
-              }, 3000);
+              // Payment rejected - show failure message and manual navigation options
+              console.log('❌ Payment rejected via fallback - user can navigate manually using the action buttons below');
             } else {
               setVerificationStatus('pending');
             }
@@ -453,14 +447,81 @@ const CheckoutPending: React.FC = () => {
           </div>
         </div>
 
+        {/* Status-Based Action Buttons */}
+        {verificationStatus === 'approved' && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-8">
+            <div className="text-center">
+              <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-green-900 mb-4">¡Pago Aprobado!</h3>
+              <p className="text-green-800 mb-6">
+                Tu pago ha sido confirmado exitosamente. Recibirás un email de confirmación en los próximos minutos.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Link 
+                  to="/" 
+                  className="btn-primary flex-1 text-center"
+                >
+                  Ir al Inicio
+                </Link>
+                <Link 
+                  to="/productos" 
+                  className="btn-secondary flex-1 text-center"
+                >
+                  Seguir Comprando
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {verificationStatus === 'rejected' && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-8">
+            <div className="text-center">
+              <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-red-900 mb-4">Pago Rechazado</h3>
+              <p className="text-red-800 mb-6">
+                Tu pago no pudo ser procesado. Puedes intentar nuevamente o contactar soporte para ayuda.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Link 
+                  to="/checkout" 
+                  className="btn-primary flex-1 text-center"
+                >
+                  Intentar Nuevamente
+                </Link>
+                <Link 
+                  to="/contacto" 
+                  className="btn-secondary flex-1 text-center"
+                >
+                  Contactar Soporte
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Auto-refresh Notice */}
         <div className="mt-6 text-center">
           <p className="text-sm text-brown-600">
-            Esta página se actualiza automáticamente cada 30 segundos
+            Esta página se actualiza automáticamente cada 5 segundos
           </p>
           <p className="text-sm text-brown-600 mt-1">
             <strong>Recuerda:</strong> Revisa tu email para la confirmación del pago
           </p>
+          {verificationStatus === 'approved' && (
+            <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+              <p className="text-sm text-green-800">
+                ✅ Tu pago ha sido aprobado. Usa los botones de arriba para navegar.
+              </p>
+            </div>
+          )}
+          {verificationStatus === 'rejected' && (
+            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-800">
+                ❌ Tu pago fue rechazado. Usa los botones de arriba para intentar nuevamente o contactar soporte.
+              </p>
+            </div>
+          )}
           {retryCount > 0 && (
             <p className="text-sm text-brown-500 mt-1">
               Verificaciones realizadas: {retryCount}/{maxRetries}
