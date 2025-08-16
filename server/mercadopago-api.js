@@ -2640,7 +2640,7 @@ app.post('/api/test-email', express.json(), async (req, res) => {
     
     const testCustomerInfo = {
       name: 'Test User',
-      email: 'camm89@hotmail.com', // Use your real email for testing
+      email: 'pagos@casapinon.co', // Use your Zoho email for testing
       phone: '3001234567',
       address: { city: 'Test City' }
     };
@@ -2689,7 +2689,7 @@ app.post('/api/test-success-email', express.json(), async (req, res) => {
     
     const testCustomerInfo = {
       name: 'Test User',
-      email: 'camm89@hotmail.com', // Use your real email for testing
+      email: 'pagos@casapinon.co', // Use your Zoho email for testing
       phone: '3001234567',
       address: { city: 'Test City' }
     };
