@@ -2414,20 +2414,16 @@ app.post('/api/products/initialize', async (req, res) => {
     
     if (process.env.DATABASE_URL) {
       console.log('🗄️  Using PostgreSQL database');
-      await productOperations.initializeWithDefaults(defaultProducts);
-      console.log('✅ Products initialized in database');
+      console.log('✅ Database ready - products will be read from existing data');
     } else {
       console.log('💾 Using in-memory storage');
-      defaultProducts.forEach(product => {
-        productDatabase.set(product.id, product);
-      });
-      console.log('✅ Products initialized in memory');
+      console.log('⚠️  In-memory storage not recommended for production');
     }
     
     res.json({ 
       success: true, 
-      message: 'Products initialized successfully',
-      productsCount: defaultProducts.length
+      message: 'Database ready - products will be read from existing data',
+      databaseMode: process.env.DATABASE_URL ? 'PostgreSQL' : 'In-Memory'
     });
   } catch (error) {
     console.error('Error initializing products:', error);
@@ -2507,8 +2503,6 @@ async function startServer() {
       // Initialize database tables
       await initializeDatabase();
       
-      // Initialize with default products
-      await productOperations.initializeWithDefaults(defaultProducts);
       console.log('✅ Database initialized successfully');
     } else {
       console.log('⚠️  No DATABASE_URL found, using in-memory storage');
@@ -2547,14 +2541,12 @@ async function startServer() {
     
     // Fallback: start server without database
     try {
-      // Initialize with default products in memory
-      defaultProducts.forEach(product => {
-        productDatabase.set(product.id, product);
-      });
+      console.log('⚠️  Database connection failed, but server will start');
       
       app.listen(PORT, () => {
         console.log(`MercadoPago API server running on port ${PORT} (fallback mode)`);
         console.log('⚠️  Using in-memory storage - orders will not persist');
+        console.log('⚠️  Products will not be available without database connection');
       });
     } catch (fallbackError) {
       console.error('Failed to start server even in fallback mode:', fallbackError);
