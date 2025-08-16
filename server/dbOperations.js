@@ -481,6 +481,19 @@ const productOperations = {
   // Initialize with default products
   async initializeWithDefaults(defaultProducts) {
     console.log('🔄 Starting product initialization...');
+    
+    // First, check if products already exist in the database
+    try {
+      const existingProducts = await this.getAll();
+      if (existingProducts.length > 0) {
+        console.log(`📊 Database already contains ${existingProducts.length} products. Skipping initialization.`);
+        console.log('✅ Product initialization completed (skipped - products already exist)');
+        return;
+      }
+    } catch (error) {
+      console.log('⚠️  Could not check existing products, proceeding with initialization...');
+    }
+    
     console.log('📊 Products to create:', defaultProducts.length);
     
     for (const product of defaultProducts) {
