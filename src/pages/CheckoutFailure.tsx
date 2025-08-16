@@ -33,6 +33,12 @@ const CheckoutFailure: React.FC = () => {
         errorCode: isUserCancellation ? 'user_cancelled' : (errorCode || 'unknown'),
         errorMessage: getErrorMessage(isUserCancellation ? 'user_cancelled' : (errorCode || 'unknown'))
       });
+      
+      // If this is a user cancellation, trigger the cancellation email
+      if (isUserCancellation && externalReference) {
+        triggerCancellationEmail(externalReference);
+      }
+      
       setIsLoading(false);
       return;
     }
@@ -95,6 +101,52 @@ const CheckoutFailure: React.FC = () => {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Function to trigger cancellation email when user cancels payment
+  const triggerCancellationEmail = async (orderNumber: string) => {
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'https://casa-pinon-backend-production.up.railway.app';
+      
+      // Get order details to extract customer info
+      const orderResponse = await fetch(`${apiUrl}/api/orders/${orderNumber}`);
+      const orderResult = await orderResponse.json();
+      
+      if (orderResult.success && orderResult.order) {
+        const order = orderResult.order;
+        
+        // Prepare customer info for the email
+        const customerInfo = {
+          name: order.customer?.name || 'Cliente',
+          email: order.customer?.email || '',
+          phone: order.customer?.phone || '',
+          address: order.customer?.address || {}
+        };
+        
+        // Call the cancellation endpoint to send email
+        const emailResponse = await fetch(`${apiUrl}/api/mercadopago/payment-cancelled`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            orderNumber,
+            customerInfo,
+            reason: 'user_cancelled'
+          })
+        });
+        
+        const emailResult = await emailResponse.json();
+        
+        if (emailResult.success) {
+          console.log('✅ Cancellation email triggered successfully');
+        } else {
+          console.error('❌ Failed to trigger cancellation email:', emailResult.error);
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error triggering cancellation email:', error);
     }
   };
 

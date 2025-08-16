@@ -44,6 +44,93 @@ const safeExtract = (data, path, defaultValue = 'N/A') => {
   }
 };
 
+// Enhanced helper function to extract order number with multiple fallbacks
+const extractOrderNumber = (order) => {
+  // Try multiple possible paths for order number
+  const possiblePaths = [
+    'orderNumber',
+    'order_number', 
+    'id',
+    'external_reference'
+  ];
+  
+  for (const path of possiblePaths) {
+    const value = safeExtract(order, path);
+    if (value && value !== 'N/A') {
+      return value;
+    }
+  }
+  
+  // If no order number found, generate a fallback
+  if (order && order.id) {
+    return `CP-${order.id}`;
+  }
+  
+  return `CP-${Date.now()}`;
+};
+
+// Enhanced helper function to extract creation date with multiple fallbacks
+const extractOrderDate = (order) => {
+  // Try multiple possible paths for date
+  const possiblePaths = [
+    'createdAt',
+    'created_at',
+    'created_date',
+    'order_date',
+    'date'
+  ];
+  
+  for (const path of possiblePaths) {
+    const value = safeExtract(order, path);
+    if (value && value !== 'N/A') {
+      return formatDate(value);
+    }
+  }
+  
+  // If no date found, use current date
+  return new Date().toLocaleDateString('es-CO');
+};
+
+// Enhanced helper function to extract items with better fallbacks
+const extractItemsList = (order) => {
+  try {
+    const items = safeExtract(order, 'items');
+    if (items && Array.isArray(items) && items.length > 0) {
+      return items.map(item => {
+        const itemName = safeExtract(item, 'name') || 
+                        safeExtract(item, 'product.name') || 
+                        safeExtract(item, 'product_name') || 
+                        'Producto sin nombre';
+        const itemPrice = safeExtract(item, 'price') || 
+                         safeExtract(item, 'product.price') || 
+                         safeExtract(item, 'product_price') || 
+                         0;
+        const itemQuantity = safeExtract(item, 'quantity') || 1;
+        
+        return `• ${itemName} x${itemQuantity} - ${formatCurrency(itemPrice)}`;
+      }).join('\n');
+    }
+    
+    // Try alternative item paths
+    const alternativePaths = ['products', 'order_items', 'cart_items'];
+    for (const path of alternativePaths) {
+      const altItems = safeExtract(order, path);
+      if (altItems && Array.isArray(altItems) && altItems.length > 0) {
+        return altItems.map(item => {
+          const itemName = safeExtract(item, 'name') || 'Producto sin nombre';
+          const itemPrice = safeExtract(item, 'price') || 0;
+          const itemQuantity = safeExtract(item, 'quantity') || 1;
+          return `• ${itemName} x${itemQuantity} - ${formatCurrency(itemPrice)}`;
+        }).join('\n');
+      }
+    }
+    
+    return 'Productos no especificados';
+  } catch (error) {
+    return 'Error al cargar productos';
+  }
+};
+
 // Helper function to format address
 const formatAddress = (address) => {
   if (!address) return 'N/A';
@@ -100,9 +187,9 @@ const formatCurrency = (amount) => {
 
 // Email templates
 const createOrderConfirmationEmail = (order, customerInfo) => {
-  // Safely extract data with fallbacks
-  const orderNumber = safeExtract(order, 'orderNumber') || safeExtract(order, 'order_number') || 'N/A';
-  const orderDate = formatDate(safeExtract(order, 'createdAt') || safeExtract(order, 'created_at'));
+  // Use enhanced helper functions for better data extraction
+  const orderNumber = extractOrderNumber(order);
+  const orderDate = extractOrderDate(order);
   const paymentStatus = safeExtract(order, 'paymentStatus') || safeExtract(order, 'payment_status') || 'pending';
   const total = formatCurrency(safeExtract(order, 'total'));
   const shippingZone = safeExtract(order, 'shippingZone') || safeExtract(order, 'shipping_zone') || 'No especificada';
@@ -131,20 +218,8 @@ const createOrderConfirmationEmail = (order, customerInfo) => {
     safeExtract(order, 'customer_address')
   );
   
-  // Format items list safely
-  let itemsList = 'Productos no especificados';
-  try {
-    const items = safeExtract(order, 'items');
-    if (items && Array.isArray(items) && items.length > 0) {
-      itemsList = items.map(item => {
-        const itemName = safeExtract(item, 'name') || 'Producto sin nombre';
-        const itemPrice = formatCurrency(safeExtract(item, 'price'));
-        return `• ${itemName} - ${itemPrice}`;
-      }).join('\n');
-    }
-  } catch (error) {
-    itemsList = 'Error al cargar productos';
-  }
+  // Use enhanced helper function for items list
+  const itemsList = extractItemsList(order);
 
   // Create payment status link (will be updated when payment is processed)
   const frontendUrl = 'https://casapi-on-production.up.railway.app';
@@ -263,9 +338,9 @@ const createOrderConfirmationEmail = (order, customerInfo) => {
 };
 
 const createPaymentStatusEmail = (order, customerInfo, paymentDetails, paymentStatus) => {
-  // Safely extract data with fallbacks
-  const orderNumber = safeExtract(order, 'orderNumber') || safeExtract(order, 'order_number') || 'N/A';
-  const orderDate = formatDate(safeExtract(order, 'createdAt') || safeExtract(order, 'created_at'));
+  // Use enhanced helper functions for better data extraction
+  const orderNumber = extractOrderNumber(order);
+  const orderDate = extractOrderDate(order);
   const total = formatCurrency(safeExtract(order, 'total'));
   const shippingZone = safeExtract(order, 'shippingZone') || safeExtract(order, 'shipping_zone') || 'No especificada';
   const estimatedDelivery = safeExtract(order, 'estimatedDelivery') || safeExtract(order, 'estimated_delivery') || 'Por confirmar';
