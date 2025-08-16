@@ -46,33 +46,51 @@ app.use('/api/mercadopago/test', express.json({ limit: '50mb' }));
 // Raw middleware for webhook (signature verification needs raw body)
 // Note: The webhook endpoint will handle its own raw parsing
 
-// File upload configuration
+// File upload configuration - OPTIMIZED for product images
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const uploadPath = path.join(__dirname, '..', 'public', 'images');
-    // Create directory if it doesn't exist
+    // Create organized directory structure
+    const uploadPath = path.join(__dirname, '..', 'public', 'images', 'products');
     if (!fs.existsSync(uploadPath)) {
       fs.mkdirSync(uploadPath, { recursive: true });
     }
     cb(null, uploadPath);
   },
   filename: function (req, file, cb) {
-    // Generate unique filename with timestamp
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const ext = path.extname(file.originalname);
-    cb(null, file.fieldname + '-' + uniqueSuffix + ext);
+    // Generate clean, organized filename
+    const timestamp = Date.now();
+    const randomSuffix = Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname).toLowerCase();
+    
+    // Create filename: product-YYYYMMDD-HHMMSS-RANDOM.ext
+    const date = new Date(timestamp);
+    const dateStr = date.getFullYear().toString() + 
+                   (date.getMonth() + 1).toString().padStart(2, '0') + 
+                   date.getDate().toString().padStart(2, '0');
+    const timeStr = date.getHours().toString().padStart(2, '0') + 
+                   date.getMinutes().toString().padStart(2, '0') + 
+                   date.getSeconds().toString().padStart(2, '0');
+    
+    const filename = `product-${dateStr}-${timeStr}-${randomSuffix}${ext}`;
+    cb(null, filename);
   }
 });
 
 const upload = multer({ 
   storage: storage,
   limits: {
-    fileSize: 50 * 1024 * 1024 // 50MB limit for base64 conversion
+    fileSize: 10 * 1024 * 1024 // 10MB limit - optimized for web performance
   },
   fileFilter: function (req, file, cb) {
-    // Accept only image files
+    // Accept only image files with optimized formats
     if (file.mimetype.startsWith('image/')) {
-      cb(null, true);
+      // Prefer WebP, JPEG, PNG for better performance
+      const allowedTypes = ['image/webp', 'image/jpeg', 'image/jpg', 'image/png'];
+      if (allowedTypes.includes(file.mimetype)) {
+        cb(null, true);
+      } else {
+        cb(new Error('Please use WebP, JPEG, or PNG format for better performance!'), false);
+      }
     } else {
       cb(new Error('Only image files are allowed!'), false);
     }
@@ -2037,7 +2055,7 @@ app.put('/api/orders/:orderId', express.json(), (req, res) => {
   }
 });
 
-// File upload endpoints
+// File upload endpoints - OPTIMIZED for performance
 app.post('/api/upload/image', upload.single('image'), (req, res) => {
   try {
     if (!req.file) {
@@ -2047,25 +2065,29 @@ app.post('/api/upload/image', upload.single('image'), (req, res) => {
       });
     }
 
-    // Read the file and convert to base64
-    const imageBuffer = fs.readFileSync(req.file.path);
-    const base64Image = imageBuffer.toString('base64');
-    const mimeType = req.file.mimetype;
+    // Get the relative path for the frontend (products subdirectory)
+    const relativePath = `/images/products/${req.file.filename}`;
+    const fullPath = path.join(__dirname, '..', 'public', 'images', 'products', req.file.filename);
     
-    // Create data URL for the image
-    const dataUrl = `data:${mimeType};base64,${base64Image}`;
+    // Verify the file was saved
+    if (!fs.existsSync(fullPath)) {
+      return res.status(500).json({
+        success: false,
+        error: 'File was not saved properly'
+      });
+    }
     
-    // Delete the temporary file since we're storing in database
-    fs.unlinkSync(req.file.path);
-    
-    console.log('✅ Image converted to base64:', req.file.filename);
+    console.log('✅ Image uploaded successfully:', req.file.filename);
+    console.log('📁 File saved at:', fullPath);
+    console.log('🌐 Accessible at:', relativePath);
     
     res.json({
       success: true,
       filename: req.file.filename,
-      path: dataUrl, // Return the base64 data URL instead of file path
+      path: relativePath, // Return the URL path instead of base64
       size: req.file.size,
-      mimetype: req.file.mimetype
+      mimetype: req.file.mimetype,
+      message: 'Image uploaded successfully. Use the path property for product images.'
     });
   } catch (error) {
     console.error('❌ Image upload error:', error);

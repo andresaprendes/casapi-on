@@ -22,8 +22,31 @@ const getAllProductImages = () => {
   return productImages;
 };
 
+// Helper function to add new uploaded product image
+const addProductImage = (productId, imagePath) => {
+  productImages[productId] = imagePath;
+  return productImages[productId];
+};
+
+// Helper function to remove product image
+const removeProductImage = (productId) => {
+  if (productImages[productId]) {
+    delete productImages[productId];
+    return true;
+  }
+  return false;
+};
+
+// Helper function to get image count
+const getImageCount = () => {
+  return Object.keys(productImages).length;
+};
+
 module.exports = {
   productImages,
   getProductImage,
-  getAllProductImages
+  getAllProductImages,
+  addProductImage,
+  removeProductImage,
+  getImageCount
 };
