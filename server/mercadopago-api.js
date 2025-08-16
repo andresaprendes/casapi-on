@@ -24,6 +24,8 @@ app.use(cors({
     'http://localhost:3000',
     'https://xn--casapion-i3a.co',
     'https://www.xn--casapion-i3a.co',
+    'https://casapinon.co',
+    'https://www.casapinon.co',
     'https://casapi-on-production.up.railway.app',
     'https://casa-pinon-backend-production.up.railway.app',
     'https://*.railway.app'
