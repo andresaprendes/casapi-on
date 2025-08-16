@@ -2616,9 +2616,60 @@ app.post('/api/mercadopago/payment-cancelled', express.json(), async (req, res) 
 
   } catch (error) {
     console.error('❌ Error processing payment cancellation:', error);
+    console.error('❌ Error stack:', error.stack);
     res.status(500).json({
       success: false,
-      error: 'Internal server error'
+      error: 'Internal server error',
+      details: error.message
+    });
+  }
+});
+
+// Test endpoint to verify email service is working
+app.post('/api/test-email', express.json(), async (req, res) => {
+  try {
+    console.log('🧪 Testing email service...');
+    
+    // Test with minimal data
+    const testOrder = {
+      id: 'test',
+      orderNumber: 'TEST-123',
+      total: 5000,
+      customer: { name: 'Test User', email: 'test@test.com' }
+    };
+    
+    const testCustomerInfo = {
+      name: 'Test User',
+      email: 'camm89@hotmail.com', // Use your real email for testing
+      phone: '3001234567',
+      address: { city: 'Test City' }
+    };
+    
+    const testPayment = {
+      id: 'test-payment',
+      status: 'cancelled',
+      external_reference: 'TEST-123',
+      transaction_amount: 5000
+    };
+    
+    console.log('📧 Attempting to send test email...');
+    const emailResult = await sendPaymentStatusEmail(testOrder, testCustomerInfo, testPayment, 'cancelled');
+    
+    console.log('📧 Email result:', emailResult);
+    
+    res.json({
+      success: true,
+      message: 'Email test completed',
+      emailResult
+    });
+    
+  } catch (error) {
+    console.error('❌ Email test failed:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Email test failed',
+      details: error.message,
+      stack: error.stack
     });
   }
 });
