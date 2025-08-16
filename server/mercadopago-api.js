@@ -89,7 +89,7 @@ const upload = multer({
       // Prefer WebP, JPEG, PNG for better performance
       const allowedTypes = ['image/webp', 'image/jpeg', 'image/jpg', 'image/png'];
       if (allowedTypes.includes(file.mimetype)) {
-        cb(null, true);
+      cb(null, true);
       } else {
         cb(new Error('Please use WebP, JPEG, or PNG format for better performance!'), false);
       }
@@ -2640,7 +2640,7 @@ app.post('/api/test-email', express.json(), async (req, res) => {
     
     const testCustomerInfo = {
       name: 'Test User',
-      email: 'camm89@hotmail.com', // Testing with Hotmail address
+      email: 'pagos@casapinon.co', // Use your Zoho email for testing
       phone: '3001234567',
       address: { city: 'Test City' }
     };
