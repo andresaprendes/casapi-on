@@ -19,12 +19,36 @@ const CheckoutFailure: React.FC = () => {
   const paymentId = searchParams.get('payment_id');
   const externalReference = searchParams.get('external_reference');
   const errorCode = searchParams.get('error');
+  const collectionStatus = searchParams.get('collection_status');
+  const status = searchParams.get('status');
 
   useEffect(() => {
     getFailureDetails();
   }, []);
 
   const getFailureDetails = async () => {
+    // IMPROVED: Better detection of user cancellations
+    // Check if this is a user cancellation based on URL parameters
+    const isUserCancellation = !paymentId && 
+                              (collectionStatus === 'null' || !collectionStatus) && 
+                              (status === 'null' || !status) && 
+                              externalReference;
+    
+    if (isUserCancellation) {
+      console.log('🚫 Detected user cancellation from URL parameters for order:', externalReference);
+      
+      setFailureDetails({
+        errorCode: 'user_cancelled',
+        errorMessage: getErrorMessage('user_cancelled'),
+        externalReference: externalReference
+      });
+      
+      // Trigger cancellation email immediately
+      triggerCancellationEmail(externalReference);
+      setIsLoading(false);
+      return;
+    }
+    
     if (!paymentId && !externalReference) {
       // Check if this is a user cancellation (no payment attempt made)
       const isUserCancellation = errorCode === 'unknown' || !errorCode;
