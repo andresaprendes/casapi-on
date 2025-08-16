@@ -1,12 +1,14 @@
 const nodemailer = require('nodemailer');
 
-// Email configuration - optimized for speed
+// Email configuration - optimized for Zoho
 const createTransporter = () => {
   return nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.zoho.com',
+    port: 587,
+    secure: false, // true for 465, false for other ports
     auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASSWORD // Use app password for Gmail
+      user: process.env.EMAIL_USER || 'pagos@casapinon.co',
+      pass: process.env.EMAIL_PASSWORD
     },
     // Optimize for speed
     pool: true,
@@ -546,7 +548,7 @@ const createPaymentStatusEmail = (order, customerInfo, paymentDetails, paymentSt
           </p>
           <p style="color: #856404; margin-bottom: 0;">
             <strong>WhatsApp:</strong> +57 300 123 4567<br>
-            <strong>Email:</strong> info@casapinon.com
+            <strong>Email:</strong> info@casapinon.co
           </p>
         </div>
 
@@ -583,7 +585,7 @@ const sendOrderConfirmation = async (order, customerInfo) => {
     const emailContent = createOrderConfirmationEmail(order, customerInfo);
 
     const mailOptions = {
-      from: process.env.EMAIL_USER,
+      from: process.env.EMAIL_USER || 'pagos@casapinon.co',
       to: customerInfo.email,
       subject: emailContent.subject,
       html: emailContent.html
@@ -609,7 +611,7 @@ const sendPaymentStatusEmail = async (order, customerInfo, paymentDetails, payme
     const emailContent = createPaymentStatusEmail(order, customerInfo, paymentDetails, paymentStatus);
 
     const mailOptions = {
-      from: process.env.EMAIL_USER,
+      from: process.env.EMAIL_USER || 'pagos@casapinon.co',
       to: customerInfo.email,
       subject: emailContent.subject,
       html: emailContent.html

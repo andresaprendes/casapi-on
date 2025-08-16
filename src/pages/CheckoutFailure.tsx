@@ -438,7 +438,7 @@ const CheckoutFailure: React.FC = () => {
               <Mail className="w-5 h-5 text-brown-600" />
               <div>
                 <p className="font-medium text-brown-900">Email</p>
-                <p className="text-sm text-brown-600">info@casapinon.com</p>
+                <p className="text-sm text-brown-600">info@casapinon.co</p>
               </div>
             </div>
           </div>
