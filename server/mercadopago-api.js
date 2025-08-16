@@ -2674,4 +2674,57 @@ app.post('/api/test-email', express.json(), async (req, res) => {
   }
 });
 
+// Test endpoint to verify successful payment email
+app.post('/api/test-success-email', express.json(), async (req, res) => {
+  try {
+    console.log('🧪 Testing successful payment email...');
+    
+    // Test with minimal data for successful payment
+    const testOrder = {
+      id: 'test-success',
+      orderNumber: 'TEST-SUCCESS-123',
+      total: 5000,
+      customer: { name: 'Test User', email: 'test@test.com' }
+    };
+    
+    const testCustomerInfo = {
+      name: 'Test User',
+      email: 'camm89@hotmail.com', // Use your real email for testing
+      phone: '3001234567',
+      address: { city: 'Test City' }
+    };
+    
+    const testPayment = {
+      id: 'test-success-payment',
+      status: 'approved',
+      external_reference: 'TEST-SUCCESS-123',
+      transaction_amount: 5000,
+      payment_method: {
+        type: 'credit_card',
+        id: 'visa'
+      }
+    };
+    
+    console.log('📧 Attempting to send successful payment email...');
+    const emailResult = await sendPaymentStatusEmail(testOrder, testCustomerInfo, testPayment, 'approved');
+    
+    console.log('📧 Success email result:', emailResult);
+    
+    res.json({
+      success: true,
+      message: 'Successful payment email test completed',
+      emailResult
+    });
+    
+  } catch (error) {
+    console.error('❌ Success email test failed:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Success email test failed',
+      details: error.message,
+      stack: error.stack
+    });
+  }
+});
+
 module.exports = app;
