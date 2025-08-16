@@ -129,6 +129,40 @@ const Checkout = () => {
     }
 
     try {
+      // Validate and format customer data
+      if (!customerData.firstName || !customerData.lastName || !customerData.email) {
+        console.error('Missing required customer information')
+        return {
+          success: false,
+          orderNumber: null
+        }
+      }
+
+      // Validate items data
+      const validatedItems = items.map(item => {
+        if (!item.product || !item.product.name || !item.product.price) {
+          console.error('Invalid item data:', item)
+          return null
+        }
+        return {
+          product: {
+            id: item.product.id || 'unknown',
+            name: item.product.name || 'Producto sin nombre',
+            price: item.product.price || 0
+          },
+          quantity: item.quantity || 1,
+          customizations: item.customizations || {}
+        }
+      }).filter(Boolean) // Remove any null items
+
+      if (validatedItems.length === 0) {
+        console.error('No valid items found for order')
+        return {
+          success: false,
+          orderNumber: null
+        }
+      }
+
       // Create order in database
       const apiUrl = import.meta.env.VITE_API_URL || 'https://casa-pinon-backend-production.up.railway.app'
       
@@ -136,34 +170,27 @@ const Checkout = () => {
         customer: {
           name: `${customerData.firstName} ${customerData.lastName}`,
           email: customerData.email,
-          phone: customerData.phone,
+          phone: customerData.phone || 'No especificado',
           address: {
-            street: customerData.address,
-            city: customerData.city,
-            state: customerData.state,
-            zipCode: customerData.zipCode || '',
+            street: customerData.address || 'No especificada',
+            city: customerData.city || 'No especificada',
+            state: customerData.state || 'No especificada',
+            zipCode: customerData.zipCode || 'No especificado',
             country: 'Colombia'
           }
         },
-        items: items.map(item => ({
-          product: {
-            id: item.product.id,
-            name: item.product.name,
-            price: item.product.price
-          },
-          quantity: item.quantity,
-          customizations: item.customizations
-        })),
-        subtotal,
+        items: validatedItems,
+        subtotal: subtotal || 0,
         shipping: 0, // No shipping cost
         tax: 0, // IVA included in product prices
-        total,
-        shippingZone: customerData.shippingZone,
-        paymentMethod: paymentInfo?.method || 'unknown',
-        notes: customerData.notes || ''
+        total: total || 0,
+        shippingZone: customerData.shippingZone || 'No especificada',
+        paymentMethod: paymentInfo?.method || 'mercadopago',
+        notes: customerData.notes || '',
+        estimatedDelivery: '15-20 días hábiles' // Default delivery time
       }
 
-      console.log('Creating order:', orderData)
+      console.log('Creating order with validated data:', orderData)
       console.log('🔍 API URL:', apiUrl)
       
       const response = await fetch(`${apiUrl}/api/orders`, {

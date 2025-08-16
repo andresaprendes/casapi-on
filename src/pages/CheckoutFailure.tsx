@@ -26,9 +26,12 @@ const CheckoutFailure: React.FC = () => {
 
   const getFailureDetails = async () => {
     if (!paymentId && !externalReference) {
+      // Check if this is a user cancellation (no payment attempt made)
+      const isUserCancellation = errorCode === 'unknown' || !errorCode;
+      
       setFailureDetails({
-        errorCode: errorCode || 'unknown',
-        errorMessage: 'No se encontró información del pago'
+        errorCode: isUserCancellation ? 'user_cancelled' : (errorCode || 'unknown'),
+        errorMessage: getErrorMessage(isUserCancellation ? 'user_cancelled' : (errorCode || 'unknown'))
       });
       setIsLoading(false);
       return;
@@ -46,29 +49,49 @@ const CheckoutFailure: React.FC = () => {
 
       if (result.success) {
         const orderData = result.order || result.payment;
+        
+        // Determine if this was a user cancellation
+        let finalErrorCode = errorCode || orderData?.error_code || 'payment_failed';
+        let finalErrorMessage = getErrorMessage(finalErrorCode);
+        
+        // If no specific error code and no payment ID, likely a user cancellation
+        if (!paymentId && !orderData?.payment_id && !errorCode) {
+          finalErrorCode = 'return_to_site';
+          finalErrorMessage = getErrorMessage('return_to_site');
+        }
+        
         setFailureDetails({
           paymentId: paymentId || orderData?.payment_id,
           externalReference: externalReference || orderData?.external_reference,
-          errorCode: errorCode || orderData?.error_code || 'payment_failed',
-          errorMessage: getErrorMessage(errorCode || orderData?.error_code || 'unknown'),
+          errorCode: finalErrorCode,
+          errorMessage: finalErrorMessage,
           amount: orderData?.amount || orderData?.total,
           orderNumber: orderData?.orderNumber || orderData?.external_reference
         });
       } else {
+        // If API call fails, assume user cancellation if no payment ID
+        const isUserCancellation = !paymentId;
+        const finalErrorCode = isUserCancellation ? 'return_to_site' : 'verification_failed';
+        
         setFailureDetails({
           paymentId: paymentId || undefined,
           externalReference: externalReference || undefined,
-          errorCode: errorCode || 'verification_failed',
-          errorMessage: 'No se pudo verificar los detalles del pago'
+          errorCode: finalErrorCode,
+          errorMessage: getErrorMessage(finalErrorCode)
         });
       }
     } catch (error) {
       console.error('Error getting failure details:', error);
+      
+      // If connection fails, assume user cancellation if no payment ID
+      const isUserCancellation = !paymentId;
+      const finalErrorCode = isUserCancellation ? 'return_to_site' : 'connection_error';
+      
       setFailureDetails({
         paymentId: paymentId || undefined,
         externalReference: externalReference || undefined,
-        errorCode: errorCode || 'connection_error',
-        errorMessage: 'Error de conexión al verificar el pago'
+        errorCode: finalErrorCode,
+        errorMessage: getErrorMessage(finalErrorCode)
       });
     } finally {
       setIsLoading(false);
@@ -102,7 +125,11 @@ const CheckoutFailure: React.FC = () => {
       'payment_pending': 'El pago está pendiente',
       'verification_failed': 'No se pudo verificar el pago',
       'connection_error': 'Error de conexión',
-      'unknown': 'Error desconocido'
+      'unknown': 'Error desconocido',
+      // Add specific codes for user cancellations
+      'user_cancelled': 'Has cancelado el proceso de pago',
+      'return_to_site': 'Has regresado al sitio sin completar el pago',
+      'abandoned_payment': 'El pago fue abandonado'
     };
 
     return errorMessages[code] || 'El pago no pudo ser procesado';
@@ -133,13 +160,31 @@ const CheckoutFailure: React.FC = () => {
       <div className="max-w-2xl mx-auto">
         {/* Failure Header */}
         <div className="text-center mb-8">
-          <XCircle className="w-20 h-20 text-red-500 mx-auto mb-6" />
-          <h1 className="text-3xl font-bold text-brown-900 mb-4">
-            Pago No Completado
-          </h1>
-          <p className="text-lg text-brown-700">
-            {failureDetails?.errorMessage || 'El pago no pudo ser procesado'}
-          </p>
+          {failureDetails?.errorCode === 'user_cancelled' || failureDetails?.errorCode === 'return_to_site' ? (
+            // User cancellation - different styling
+            <>
+              <div className="w-20 h-20 bg-gray-500 text-white rounded-full flex items-center justify-center mx-auto mb-6">
+                <span className="text-3xl">🚫</span>
+              </div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-4">
+                Pago Cancelado
+              </h1>
+              <p className="text-lg text-gray-700">
+                {failureDetails?.errorMessage || 'Has cancelado el proceso de pago'}
+              </p>
+            </>
+          ) : (
+            // Genuine payment failure - original styling
+            <>
+              <XCircle className="w-20 h-20 text-red-500 mx-auto mb-6" />
+              <h1 className="text-3xl font-bold text-brown-900 mb-4">
+                Pago No Completado
+              </h1>
+              <p className="text-lg text-brown-700">
+                {failureDetails?.errorMessage || 'El pago no pudo ser procesado'}
+              </p>
+            </>
+          )}
         </div>
 
         {/* Error Details Card */}
@@ -178,48 +223,122 @@ const CheckoutFailure: React.FC = () => {
         </div>
 
         {/* Common Solutions */}
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-8">
-          <h3 className="text-lg font-semibold text-yellow-900 mb-4 flex items-center">
-            <AlertTriangle className="w-5 h-5 mr-2" />
-            Posibles Soluciones
+        <div className={`border rounded-lg p-6 mb-8 ${
+          failureDetails?.errorCode === 'user_cancelled' || failureDetails?.errorCode === 'return_to_site'
+            ? 'bg-blue-50 border-blue-200' // Blue for cancellations
+            : 'bg-yellow-50 border-yellow-200' // Yellow for failures
+        }`}>
+          <h3 className={`text-lg font-semibold mb-4 flex items-center ${
+            failureDetails?.errorCode === 'user_cancelled' || failureDetails?.errorCode === 'return_to_site'
+              ? 'text-blue-900' // Blue for cancellations
+              : 'text-yellow-900' // Yellow for failures
+          }`}>
+            {failureDetails?.errorCode === 'user_cancelled' || failureDetails?.errorCode === 'return_to_site' ? (
+              <span className="w-5 h-5 mr-2">💡</span>
+            ) : (
+              <AlertTriangle className="w-5 h-5 mr-2" />
+            )}
+            {failureDetails?.errorCode === 'user_cancelled' || failureDetails?.errorCode === 'return_to_site' 
+              ? '¿Qué puedes hacer?' 
+              : 'Posibles Soluciones'
+            }
           </h3>
-          <div className="space-y-3">
-            <div className="flex items-start space-x-3">
-              <div className="w-6 h-6 bg-yellow-500 text-white rounded-full flex items-center justify-center text-sm font-bold mt-0.5">
-                1
+          
+          {failureDetails?.errorCode === 'user_cancelled' || failureDetails?.errorCode === 'return_to_site' ? (
+            // Solutions for cancelled payments
+            <div className="space-y-3">
+              <div className="flex items-start space-x-3">
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold mt-0.5 ${
+                  failureDetails?.errorCode === 'user_cancelled' || failureDetails?.errorCode === 'return_to_site'
+                    ? 'bg-blue-500 text-white' // Blue for cancellations
+                    : 'bg-yellow-500 text-white' // Yellow for failures
+                }`}>
+                  1
+                </div>
+                <div>
+                  <p className={`font-medium ${
+                    failureDetails?.errorCode === 'user_cancelled' || failureDetails?.errorCode === 'return_to_site'
+                      ? 'text-blue-900' // Blue for cancellations
+                      : 'text-yellow-900' // Yellow for failures
+                  }`}>
+                    Continuar comprando
+                  </p>
+                  <p className={`text-sm ${
+                    failureDetails?.errorCode === 'user_cancelled' || failureDetails?.errorCode === 'return_to_site'
+                      ? 'text-blue-700' // Blue for cancellations
+                      : 'text-yellow-700' // Yellow for failures
+                  }`}>
+                    Tu carrito sigue disponible. Puedes completar la compra cuando estés listo.
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="font-medium text-yellow-900">Verifica los datos</p>
-                <p className="text-sm text-yellow-700">
-                  Asegúrate de que la información de tu tarjeta o cuenta bancaria sea correcta
-                </p>
+              
+              <div className="flex items-start space-x-3">
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold mt-0.5 ${
+                  failureDetails?.errorCode === 'user_cancelled' || failureDetails?.errorCode === 'return_to_site'
+                    ? 'bg-blue-500 text-white' // Blue for cancellations
+                    : 'bg-yellow-500 text-white' // Yellow for failures
+                }`}>
+                  2
+                </div>
+                <div>
+                  <p className={`font-medium ${
+                    failureDetails?.errorCode === 'user_cancelled' || failureDetails?.errorCode === 'return_to_site'
+                      ? 'text-blue-900' // Blue for cancellations
+                      : 'text-yellow-900' // Yellow for failures
+                  }`}>
+                    Intentar nuevamente
+                  </p>
+                  <p className={`text-sm ${
+                    failureDetails?.errorCode === 'user_cancelled' || failureDetails?.errorCode === 'return_to_site'
+                      ? 'text-blue-700' // Blue for cancellations
+                      : 'text-yellow-700' // Yellow for failures
+                  }`}>
+                    Si cambias de opinión, puedes intentar el pago nuevamente.
+                  </p>
+                </div>
               </div>
             </div>
-            
-            <div className="flex items-start space-x-3">
-              <div className="w-6 h-6 bg-yellow-500 text-white rounded-full flex items-center justify-center text-sm font-bold mt-0.5">
-                2
+          ) : (
+            // Solutions for payment failures (original content)
+            <div className="space-y-3">
+              <div className="flex items-start space-x-3">
+                <div className="w-6 h-6 bg-yellow-500 text-white rounded-full flex items-center justify-center text-sm font-bold mt-0.5">
+                  1
+                </div>
+                <div>
+                  <p className="font-medium text-yellow-900">Verifica los datos</p>
+                  <p className="text-sm text-yellow-700">
+                    Asegúrate de que la información de tu tarjeta o cuenta bancaria sea correcta
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="font-medium text-yellow-900">Saldo suficiente</p>
-                <p className="text-sm text-yellow-700">
-                  Verifica que tengas saldo suficiente en tu cuenta o tarjeta
-                </p>
+              
+              <div className="flex items-start space-x-3">
+                <div className="w-6 h-6 bg-yellow-500 text-white rounded-full flex items-center justify-center text-sm font-bold mt-0.5">
+                  2
+                </div>
+                <div>
+                  <p className="font-medium text-yellow-900">Saldo suficiente</p>
+                  <p className="text-sm text-yellow-700">
+                    Verifica que tengas saldo suficiente en tu cuenta o tarjeta
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-3">
+                <div className="w-6 h-6 bg-yellow-500 text-white rounded-full flex items-center justify-center text-sm font-bold mt-0.5">
+                  3
+                </div>
+                <div>
+                  <p className="font-medium text-yellow-900">Método alternativo</p>
+                  <p className="text-sm text-yellow-700">
+                    Intenta con otro método de pago disponible
+                  </p>
+                </div>
               </div>
             </div>
-            
-            <div className="flex items-start space-x-3">
-              <div className="w-6 h-6 bg-yellow-500 text-white rounded-full flex items-center justify-center text-sm font-bold mt-0.5">
-                3
-              </div>
-              <div>
-                <p className="font-medium text-yellow-900">Método alternativo</p>
-                <p className="text-sm text-yellow-700">
-                  Intenta con otro método de pago disponible
-                </p>
-              </div>
-            </div>
-          </div>
+          )}
         </div>
 
         {/* Contact Information */}
