@@ -89,7 +89,7 @@ const HeroSection = () => {
             <div className="bg-cream-200 rounded-lg p-6 shadow-2xl overflow-hidden">
               <div className="aspect-square rounded-lg overflow-hidden">
                 <img
-                  src="/images/image-1755135305383-454296344.png"
+                  src="/images/image-1755135305383-454296344.webp"
                   alt="Mesa de Comedor Premium de Madera Real - Casa Piñón Ebanistería"
                   className="w-full h-full object-cover object-center"
                 />

@@ -2,7 +2,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 
 /**
  * Constructs the full image URL for product images
- * @param imagePath - The image path from the database (e.g., "/images/products/filename.png")
+ * @param imagePath - The image path from the database (e.g., "/images/filename.webp")
  * @returns The full URL to the image
  */
 export const getImageUrl = (imagePath: string): string => {
@@ -18,8 +18,18 @@ export const getImageUrl = (imagePath: string): string => {
     return imagePath
   }
   
-  // Otherwise, prepend the API URL
-  return `${API_URL}${imagePath}`
+  // If it's a relative path starting with /images/, it's a frontend public image
+  if (imagePath.startsWith('/images/')) {
+    return imagePath // Return as is for frontend public images
+  }
+  
+  // If it's a product image from the backend (starts with /images/products/), prepend API URL
+  if (imagePath.startsWith('/images/products/')) {
+    return `${API_URL}${imagePath}`
+  }
+  
+  // For any other relative paths, assume they're frontend public images
+  return imagePath
 }
 
 /**
