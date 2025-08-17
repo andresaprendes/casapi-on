@@ -22,6 +22,11 @@ pool.on('error', (err) => {
 const initializeDatabase = async () => {
   try {
     console.log('🔧 Initializing database tables...');
+    console.log('🔍 Testing database connection first...');
+    
+    // Test connection first
+    const testResult = await pool.query('SELECT NOW()');
+    console.log('✅ Database connection test successful:', testResult.rows[0]);
     
     // Drop and recreate orders table to fix schema issues
     // Create orders table if it doesn't exist
@@ -104,6 +109,13 @@ const initializeDatabase = async () => {
       // Column might already exist
     }
     
+    // Add wood_type column
+    try {
+      await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS wood_type VARCHAR(100)`);
+    } catch (error) {
+      // Column might already exist
+    }
+    
     // Migrate in_stock to made_to_order
     try {
       await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS made_to_order BOOLEAN DEFAULT TRUE`);
@@ -156,6 +168,16 @@ const initializeDatabase = async () => {
         display_order INTEGER DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create backup_log table for tracking backups and syncs
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS backup_log (
+        id SERIAL PRIMARY KEY,
+        type VARCHAR(50) NOT NULL,
+        filename VARCHAR(255),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
 

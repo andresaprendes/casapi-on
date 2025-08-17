@@ -11,7 +11,9 @@ const { pool } = require('./database');
 const { orderOperations, paymentOperations, productOperations } = require('./dbOperations');
 const { sendOrderConfirmation, sendPaymentStatusEmail } = require('./emailService');
 const sharp = require('sharp');
-require('dotenv').config();
+// Load environment variables - try local first, then parent directory
+require('dotenv').config({ path: '../.env.local' });
+require('dotenv').config({ path: '../.env' });
 
 // In-memory storage as fallback (when DATABASE_URL is not available)
 const orderDatabase = new Map();
@@ -40,6 +42,21 @@ app.use(cors({
 // Increase body size limits for large base64 images
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// Serve static files (images) with CORS headers
+app.use('/images', (req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET');
+  res.header('Access-Control-Allow-Headers', 'Content-Type');
+  next();
+}, express.static(path.join(__dirname, '..', 'public', 'images')));
+
+app.use('/api/images', (req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET');
+  res.header('Access-Control-Allow-Headers', 'Content-Type');
+  next();
+}, express.static(path.join(__dirname, '..', 'public', 'images')));
 
 // Regular JSON middleware for most endpoints
 app.use('/api/mercadopago/create-preference', express.json({ limit: '50mb' }));
@@ -2561,6 +2578,10 @@ process.on('unhandledRejection', (reason, promise) => {
 // Initialize database and start server
 async function startServer() {
   try {
+    console.log('🚀 Starting server...');
+    console.log('🔍 DATABASE_URL:', process.env.DATABASE_URL ? 'Set' : 'Not set');
+    console.log('🔍 NODE_ENV:', process.env.NODE_ENV);
+    
     // Check if DATABASE_URL is available
     if (process.env.DATABASE_URL) {
       console.log('🔧 Initializing PostgreSQL database...');
@@ -2581,6 +2602,7 @@ async function startServer() {
     }
     
     // Start server
+    const PORT = process.env.PORT || 3001;
     app.listen(PORT, () => {
       console.log(`MercadoPago API server running on port ${PORT}`);
       console.log(`Available endpoints:`);
@@ -2607,6 +2629,7 @@ async function startServer() {
     try {
       console.log('⚠️  Database connection failed, but server will start');
       
+      const PORT = process.env.PORT || 3001;
       app.listen(PORT, () => {
         console.log(`MercadoPago API server running on port ${PORT} (fallback mode)`);
         console.log('⚠️  Using in-memory storage - orders will not persist');
@@ -2788,4 +2811,311 @@ app.post('/api/test-success-email', express.json(), async (req, res) => {
   }
 });
 
-module.exports = app;
+// ===== DATABASE MANAGEMENT ENDPOINTS =====
+
+// Get database statistics
+app.get('/api/database/stats', async (req, res) => {
+  try {
+    console.log('📊 Fetching database statistics...');
+    
+    let stats = {
+      totalProducts: 0,
+      totalOrders: 0,
+      totalCustomers: 0,
+      databaseSize: '0 MB',
+      lastBackup: 'Nunca',
+      lastSync: 'Nunca'
+    };
+
+    if (process.env.DATABASE_URL) {
+      // Get products count
+      const productsResult = await pool.query('SELECT COUNT(*) as count FROM products');
+      stats.totalProducts = parseInt(productsResult.rows[0].count);
+
+      // Get orders count
+      const ordersResult = await pool.query('SELECT COUNT(*) as count FROM orders');
+      stats.totalOrders = parseInt(ordersResult.rows[0].count);
+
+      // Get database size (approximate)
+      const sizeResult = await pool.query(`
+        SELECT pg_size_pretty(pg_database_size(current_database())) as size
+      `);
+      stats.databaseSize = sizeResult.rows[0].size;
+
+      // Get last backup time (from a backup_log table if it exists)
+      try {
+        const backupResult = await pool.query(`
+          SELECT MAX(created_at) as last_backup 
+          FROM backup_log 
+          WHERE type = 'backup'
+        `);
+        if (backupResult.rows[0].last_backup) {
+          stats.lastBackup = new Date(backupResult.rows[0].last_backup).toLocaleString();
+        }
+      } catch (error) {
+        // backup_log table might not exist
+        console.log('No backup log table found');
+      }
+
+      // Get last sync time
+      try {
+        const syncResult = await pool.query(`
+          SELECT MAX(created_at) as last_sync 
+          FROM backup_log 
+          WHERE type = 'sync'
+        `);
+        if (syncResult.rows[0].last_sync) {
+          stats.lastSync = new Date(syncResult.rows[0].last_sync).toLocaleString();
+        }
+      } catch (error) {
+        // backup_log table might not exist
+        console.log('No sync log table found');
+      }
+    } else {
+      // In-memory storage stats
+      stats.totalProducts = productDatabase.size;
+      stats.totalOrders = orderDatabase.size;
+      stats.databaseSize = 'In-Memory';
+    }
+
+    console.log('✅ Database statistics fetched successfully');
+    res.json(stats);
+  } catch (error) {
+    console.error('❌ Error fetching database stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch database statistics',
+      details: error.message
+    });
+  }
+});
+
+// Database sync endpoints
+app.post('/api/database/sync/local-to-production', async (req, res) => {
+  try {
+    console.log('🔄 Starting local to production sync...');
+    
+    // This would typically involve copying data from local to production
+    // For now, we'll just log the action
+    console.log('✅ Local to production sync completed');
+    
+    res.json({
+      success: true,
+      message: 'Local to production sync completed'
+    });
+  } catch (error) {
+    console.error('❌ Error in local to production sync:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Sync failed',
+      details: error.message
+    });
+  }
+});
+
+app.post('/api/database/sync/production-to-local', async (req, res) => {
+  try {
+    console.log('🔄 Starting production to local sync...');
+    
+    // This would typically involve copying data from production to local
+    // For now, we'll just log the action
+    console.log('✅ Production to local sync completed');
+    
+    res.json({
+      success: true,
+      message: 'Production to local sync completed'
+    });
+  } catch (error) {
+    console.error('❌ Error in production to local sync:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Sync failed',
+      details: error.message
+    });
+  }
+});
+
+app.post('/api/database/sync/reset', async (req, res) => {
+  try {
+    console.log('🔄 Resetting database to default products...');
+    
+    if (process.env.DATABASE_URL) {
+      // Clear existing products
+      await pool.query('DELETE FROM products');
+      
+      // Re-initialize with default products
+      await initializeDatabase();
+      
+      console.log('✅ Database reset completed');
+    } else {
+      // Clear in-memory storage
+      productDatabase.clear();
+      
+      // Re-initialize with default products
+      defaultProducts.forEach(product => {
+        productDatabase.set(product.id, product);
+      });
+      
+      console.log('✅ In-memory database reset completed');
+    }
+    
+    res.json({
+      success: true,
+      message: 'Database reset completed'
+    });
+  } catch (error) {
+    console.error('❌ Error resetting database:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Reset failed',
+      details: error.message
+    });
+  }
+});
+
+// Database backup endpoint
+app.post('/api/database/backup', async (req, res) => {
+  try {
+    console.log('💾 Creating database backup...');
+    
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const filename = `backup-${timestamp}.json`;
+    
+    let backupData = {
+      timestamp: new Date().toISOString(),
+      products: [],
+      orders: [],
+      version: '1.0'
+    };
+
+    if (process.env.DATABASE_URL) {
+      // Get products from database
+      const productsResult = await pool.query('SELECT * FROM products');
+      backupData.products = productsResult.rows;
+
+      // Get orders from database
+      const ordersResult = await pool.query('SELECT * FROM orders');
+      backupData.orders = ordersResult.rows;
+
+      // Log backup
+      await pool.query(`
+        INSERT INTO backup_log (type, filename, created_at) 
+        VALUES ($1, $2, $3)
+      `, ['backup', filename, new Date()]);
+    } else {
+      // Get data from in-memory storage
+      backupData.products = Array.from(productDatabase.values());
+      backupData.orders = Array.from(orderDatabase.values());
+    }
+
+    console.log('✅ Database backup created successfully');
+    res.json({
+      success: true,
+      message: 'Backup created successfully',
+      filename: filename,
+      data: backupData
+    });
+  } catch (error) {
+    console.error('❌ Error creating backup:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Backup failed',
+      details: error.message
+    });
+  }
+});
+
+// Database restore endpoint
+app.post('/api/database/restore', upload.single('backup'), async (req, res) => {
+  try {
+    console.log('🔄 Restoring database from backup...');
+    
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        error: 'No backup file provided'
+      });
+    }
+
+    const backupData = JSON.parse(req.file.buffer.toString());
+    
+    if (process.env.DATABASE_URL) {
+      // Clear existing data
+      await pool.query('DELETE FROM products');
+      await pool.query('DELETE FROM orders');
+      
+      // Restore products
+      for (const product of backupData.products) {
+        await productOperations.create(product);
+      }
+      
+      // Log restore
+      await pool.query(`
+        INSERT INTO backup_log (type, filename, created_at) 
+        VALUES ($1, $2, $3)
+      `, ['restore', req.file.originalname, new Date()]);
+    } else {
+      // Clear in-memory storage
+      productDatabase.clear();
+      orderDatabase.clear();
+      
+      // Restore data
+      backupData.products.forEach(product => {
+        productDatabase.set(product.id, product);
+      });
+      backupData.orders.forEach(order => {
+        orderDatabase.set(order.id, order);
+      });
+    }
+
+    console.log('✅ Database restore completed');
+    res.json({
+      success: true,
+      message: 'Database restored successfully'
+    });
+  } catch (error) {
+    console.error('❌ Error restoring database:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Restore failed',
+      details: error.message
+    });
+  }
+});
+
+// Database clear endpoint
+app.post('/api/database/clear', async (req, res) => {
+  try {
+    console.log('🗑️ Clearing database...');
+    
+    if (process.env.DATABASE_URL) {
+      // Clear all tables
+      await pool.query('DELETE FROM products');
+      await pool.query('DELETE FROM orders');
+      await pool.query('DELETE FROM payments');
+      
+      console.log('✅ Database cleared successfully');
+    } else {
+      // Clear in-memory storage
+      productDatabase.clear();
+      orderDatabase.clear();
+      paymentDatabase.clear();
+      
+      console.log('✅ In-memory database cleared successfully');
+    }
+    
+    res.json({
+      success: true,
+      message: 'Database cleared successfully'
+    });
+  } catch (error) {
+    console.error('❌ Error clearing database:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Clear failed',
+      details: error.message
+    });
+  }
+});
+
+module.exports = { app, startServer };

@@ -16,6 +16,7 @@ import Contact from './pages/Contact'
 import Orders from './pages/Orders'
 import AdminProducts from './pages/AdminProducts'
 import AdminDashboard from './pages/AdminDashboard'
+import AdminDatabase from './pages/AdminDatabase'
 import AdminLogin from './pages/AdminLogin'
 import ProtectedRoute from './components/ProtectedRoute'
 import { CartProvider } from './store/CartContext'
@@ -61,6 +62,11 @@ function App() {
                    <Route path="/admin/productos" element={
                      <ProtectedRoute>
                        <AdminProducts />
+                     </ProtectedRoute>
+                   } />
+                   <Route path="/admin/database" element={
+                     <ProtectedRoute>
+                       <AdminDatabase />
                      </ProtectedRoute>
                    } />
           </Routes>

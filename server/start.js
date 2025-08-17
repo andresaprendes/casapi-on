@@ -1,6 +1,14 @@
 #!/usr/bin/env node
 
-require('dotenv').config();
+// Load environment variables - try local first, then production
+require('dotenv').config({ path: '../.env.local' });
+require('dotenv').config({ path: '../.env' });
+
+// Debug environment variables
+console.log('🔍 Environment check:');
+console.log('🔍 DATABASE_URL:', process.env.DATABASE_URL ? 'Set' : 'Not set');
+console.log('🔍 NODE_ENV:', process.env.NODE_ENV);
+console.log('🔍 PORT:', process.env.PORT);
 
 const app = require('./mercadopago-api');
 
@@ -17,9 +25,8 @@ process.on('SIGINT', () => {
   process.exit(0);
 });
 
-// Start server
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`📊 Database: ${process.env.DATABASE_URL ? 'Connected' : 'Using in-memory storage'}`);
-});
+// Import the startServer function from mercadopago-api
+const { startServer } = require('./mercadopago-api');
+
+// Start server with proper initialization
+startServer();

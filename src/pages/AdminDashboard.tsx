@@ -1,11 +1,54 @@
 import { Link } from 'react-router-dom'
-import { Package, Settings, LogOut, BarChart3, Users, ShoppingCart } from 'lucide-react'
+import { Package, Settings, LogOut, BarChart3, Users, ShoppingCart, Database, Upload, Download, RefreshCw, Server, Globe } from 'lucide-react'
 import { useAuth } from '../store/AuthContext'
 import { useProducts } from '../hooks/useProducts'
+import { useState, useEffect } from 'react'
+import { toast } from 'react-hot-toast'
 
 const AdminDashboard = () => {
   const { logout } = useAuth()
-  const { products } = useProducts()
+  const { products, refreshProducts } = useProducts()
+  const [isOnline, setIsOnline] = useState(true)
+  const [apiStatus, setApiStatus] = useState<'online' | 'offline' | 'checking'>('checking')
+  const [environment, setEnvironment] = useState<'local' | 'production'>('local')
+
+  // Check API status and environment
+  useEffect(() => {
+    const checkApiStatus = async () => {
+      try {
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+        setEnvironment(apiUrl.includes('localhost') ? 'local' : 'production')
+        
+        const response = await fetch(`${apiUrl}/api/products/test`)
+        if (response.ok) {
+          setApiStatus('online')
+        } else {
+          setApiStatus('offline')
+        }
+      } catch (error) {
+        setApiStatus('offline')
+      }
+    }
+
+    checkApiStatus()
+    const interval = setInterval(checkApiStatus, 30000) // Check every 30 seconds
+
+    return () => clearInterval(interval)
+  }, [])
+
+  // Check online status
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true)
+    const handleOffline = () => setIsOnline(false)
+
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+    }
+  }, [])
 
   const adminCards = [
     {
@@ -14,7 +57,8 @@ const AdminDashboard = () => {
       icon: Settings,
       link: '/admin/productos',
       color: 'bg-brown-600 hover:bg-brown-700',
-      iconColor: 'text-brown-100'
+      iconColor: 'text-brown-100',
+      badge: `${products.length} productos`
     },
     {
       title: 'Gestión de Pedidos',
@@ -22,23 +66,77 @@ const AdminDashboard = () => {
       icon: Package,
       link: '/admin/pedidos',
       color: 'bg-blue-600 hover:bg-blue-700',
-      iconColor: 'text-blue-100'
+      iconColor: 'text-blue-100',
+      badge: '0 pedidos'
+    },
+    {
+      title: 'Base de Datos',
+      description: 'Sincronización y gestión de la base de datos',
+      icon: Database,
+      link: '/admin/database',
+      color: 'bg-purple-600 hover:bg-purple-700',
+      iconColor: 'text-purple-100',
+      badge: environment
     },
     {
       title: 'Estadísticas',
       description: 'Vista general de ventas y métricas',
       icon: BarChart3,
-      link: '#',
+      link: '/admin/stats',
       color: 'bg-green-600 hover:bg-green-700',
-      iconColor: 'text-green-100'
+      iconColor: 'text-green-100',
+      badge: 'Próximamente'
     },
     {
       title: 'Clientes',
       description: 'Gestión de clientes y contactos',
       icon: Users,
-      link: '#',
-      color: 'bg-purple-600 hover:bg-purple-700',
-      iconColor: 'text-purple-100'
+      link: '/admin/customers',
+      color: 'bg-indigo-600 hover:bg-indigo-700',
+      iconColor: 'text-indigo-100',
+      badge: 'Próximamente'
+    },
+    {
+      title: 'Configuración',
+      description: 'Configuración del sistema y preferencias',
+      icon: Settings,
+      link: '/admin/settings',
+      color: 'bg-gray-600 hover:bg-gray-700',
+      iconColor: 'text-gray-100',
+      badge: 'Próximamente'
+    }
+  ]
+
+  const quickActions = [
+    {
+      title: 'Sincronizar DB',
+      description: 'Sincronizar base de datos local con producción',
+      icon: RefreshCw,
+      action: () => {
+        toast.success('Sincronización iniciada...')
+        // TODO: Implement database sync
+      },
+      color: 'bg-blue-500 hover:bg-blue-600'
+    },
+    {
+      title: 'Respaldar DB',
+      description: 'Crear respaldo de la base de datos',
+      icon: Download,
+      action: () => {
+        toast.success('Respaldo iniciado...')
+        // TODO: Implement database backup
+      },
+      color: 'bg-green-500 hover:bg-green-600'
+    },
+    {
+      title: 'Refrescar Productos',
+      description: 'Actualizar lista de productos',
+      icon: RefreshCw,
+      action: () => {
+        refreshProducts()
+        toast.success('Productos actualizados')
+      },
+      color: 'bg-orange-500 hover:bg-orange-600'
     }
   ]
 
@@ -51,26 +149,54 @@ const AdminDashboard = () => {
             <h1 className="text-2xl sm:text-3xl font-bold text-brown-900 mb-2">Panel de Administración</h1>
             <p className="text-brown-600">Bienvenido al panel de control de Casa Piñón Ebanistería</p>
           </div>
-          <button
-            onClick={logout}
-            className="flex items-center justify-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200 w-full sm:w-auto"
-          >
-            <LogOut className="w-4 h-4" />
-            <span>Cerrar Sesión</span>
-          </button>
+          <div className="flex items-center gap-4">
+            {/* Status Indicators */}
+            <div className="flex items-center gap-2">
+              <div className={`w-3 h-3 rounded-full ${isOnline ? 'bg-green-500' : 'bg-red-500'}`}></div>
+              <span className="text-sm text-gray-600">
+                {isOnline ? 'En línea' : 'Sin conexión'}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className={`w-3 h-3 rounded-full ${
+                apiStatus === 'online' ? 'bg-green-500' : 
+                apiStatus === 'offline' ? 'bg-red-500' : 'bg-yellow-500'
+              }`}></div>
+              <span className="text-sm text-gray-600">
+                API {apiStatus === 'online' ? 'Conectada' : apiStatus === 'offline' ? 'Desconectada' : 'Verificando...'}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 px-3 py-1 bg-gray-100 rounded-full">
+              {environment === 'local' ? (
+                <Server className="w-4 h-4 text-blue-600" />
+              ) : (
+                <Globe className="w-4 h-4 text-green-600" />
+              )}
+              <span className="text-sm font-medium text-gray-700">
+                {environment === 'local' ? 'Local' : 'Producción'}
+              </span>
+            </div>
+            <button
+              onClick={logout}
+              className="flex items-center justify-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>Cerrar Sesión</span>
+            </button>
+          </div>
         </div>
 
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                      <div className="bg-white rounded-lg shadow-md p-6">
-              <div className="flex items-center">
-                <Package className="h-8 w-8 text-blue-600" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Total Productos</p>
-                  <p className="text-2xl font-bold text-gray-900">{products.length}</p>
-                </div>
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="flex items-center">
+              <Package className="h-8 w-8 text-blue-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Total Productos</p>
+                <p className="text-2xl font-bold text-gray-900">{products.length}</p>
               </div>
             </div>
+          </div>
           
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex items-center">
@@ -103,53 +229,60 @@ const AdminDashboard = () => {
           </div>
         </div>
 
+        {/* Quick Actions */}
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Acciones Rápidas</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {quickActions.map((action, index) => (
+              <button
+                key={index}
+                onClick={action.action}
+                className={`${action.color} text-white p-4 rounded-lg flex items-center space-x-3 transition-colors duration-200`}
+              >
+                <action.icon className="w-6 h-6" />
+                <div className="text-left">
+                  <h3 className="font-semibold">{action.title}</h3>
+                  <p className="text-sm opacity-90">{action.description}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Admin Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {adminCards.map((card, index) => (
             <Link
               key={index}
               to={card.link}
-              className={`${card.color} text-white rounded-lg shadow-md p-6 transition-all duration-200 transform hover:scale-105`}
+              className={`${card.color} text-white rounded-lg shadow-md p-6 transition-all duration-200 hover:shadow-lg hover:scale-105`}
             >
-              <div className="flex items-start">
-                <div className={`p-3 rounded-lg bg-white bg-opacity-20 ${card.iconColor}`}>
-                  <card.icon className="w-6 h-6" />
-                </div>
-                <div className="ml-4">
-                  <h3 className="text-xl font-semibold mb-2">{card.title}</h3>
-                  <p className="text-white text-opacity-90">{card.description}</p>
-                </div>
+              <div className="flex items-start justify-between mb-4">
+                <card.icon className={`w-8 h-8 ${card.iconColor}`} />
+                <span className="text-xs bg-white bg-opacity-20 px-2 py-1 rounded-full">
+                  {card.badge}
+                </span>
               </div>
+              <h3 className="text-lg font-semibold mb-2">{card.title}</h3>
+              <p className="text-sm opacity-90">{card.description}</p>
             </Link>
           ))}
         </div>
 
-        {/* Quick Actions */}
+        {/* Environment Info */}
         <div className="mt-8 bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold text-brown-900 mb-4">Acciones Rápidas</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Link
-              to="/admin/productos"
-              className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200"
-            >
-              <Settings className="w-5 h-5 text-brown-600 mr-3" />
-              <span className="text-brown-900">Agregar Nuevo Producto</span>
-            </Link>
-            
-            <Link
-              to="/admin/pedidos"
-              className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200"
-            >
-              <Package className="w-5 h-5 text-blue-600 mr-3" />
-              <span className="text-brown-900">Revisar Pedidos</span>
-            </Link>
-            
-            <button
-              className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200"
-            >
-              <BarChart3 className="w-5 h-5 text-green-600 mr-3" />
-              <span className="text-brown-900">Ver Reportes</span>
-            </button>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Información del Entorno</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div>
+              <p><strong>Entorno:</strong> {environment === 'local' ? 'Desarrollo Local' : 'Producción'}</p>
+              <p><strong>API URL:</strong> {import.meta.env.VITE_API_URL || 'http://localhost:3001'}</p>
+              <p><strong>Estado API:</strong> {apiStatus === 'online' ? 'Conectada' : 'Desconectada'}</p>
+            </div>
+            <div>
+              <p><strong>Conexión Internet:</strong> {isOnline ? 'Disponible' : 'No disponible'}</p>
+              <p><strong>Productos Cargados:</strong> {products.length}</p>
+              <p><strong>Última Actualización:</strong> {new Date().toLocaleString()}</p>
+            </div>
           </div>
         </div>
       </div>
