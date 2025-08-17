@@ -2103,6 +2103,11 @@ app.post('/api/upload/image', upload.single('image'), (req, res) => {
 // Serve static files from public directory
 app.use('/images', express.static(path.join(__dirname, '..', 'public', 'images')));
 
+// Railway-specific static file serving (fixes 404 errors)
+app.use('/images', express.static(path.join(__dirname, 'public', 'images')));
+app.use('/images', express.static(path.join(__dirname, '..', 'public', 'images')));
+app.use('/images', express.static(path.join(__dirname, '..', '..', 'public', 'images')));
+
 // Product API endpoints
 app.get('/api/products', async (req, res) => {
   try {
