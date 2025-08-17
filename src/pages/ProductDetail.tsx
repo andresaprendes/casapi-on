@@ -1,9 +1,20 @@
-import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useState } from 'react'
+import { useParams, Link } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import { motion } from 'framer-motion'
-import { Star, ShoppingCart, Heart, Share2, ArrowLeft, Package, Truck, Shield, Clock } from 'lucide-react'
-import ProductCard from '../components/ProductCard'
+import { 
+  Star, 
+  ShoppingCart, 
+  ArrowLeft, 
+  Package, 
+  Truck, 
+  Shield, 
+  Clock,
+  ChevronLeft,
+  ChevronRight,
+  CreditCard,
+  MapPin
+} from 'lucide-react'
 import { useProducts } from '../hooks/useProducts'
 import { useCart } from '../store/CartContext'
 import { toast } from 'react-hot-toast'

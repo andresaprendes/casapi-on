@@ -7,7 +7,7 @@ import { toast } from 'react-hot-toast'
 import { Link } from 'react-router-dom'
 import ProductReorder from '../components/ProductReorder'
 import { getImageUrl } from '../utils/imageUtils'
-import { woodTypes, categories } from '../data/mockData'
+import { woodTypes } from '../data/mockData'
 
 const AdminProducts = () => {
   const { products, addProduct, updateProduct, deleteProduct } = useProducts()
