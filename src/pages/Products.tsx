@@ -4,13 +4,14 @@ import { Helmet } from 'react-helmet-async'
 import { motion } from 'framer-motion'
 import { Search, Grid, List } from 'lucide-react'
 import ProductCard from '../components/ProductCard'
-import { categories } from '../data/mockData'
+import { categories, woodTypes } from '../data/mockData'
 import { useProducts } from '../hooks/useProducts'
 
 const Products = () => {
   const { category } = useParams()
   const { products } = useProducts()
   const [searchTerm, setSearchTerm] = useState('')
+  const [selectedWoodType, setSelectedWoodType] = useState('')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [filteredProducts, setFilteredProducts] = useState(products)
 
@@ -20,6 +21,11 @@ const Products = () => {
     // Filter by category if specified
     if (category) {
       filtered = filtered.filter(product => product.category === category)
+    }
+
+    // Filter by wood type if selected
+    if (selectedWoodType) {
+      filtered = filtered.filter(product => product.woodType === selectedWoodType)
     }
 
     // Filter by search term
@@ -34,7 +40,7 @@ const Products = () => {
     }
 
     setFilteredProducts(filtered)
-  }, [products, category, searchTerm])
+  }, [products, category, selectedWoodType, searchTerm])
 
   const currentCategory = categories.find(cat => cat.slug === category)
 
@@ -89,28 +95,42 @@ const Products = () => {
                 />
               </div>
 
-              {/* View Mode Toggle */}
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => setViewMode('grid')}
-                  className={`p-2 rounded-lg transition-colors duration-200 ${
-                    viewMode === 'grid'
-                      ? 'bg-brown-800 text-cream-50'
-                      : 'bg-cream-100 text-brown-600 hover:bg-cream-200'
-                  }`}
+              {/* Wood Type Filter */}
+              <div className="flex items-center space-x-4">
+                <select
+                  value={selectedWoodType}
+                  onChange={(e) => setSelectedWoodType(e.target.value)}
+                  className="px-4 py-2 border border-brown-200 rounded-lg focus:ring-2 focus:ring-brown-500 focus:border-transparent bg-white text-brown-700"
                 >
-                  <Grid className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={() => setViewMode('list')}
-                  className={`p-2 rounded-lg transition-colors duration-200 ${
-                    viewMode === 'list'
-                      ? 'bg-brown-800 text-cream-50'
-                      : 'bg-cream-100 text-brown-600 hover:bg-cream-200'
-                  }`}
-                >
-                  <List className="w-5 h-5" />
-                </button>
+                  <option value="">Todos los tipos de madera</option>
+                  {woodTypes.map(wood => (
+                    <option key={wood.id} value={wood.id}>{wood.name}</option>
+                  ))}
+                </select>
+
+                {/* View Mode Toggle */}
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => setViewMode('grid')}
+                    className={`p-2 rounded-lg transition-colors duration-200 ${
+                      viewMode === 'grid'
+                        ? 'bg-brown-800 text-cream-50'
+                        : 'bg-cream-100 text-brown-600 hover:bg-cream-200'
+                    }`}
+                  >
+                    <Grid className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={() => setViewMode('list')}
+                    className={`p-2 rounded-lg transition-colors duration-200 ${
+                      viewMode === 'list'
+                        ? 'bg-brown-800 text-cream-50'
+                        : 'bg-brown-100 text-brown-600 hover:bg-brown-200'
+                    }`}
+                  >
+                    <List className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
             </div>
           </motion.div>

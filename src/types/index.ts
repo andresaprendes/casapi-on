@@ -5,6 +5,7 @@ export interface Product {
   price: number
   category: string
   subcategory?: string
+  woodType: string // New field for wood type categorization
   images: string[]
   materials: string[]
   dimensions?: {

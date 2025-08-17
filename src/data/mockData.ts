@@ -8,6 +8,7 @@ export const products: Product[] = [
     price: 2800000,
     category: 'comedor',
     subcategory: 'mesas',
+    woodType: 'pinon',
     images: ['/images/image-1755135305383-454296344.png'],
     materials: ['Piñón macizo', 'Barniz natural'],
     dimensions: { length: 180, width: 90, height: 75 },
@@ -31,6 +32,7 @@ export const products: Product[] = [
     price: 1200000,
     category: 'puertas',
     subcategory: 'principales',
+    woodType: 'pinon',
     images: ['/images/puerta-pinon-1.jpg', '/images/puerta-pinon-2.jpg'],
     materials: ['Piñón macizo', 'Herrajes de bronce', 'Barniz protector'],
     dimensions: { length: 210, width: 90, height: 6 },
@@ -54,6 +56,7 @@ export const products: Product[] = [
     price: 2200000,
     category: 'habitacion',
     subcategory: 'camas',
+    woodType: 'pinon',
     images: ['/images/cama-pinon-1.jpg', '/images/cama-pinon-2.jpg'],
     materials: ['Piñón macizo', 'Tallado artesanal', 'Barniz natural'],
     dimensions: { length: 200, width: 160, height: 120 },
@@ -77,6 +80,7 @@ export const products: Product[] = [
     price: 1800000,
     category: 'sala',
     subcategory: 'estanterias',
+    woodType: 'pinon',
     images: ['/images/estanteria-pinon-1.jpg', '/images/estanteria-pinon-2.jpg'],
     materials: ['Piñón macizo', 'Barniz natural', 'Tallado artesanal'],
     dimensions: { length: 100, width: 35, height: 180 },
@@ -100,43 +104,66 @@ export const products: Product[] = [
     price: 1500000,
     category: 'sala',
     subcategory: 'mesas-centro',
+    woodType: 'pinon',
     images: ['/images/mesa-centro-pinon-1.jpg', '/images/mesa-centro-pinon-2.jpg'],
-    materials: ['Piñón macizo', 'Tallado decorativo', 'Barniz natural'],
-    dimensions: { length: 120, width: 60, height: 45 },
+    materials: ['Piñón macizo', 'Barniz natural', 'Tallado artesanal'],
+    dimensions: { length: 120, width: 70, height: 45 },
     weight: 25,
     madeToOrder: true,
     isCustom: false,
-    designVariations: 'El diseño del tallado decorativo puede variar según el estilo preferido.',
-    estimatedDelivery: '2-4 semanas',
-    features: ['Diseño único', 'Tallado decorativo', 'Madera de piñón auténtica'],
+    designVariations: 'El diseño del tallado puede adaptarse según las preferencias del cliente.',
+    estimatedDelivery: '3-4 semanas',
+    features: ['Diseño único', 'Tallado artesanal', 'Madera de piñón auténtica'],
     specifications: {
       'Material': 'Piñón macizo',
-      'Dimensiones': '120x60cm',
       'Acabado': 'Barniz natural',
       'Garantía': '3 años'
     }
   },
   {
     id: '6',
-    name: 'Escritorio Ejecutivo de Piñón',
-    description: 'Escritorio ejecutivo fabricado en madera de piñón con cajones tallados y amplío espacio de trabajo. Ideal para oficinas que valoran la elegancia y funcionalidad.',
+    name: 'Escritorio Ejecutivo de Cedro',
+    description: 'Escritorio ejecutivo fabricado en madera de cedro con acabados premium. Diseño ergonómico y elegante para tu espacio de trabajo.',
     price: 3200000,
     category: 'oficina',
     subcategory: 'escritorios',
-    images: ['/images/escritorio-pinon-1.jpg', '/images/escritorio-pinon-2.jpg'],
-    materials: ['Piñón macizo', 'Herrajes de bronce', 'Barniz satinado'],
-    dimensions: { length: 150, width: 70, height: 75 },
+    woodType: 'cedro',
+    images: ['/images/escritorio-cedro-1.jpg', '/images/escritorio-cedro-2.jpg'],
+    materials: ['Cedro macizo', 'Barniz premium', 'Herrajes de acero'],
+    dimensions: { length: 140, width: 80, height: 75 },
     weight: 50,
     madeToOrder: true,
     isCustom: false,
-    designVariations: 'El diseño de los cajones y el acabado pueden personalizarse según las necesidades del cliente.',
+    designVariations: 'El diseño puede adaptarse según las necesidades específicas del cliente.',
     estimatedDelivery: '5-7 semanas',
-    features: ['Cajones tallados', 'Amplio espacio', 'Diseño ejecutivo'],
+    features: ['Diseño ergonómico', 'Madera de cedro premium', 'Herrajes de calidad'],
     specifications: {
-      'Material': 'Piñón macizo',
-      'Dimensiones': '150x70cm',
-      'Acabado': 'Barniz satinado',
-      'Garantía': '3 años'
+      'Material': 'Cedro macizo',
+      'Acabado': 'Barniz premium',
+      'Garantía': '5 años'
+    }
+  },
+  {
+    id: '7',
+    name: 'Ventana Corredera de Roble',
+    description: 'Ventana corredera fabricada en madera de roble con sistema de deslizamiento suave. Perfecta para espacios modernos y tradicionales.',
+    price: 1800000,
+    category: 'ventanas',
+    subcategory: 'correderas',
+    woodType: 'roble',
+    images: ['/images/ventana-roble-1.jpg', '/images/ventana-roble-2.jpg'],
+    materials: ['Roble macizo', 'Vidrio templado', 'Sistema de deslizamiento'],
+    dimensions: { length: 120, width: 15, height: 120 },
+    weight: 30,
+    madeToOrder: true,
+    isCustom: false,
+    designVariations: 'Las dimensiones pueden adaptarse según las aberturas de la casa.',
+    estimatedDelivery: '4-6 semanas',
+    features: ['Sistema corredero suave', 'Madera de roble', 'Vidrio templado'],
+    specifications: {
+      'Material': 'Roble macizo',
+      'Vidrio': 'Templado',
+      'Garantía': '5 años'
     }
   }
 ]
@@ -259,5 +286,78 @@ export const shippingZones: any[] = [
     cities: ['Bello', 'Envigado', 'Sabaneta', 'Itagüí', 'Caldas'],
     basePrice: 120000,
     freeShippingThreshold: 3000000
+  }
+]
+
+export const woodTypes = [
+  {
+    id: 'pinon',
+    name: 'Piñón',
+    description: 'Madera de piñón colombiano, conocida por su durabilidad y belleza natural',
+    characteristics: ['Durabilidad alta', 'Resistente a la humedad', 'Color marrón dorado', 'Veta pronunciada'],
+    image: '/images/wood-pinon.jpg',
+    slug: 'pinon',
+    isPremium: true,
+    origin: 'Colombia'
+  },
+  {
+    id: 'cedro',
+    name: 'Cedro',
+    description: 'Madera de cedro rojo, apreciada por su aroma y resistencia natural a insectos',
+    characteristics: ['Aroma natural', 'Resistente a insectos', 'Color rojizo', 'Veta suave'],
+    image: '/images/wood-cedro.jpg',
+    slug: 'cedro',
+    isPremium: true,
+    origin: 'Colombia'
+  },
+  {
+    id: 'roble',
+    name: 'Roble',
+    description: 'Madera de roble blanco, conocida por su fortaleza y durabilidad excepcional',
+    characteristics: ['Fortaleza excepcional', 'Durabilidad muy alta', 'Color marrón claro', 'Veta marcada'],
+    image: '/images/wood-roble.jpg',
+    slug: 'roble',
+    isPremium: true,
+    origin: 'Colombia'
+  },
+  {
+    id: 'nogal',
+    name: 'Nogal',
+    description: 'Madera de nogal negro, apreciada por su color oscuro y elegancia',
+    characteristics: ['Color oscuro elegante', 'Veta fina', 'Durabilidad alta', 'Acabado premium'],
+    image: '/images/wood-nogal.jpg',
+    slug: 'nogal',
+    isPremium: true,
+    origin: 'Colombia'
+  },
+  {
+    id: 'pino',
+    name: 'Pino',
+    description: 'Madera de pino radiata, versátil y económica para diversos usos',
+    characteristics: ['Versatilidad', 'Precio accesible', 'Color claro', 'Fácil de trabajar'],
+    image: '/images/wood-pino.jpg',
+    slug: 'pino',
+    isPremium: false,
+    origin: 'Colombia'
+  },
+  {
+    id: 'guayacan',
+    name: 'Guayacán',
+    description: 'Madera de guayacán, conocida como "palo santo" por su extrema dureza',
+    characteristics: ['Extrema dureza', 'Resistencia al agua', 'Color verde oliva', 'Durabilidad máxima'],
+    image: '/images/wood-guayacan.jpg',
+    slug: 'guayacan',
+    isPremium: true,
+    origin: 'Colombia'
+  },
+  {
+    id: 'caoba',
+    name: 'Caoba',
+    description: 'Madera de caoba americana, apreciada por su color rojizo y estabilidad',
+    characteristics: ['Color rojizo rico', 'Estabilidad dimensional', 'Veta suave', 'Acabado premium'],
+    image: '/images/wood-caoba.jpg',
+    slug: 'caoba',
+    isPremium: true,
+    origin: 'Colombia'
   }
 ] 

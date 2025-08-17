@@ -7,6 +7,7 @@ import { toast } from 'react-hot-toast'
 import { Link } from 'react-router-dom'
 import ProductReorder from '../components/ProductReorder'
 import { getImageUrl } from '../utils/imageUtils'
+import { woodTypes, categories } from '../data/mockData'
 
 const AdminProducts = () => {
   const { products, addProduct, updateProduct, deleteProduct } = useProducts()
@@ -26,6 +27,7 @@ const AdminProducts = () => {
     price: 0,
     category: '',
     subcategory: '',
+    woodType: '',
     images: [] as string[],
     materials: [] as string[],
     madeToOrder: true,
@@ -65,6 +67,7 @@ const AdminProducts = () => {
       price: product.price,
       category: product.category,
       subcategory: product.subcategory || '',
+      woodType: product.woodType || '',
       images: [...product.images],
       materials: [...product.materials],
       madeToOrder: product.madeToOrder,
@@ -85,6 +88,7 @@ const AdminProducts = () => {
       price: 0,
       category: '',
       subcategory: '',
+      woodType: '',
       images: [],
       materials: [],
       madeToOrder: true,
@@ -344,6 +348,15 @@ const AdminProducts = () => {
                 <p className="text-brown-600 text-sm mb-2 line-clamp-2">{product.description}</p>
                 <p className="text-lg font-bold text-brown-800 mb-3">{formatCurrency(product.price)}</p>
                 
+                {/* Wood Type Badge */}
+                {product.woodType && (
+                  <div className="mb-3">
+                    <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                      {woodTypes.find(w => w.id === product.woodType)?.name || product.woodType}
+                    </span>
+                  </div>
+                )}
+                
                 <div className="flex items-center justify-between">
                   <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
                     product.madeToOrder ? 'bg-orange-100 text-orange-800' : 'bg-red-100 text-red-800'
@@ -467,6 +480,22 @@ const AdminProducts = () => {
                       </div>
 
                       <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Tipo de Madera
+                          </label>
+                          <select
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brown-500 focus:border-transparent"
+                            value={formData.woodType}
+                            onChange={(e) => setFormData(prev => ({ ...prev, woodType: e.target.value }))}
+                          >
+                            <option value="">Seleccionar tipo de madera</option>
+                            {woodTypes.map(wood => (
+                              <option key={wood.id} value={wood.id}>{wood.name}</option>
+                            ))}
+                          </select>
+                        </div>
+
                         <div className="flex items-center">
                           <input
                             type="checkbox"

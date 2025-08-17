@@ -5,6 +5,7 @@ import { Product } from '../types'
 import { useCart } from '../store/CartContext'
 import { toast } from 'react-hot-toast'
 import { getImageUrl } from '../utils/imageUtils'
+import { woodTypes } from '../data/mockData'
 
 interface ProductCardProps {
   product: Product
@@ -145,6 +146,16 @@ const ProductCard = ({ product }: ProductCardProps) => {
             </span>
           )}
         </div>
+
+        {/* Wood Type */}
+        {product.woodType && (
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-brown-600">Madera:</span>
+            <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full font-medium">
+              {woodTypes.find(type => type.id === product.woodType)?.name || product.woodType}
+            </span>
+          </div>
+        )}
 
         {/* Price and Rating */}
         <div className="flex items-center justify-between">

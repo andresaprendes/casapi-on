@@ -6,7 +6,7 @@ import HeroSection from '../components/HeroSection'
 import ProductCard from '../components/ProductCard'
 import TestimonialCard from '../components/TestimonialCard'
 import PaymentStatusWidget from '../components/PaymentStatusWidget'
-import { testimonials } from '../data/mockData'
+import { testimonials, woodTypes } from '../data/mockData'
 import { useProducts } from '../hooks/useProducts'
 
 const Home = () => {
@@ -141,8 +141,8 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Categories Section */}
-      <section className="section-padding bg-brown-900 text-cream-50">
+      {/* Categories */}
+      <section className="section-padding bg-cream-50">
         <div className="container-custom">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -150,19 +150,17 @@ const Home = () => {
             transition={{ duration: 0.6 }}
             className="text-center mb-12"
           >
-            <h2 className="text-3xl md:text-4xl font-serif font-bold mb-4">
+            <h2 className="text-3xl md:text-4xl font-serif font-bold text-brown-900 mb-4">
               Nuestras Categorías
             </h2>
-            <p className="text-lg text-cream-200 max-w-2xl mx-auto">
-              Explora nuestras categorías especializadas en muebles y carpintería fina.
+            <p className="text-lg text-brown-600 max-w-2xl mx-auto">
+              Descubre nuestra amplia gama de productos artesanales en madera real.
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
-              { name: 'Sala', href: '/productos/sala', description: 'Sofás, mesas de centro, estanterías' },
-              { name: 'Comedor', href: '/productos/comedor', description: 'Mesas, sillas, aparadores' },
-              { name: 'Habitación', href: '/productos/habitacion', description: 'Camas, mesitas, armarios' },
+              { name: 'Comedor', href: '/productos/comedor', description: 'Mesas y muebles de comedor' },
               { name: 'Puertas', href: '/productos/puertas', description: 'Puertas interiores y exteriores' },
               { name: 'Ventanas', href: '/productos/ventanas', description: 'Ventanas de madera fina' },
               { name: 'Personalizados', href: '/productos', description: 'Diseños a medida' },
@@ -186,6 +184,68 @@ const Home = () => {
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </div>
                 </Link>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Wood Types Showcase */}
+      <section className="section-padding">
+        <div className="container-custom">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-12"
+          >
+            <h2 className="text-3xl md:text-4xl font-serif font-bold text-brown-900 mb-4">
+              Tipos de Madera Premium
+            </h2>
+            <p className="text-lg text-brown-600 max-w-2xl mx-auto">
+              Trabajamos con las mejores maderas colombianas para garantizar durabilidad y belleza natural.
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {woodTypes.map((wood, index) => (
+              <motion.div
+                key={wood.id}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow duration-200"
+              >
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-gradient-to-br from-brown-600 to-brown-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span className="text-cream-50 font-serif font-bold text-xl">
+                      {wood.name.charAt(0)}
+                    </span>
+                  </div>
+                  <h3 className="text-xl font-serif font-semibold text-brown-900 mb-2">
+                    {wood.name}
+                  </h3>
+                  <p className="text-brown-600 text-sm mb-4">
+                    {wood.description}
+                  </p>
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    {wood.characteristics.slice(0, 2).map((char, charIndex) => (
+                      <span
+                        key={charIndex}
+                        className="px-2 py-1 bg-green-50 text-green-700 rounded-full text-xs"
+                      >
+                        {char}
+                      </span>
+                    ))}
+                  </div>
+                  {wood.isPremium && (
+                    <div className="mt-3">
+                      <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium">
+                        Premium
+                      </span>
+                    </div>
+                  )}
+                </div>
               </motion.div>
             ))}
           </div>
