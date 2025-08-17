@@ -230,7 +230,7 @@ export const categories = [
     id: 'comedor',
     name: 'Comedor',
     description: 'Mesas y muebles de piñón para el comedor',
-    image: '/images/category-comedor.jpg',
+    image: '/images/image-1755135305383-454296344.webp',
     slug: 'comedor',
     subcategories: ['mesas', 'sillas', 'aparadores', 'buffets']
   },
@@ -238,7 +238,7 @@ export const categories = [
     id: 'puertas',
     name: 'Puertas',
     description: 'Puertas artesanales de madera de piñón',
-    image: '/images/category-puertas.jpg',
+    image: '/images/image-1755137369333-477927924.webp',
     slug: 'puertas',
     subcategories: ['principales', 'interiores', 'correderas', 'rústicas']
   },
@@ -246,7 +246,7 @@ export const categories = [
     id: 'habitacion',
     name: 'Habitación',
     description: 'Camas y muebles de piñón para dormitorios',
-    image: '/images/category-habitacion.jpg',
+    image: '/images/image-1755137545858-681902723.webp',
     slug: 'habitacion',
     subcategories: ['camas', 'mesitas', 'armarios', 'cómodas']
   },
@@ -254,7 +254,7 @@ export const categories = [
     id: 'sala',
     name: 'Sala',
     description: 'Estanterías y muebles de piñón para la sala',
-    image: '/images/category-sala.jpg',
+    image: '/images/image-1755137657743-535686656.webp',
     slug: 'sala',
     subcategories: ['estanterias', 'mesas-centro', 'aparadores', 'libreros']
   },
@@ -262,7 +262,7 @@ export const categories = [
     id: 'oficina',
     name: 'Oficina',
     description: 'Escritorios y muebles ejecutivos de piñón',
-    image: '/images/category-oficina.jpg',
+    image: '/images/image-1755136170928-605023865.webp',
     slug: 'oficina',
     subcategories: ['escritorios', 'estanterias', 'archivadores', 'sillas']
   }
@@ -295,7 +295,7 @@ export const woodTypes = [
     name: 'Piñón',
     description: 'Madera de piñón colombiano, conocida por su durabilidad y belleza natural',
     characteristics: ['Durabilidad alta', 'Resistente a la humedad', 'Color marrón dorado', 'Veta pronunciada'],
-    image: '/images/wood-pinon.jpg',
+    image: '/images/image-1755135305383-454296344.webp',
     slug: 'pinon',
     isPremium: true,
     origin: 'Colombia'
@@ -305,7 +305,7 @@ export const woodTypes = [
     name: 'Cedro',
     description: 'Madera de cedro rojo, apreciada por su aroma y resistencia natural a insectos',
     characteristics: ['Aroma natural', 'Resistente a insectos', 'Color rojizo', 'Veta suave'],
-    image: '/images/wood-cedro.jpg',
+    image: '/images/image-1755136170928-605023865.webp',
     slug: 'cedro',
     isPremium: true,
     origin: 'Colombia'
@@ -315,7 +315,7 @@ export const woodTypes = [
     name: 'Roble',
     description: 'Madera de roble blanco, conocida por su fortaleza y durabilidad excepcional',
     characteristics: ['Fortaleza excepcional', 'Durabilidad muy alta', 'Color marrón claro', 'Veta marcada'],
-    image: '/images/wood-roble.jpg',
+    image: '/images/image-1755136180161-48892126.webp',
     slug: 'roble',
     isPremium: true,
     origin: 'Colombia'
@@ -325,7 +325,7 @@ export const woodTypes = [
     name: 'Nogal',
     description: 'Madera de nogal negro, apreciada por su color oscuro y elegancia',
     characteristics: ['Color oscuro elegante', 'Veta fina', 'Durabilidad alta', 'Acabado premium'],
-    image: '/images/wood-nogal.jpg',
+    image: '/images/image-1755138001829-743849468.webp',
     slug: 'nogal',
     isPremium: true,
     origin: 'Colombia'
@@ -335,7 +335,7 @@ export const woodTypes = [
     name: 'Pino',
     description: 'Madera de pino radiata, versátil y económica para diversos usos',
     characteristics: ['Versatilidad', 'Precio accesible', 'Color claro', 'Fácil de trabajar'],
-    image: '/images/wood-pino.jpg',
+    image: '/images/image-1755137545858-681902723.webp',
     slug: 'pino',
     isPremium: false,
     origin: 'Colombia'
@@ -345,7 +345,7 @@ export const woodTypes = [
     name: 'Guayacán',
     description: 'Madera de guayacán, conocida como "palo santo" por su extrema dureza',
     characteristics: ['Extrema dureza', 'Resistencia al agua', 'Color verde oliva', 'Durabilidad máxima'],
-    image: '/images/wood-guayacan.jpg',
+    image: '/images/image-1755137657743-535686656.webp',
     slug: 'guayacan',
     isPremium: true,
     origin: 'Colombia'
@@ -355,7 +355,7 @@ export const woodTypes = [
     name: 'Caoba',
     description: 'Madera de caoba americana, apreciada por su color rojizo y estabilidad',
     characteristics: ['Color rojizo rico', 'Estabilidad dimensional', 'Veta suave', 'Acabado premium'],
-    image: '/images/wood-caoba.jpg',
+    image: '/images/image-1755136374138-27692147.webp',
     slug: 'caoba',
     isPremium: true,
     origin: 'Colombia'
