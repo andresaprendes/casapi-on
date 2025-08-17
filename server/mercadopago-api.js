@@ -2541,7 +2541,7 @@ app.get('/api/products/test', async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 3001;
+// PORT is now defined in start.js
 
 // Prevent process from crashing
 process.on('uncaughtException', (error) => {
@@ -2614,7 +2614,7 @@ async function startServer() {
   }
 }
 
-startServer();
+// Server startup is now handled by start.js
 
 // New endpoint to handle cancelled payments (when user clicks "volver al sitio")
 app.post('/api/mercadopago/payment-cancelled', express.json(), async (req, res) => {
