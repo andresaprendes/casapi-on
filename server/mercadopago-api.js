@@ -9,6 +9,7 @@ const { MercadoPagoConfig, Preference, Payment, PaymentMethod } = require('merca
 const { initializeDatabase } = require('./database');
 const { orderOperations, paymentOperations, productOperations } = require('./dbOperations');
 const { sendOrderConfirmation, sendPaymentStatusEmail } = require('./emailService');
+const sharp = require('sharp');
 require('dotenv').config();
 
 // In-memory storage as fallback (when DATABASE_URL is not available)
@@ -2058,7 +2059,7 @@ app.put('/api/orders/:orderId', express.json(), (req, res) => {
 });
 
 // File upload endpoints - OPTIMIZED for performance
-app.post('/api/upload/image', upload.single('image'), (req, res) => {
+app.post('/api/upload/image', upload.single('image'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({
@@ -2067,35 +2068,46 @@ app.post('/api/upload/image', upload.single('image'), (req, res) => {
       });
     }
 
-    // Get the relative path for the frontend (products subdirectory)
-    const relativePath = `/images/products/${req.file.filename}`;
-    const fullPath = path.join(__dirname, '..', 'public', 'images', 'products', req.file.filename);
+    const inputPath = req.file.path;
+    const filename = req.file.filename;
     
-    // Verify the file was saved
-    if (!fs.existsSync(fullPath)) {
-      return res.status(500).json({
-        success: false,
-        error: 'File was not saved properly'
-      });
-    }
+    // Convert filename to WebP
+    const webpFilename = filename.replace(/\.[^/.]+$/, '.webp');
+    const outputPath = path.join(__dirname, '..', 'public', 'images', 'products', webpFilename);
+
+    // Convert to WebP with optimization
+    await sharp(inputPath)
+      .webp({ 
+        quality: 80,        // Good quality
+        effort: 6,          // Good compression
+        nearLossless: true  // Better quality
+      })
+      .toFile(outputPath);
+
+    // Delete original file
+    fs.unlinkSync(inputPath);
+
+    // Return WebP path
+    const relativePath = `/images/products/${webpFilename}`;
     
-    console.log('✅ Image uploaded successfully:', req.file.filename);
-    console.log('📁 File saved at:', fullPath);
+    console.log('✅ Image converted to WebP successfully:', webpFilename);
+    console.log('📁 WebP file saved at:', outputPath);
     console.log('🌐 Accessible at:', relativePath);
     
     res.json({
       success: true,
-      filename: req.file.filename,
-      path: relativePath, // Return the URL path instead of base64
+      filename: webpFilename,
+      path: relativePath,
       size: req.file.size,
-      mimetype: req.file.mimetype,
-      message: 'Image uploaded successfully. Use the path property for product images.'
+      mimetype: 'image/webp',
+      message: 'Image converted to WebP and uploaded successfully!'
     });
+
   } catch (error) {
-    console.error('❌ Image upload error:', error);
+    console.error('❌ Image upload/conversion error:', error);
     res.status(500).json({
       success: false,
-      error: error.message || 'Error uploading image'
+      error: error.message || 'Error uploading/converting image'
     });
   }
 });
