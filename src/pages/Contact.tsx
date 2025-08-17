@@ -38,7 +38,7 @@ const Contact = () => {
         'service_g2bg5y8', // Service ID de EmailJS
         'template_1sb5jsp', // Template ID de EmailJS
         templateParams,
-        '3VIAbXhCV_ANhCN6m' // Public Key de EmailJS
+        import.meta.env.VITE_EMAILJS_PUBLIC_KEY || '3VIAbXhCV_ANhCN6m' // Public Key de EmailJS
       )
 
       setSubmitStatus('success')
@@ -280,7 +280,7 @@ const Contact = () => {
               <div className="bg-brown-100 rounded-lg p-4">
                 <div className="aspect-video rounded-lg overflow-hidden shadow-lg">
                   <iframe
-                    src="https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=4FRJ%2B4M+Retiro,+Antioquia,+Colombia"
+                    src={`https://www.google.com/maps/embed/v1/place?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8'}&q=4FRJ%2B4M+Retiro,+Antioquia,+Colombia`}
                     width="100%"
                     height="100%"
                     style={{ border: 0 }}
