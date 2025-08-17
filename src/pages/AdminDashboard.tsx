@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Package, Settings, LogOut, BarChart3, Users, ShoppingCart, Database, Upload, Download, RefreshCw, Server, Globe } from 'lucide-react'
+import { Package, Settings, LogOut, BarChart3, Users, ShoppingCart, Database, Download, RefreshCw, Server, Globe } from 'lucide-react'
 import { useAuth } from '../store/AuthContext'
 import { useProducts } from '../hooks/useProducts'
 import { useState, useEffect } from 'react'
