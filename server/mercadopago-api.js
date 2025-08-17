@@ -115,7 +115,13 @@ if (MERCADOPAGO_ACCESS_TOKEN && !MERCADOPAGO_ACCESS_TOKEN.startsWith('APP_USR-')
 }
 
 const WEBHOOK_SECRET = process.env.MERCADOPAGO_WEBHOOK_SECRET || 'your-webhook-secret';
-console.log('✅ MercadoPago token validated:', MERCADOPAGO_ACCESS_TOKEN.substring(0, 15) + '...');
+
+// Check if MercadoPago token is available
+if (MERCADOPAGO_ACCESS_TOKEN) {
+  console.log('✅ MercadoPago token validated:', MERCADOPAGO_ACCESS_TOKEN.substring(0, 15) + '...');
+} else {
+  console.log('⚠️  MercadoPago token not available - payment features will be limited');
+}
 
 // Database will be initialized on startup
 
