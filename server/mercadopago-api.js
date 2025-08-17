@@ -7,6 +7,7 @@ const path = require('path');
 const fs = require('fs');
 const { MercadoPagoConfig, Preference, Payment, PaymentMethod } = require('mercadopago');
 const { initializeDatabase } = require('./database');
+const { pool } = require('./database');
 const { orderOperations, paymentOperations, productOperations } = require('./dbOperations');
 const { sendOrderConfirmation, sendPaymentStatusEmail } = require('./emailService');
 const sharp = require('sharp');
@@ -423,8 +424,13 @@ async function handleAbandonedOrders() {
     `;
     
     let result;
-    if (process.env.DATABASE_URL) {
-      result = await orderOperations.pool.query(query);
+    if (process.env.DATABASE_URL && pool) {
+      try {
+        result = await pool.query(query);
+      } catch (dbError) {
+        console.error('Database error in abandoned orders cleanup:', dbError);
+        return 0;
+      }
     } else {
       // Fallback to in-memory storage
       const orders = Array.from(orderDatabase.values());
@@ -454,11 +460,16 @@ async function handleAbandonedOrders() {
       await updateOrderPaymentStatus(order.order_number, 'failed', null);
       
       // Mark as abandoned
-      if (process.env.DATABASE_URL) {
-        await orderOperations.pool.query(
-          'UPDATE orders SET abandoned_at = CURRENT_TIMESTAMP WHERE order_number = $1',
-          [order.order_number]
-        );
+      if (process.env.DATABASE_URL && pool) {
+        try {
+          await pool.query(
+            'UPDATE orders SET abandoned_at = CURRENT_TIMESTAMP WHERE order_number = $1',
+            [order.order_number]
+          );
+        } catch (dbError) {
+          console.error('Database error updating abandoned order:', dbError);
+          continue; // Skip to next order
+        }
       } else {
         // Update in-memory storage
         const orderToUpdate = orderDatabase.get(order.order_number);
@@ -2088,17 +2099,38 @@ app.post('/api/upload/image', upload.single('image'), async (req, res) => {
     const webpFilename = filename.replace(/\.[^/.]+$/, '.webp');
     const outputPath = path.join(__dirname, '..', 'public', 'images', 'products', webpFilename);
 
-    // Convert to WebP with optimization
-    await sharp(inputPath)
-      .webp({ 
-        quality: 80,        // Good quality
-        effort: 6,          // Good compression
-        nearLossless: true  // Better quality
-      })
-      .toFile(outputPath);
+    // Ensure input and output paths are different
+    if (inputPath === outputPath) {
+      // If paths are the same, create a temporary output path
+      const tempOutputPath = path.join(__dirname, '..', 'public', 'images', 'products', `temp_${webpFilename}`);
+      
+      // Convert to WebP with optimization
+      await sharp(inputPath)
+        .webp({ 
+          quality: 80,        // Good quality
+          effort: 6,          // Good compression
+          nearLossless: true  // Better quality
+        })
+        .toFile(tempOutputPath);
 
-    // Delete original file
-    fs.unlinkSync(inputPath);
+      // Delete original file
+      fs.unlinkSync(inputPath);
+      
+      // Rename temp file to final name
+      fs.renameSync(tempOutputPath, outputPath);
+    } else {
+      // Convert to WebP with optimization
+      await sharp(inputPath)
+        .webp({ 
+          quality: 80,        // Good quality
+          effort: 6,          // Good compression
+          nearLossless: true  // Better quality
+        })
+        .toFile(outputPath);
+
+      // Delete original file
+      fs.unlinkSync(inputPath);
+    }
 
     // Return WebP path
     const relativePath = `/images/products/${webpFilename}`;

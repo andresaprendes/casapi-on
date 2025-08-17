@@ -27,7 +27,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Simple password-based authentication
   // In production, use proper JWT tokens and secure backend authentication
-  const ADMIN_PASSWORD = 'CasaPinon2025!' // Change this to your desired password
+  const ADMIN_PASSWORD = process.env.REACT_APP_ADMIN_PASSWORD || 'CasaPinon2025!' // Use environment variable
 
   useEffect(() => {
     // Check if user is already authenticated (from localStorage)
