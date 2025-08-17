@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Product } from '../types'
+import { products as mockProducts } from '../data/mockData'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 
@@ -24,7 +25,11 @@ export const useProducts = () => {
       }
     } catch (err) {
       console.error('Error fetching products:', err)
-      setError(err instanceof Error ? err.message : 'Failed to fetch products')
+      console.log('🔄 Falling back to mock data...')
+      
+      // Fallback to mock data when API is not available
+      setProducts(mockProducts)
+      setError('Backend API not available - using mock data')
     } finally {
       setLoading(false)
     }

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test React Images - Casa Piñón</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5dc;
+        }
+        .test-section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .image-item {
+            text-align: center;
+        }
+        .image-item img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 4px;
+            border: 2px solid #ddd;
+        }
+        .image-item .status {
+            margin-top: 5px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .loading { color: #ffc107; }
+        
+        h1, h2 {
+            color: #8b4513;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .status-good {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .status-bad {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test de Imágenes en React - Casa Piñón</h1>
+    
+    <div class="test-section">
+        <h2>📋 Estado de las Imágenes</h2>
+        <div id="overall-status" class="status-badge status-good">
+            ✅ Verificando imágenes...
+        </div>
+        
+        <p><strong>Este test verifica que las imágenes estén disponibles para el React app.</strong></p>
+        <p>Si las imágenes se cargan aquí, también deberían cargar en el React app.</p>
+    </div>
+
+    <div class="test-section">
+        <h2>🖼️ Imágenes de Productos</h2>
+        <div class="image-grid" id="product-images">
+            <!-- Images will be loaded here -->
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>📂 Imágenes de Categorías</h2>
+        <div class="image-grid" id="category-images">
+            <!-- Category images will be loaded here -->
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🌳 Imágenes de Tipos de Madera</h2>
+        <div class="image-grid" id="wood-images">
+            <!-- Wood type images will be loaded here -->
+        </div>
+    </div>
+
+    <script>
+        const images = {
+            products: [
+                '/images/image-1755135305383-454296344.webp',
+                '/images/image-1755137369333-477927924.webp',
+                '/images/image-1755137545858-681902723.webp',
+                '/images/image-1755137657743-535686656.webp',
+                '/images/image-1755138001829-743849468.webp',
+                '/images/image-1755136170928-605023865.webp',
+                '/images/image-1755136180161-48892126.webp'
+            ],
+            categories: [
+                '/images/image-1755135305383-454296344.webp',
+                '/images/image-1755137369333-477927924.webp',
+                '/images/image-1755137545858-681902723.webp',
+                '/images/image-1755137657743-535686656.webp',
+                '/images/image-1755136170928-605023865.webp'
+            ],
+            woodTypes: [
+                '/images/image-1755135305383-454296344.webp',
+                '/images/image-1755136170928-605023865.webp',
+                '/images/image-1755136180161-48892126.webp',
+                '/images/image-1755138001829-743849468.webp',
+                '/images/image-1755137545858-681902723.webp',
+                '/images/image-1755137657743-535686656.webp',
+                '/images/image-1755136374138-27692147.webp'
+            ]
+        };
+
+        function createImageElement(src, containerId) {
+            const container = document.getElementById(containerId);
+            const item = document.createElement('div');
+            item.className = 'image-item';
+            
+            const img = document.createElement('img');
+            img.src = src;
+            img.alt = 'Test image';
+            
+            const status = document.createElement('div');
+            status.className = 'status loading';
+            status.textContent = 'Cargando...';
+            
+            item.appendChild(img);
+            item.appendChild(status);
+            container.appendChild(item);
+            
+            img.onload = function() {
+                status.textContent = '✅ Cargada';
+                status.className = 'status success';
+            };
+            
+            img.onerror = function() {
+                status.textContent = '❌ Error';
+                status.className = 'status error';
+            };
+            
+            return img;
+        }
+
+        function testImages() {
+            // Test product images
+            images.products.forEach(src => {
+                createImageElement(src, 'product-images');
+            });
+            
+            // Test category images
+            images.categories.forEach(src => {
+                createImageElement(src, 'category-images');
+            });
+            
+            // Test wood type images
+            images.woodTypes.forEach(src => {
+                createImageElement(src, 'wood-images');
+            });
+            
+            // Update overall status after a delay
+            setTimeout(() => {
+                const successCount = document.querySelectorAll('.status.success').length;
+                const errorCount = document.querySelectorAll('.status.error').length;
+                const totalCount = document.querySelectorAll('.status').length;
+                
+                const statusElement = document.getElementById('overall-status');
+                if (errorCount === 0) {
+                    statusElement.textContent = `✅ PERFECTO - ${successCount}/${totalCount} imágenes cargadas correctamente`;
+                    statusElement.className = 'status-badge status-good';
+                } else {
+                    statusElement.textContent = `❌ PROBLEMA - ${errorCount}/${totalCount} imágenes con error`;
+                    statusElement.className = 'status-badge status-bad';
+                }
+            }, 2000);
+        }
+
+        // Start testing when page loads
+        window.addEventListener('load', testImages);
+    </script>
+</body>
+</html>
