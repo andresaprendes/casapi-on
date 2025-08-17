@@ -104,14 +104,13 @@ const upload = multer({
 const MERCADOPAGO_ACCESS_TOKEN = process.env.MERCADOPAGO_ACCESS_TOKEN;
 if (!MERCADOPAGO_ACCESS_TOKEN) {
   console.error('❌ MERCADOPAGO_ACCESS_TOKEN is not set!');
-  process.exit(1);
+  console.error('⚠️  Server will start but MercadoPago features will be disabled');
 }
 
 // Validate token format
-if (!MERCADOPAGO_ACCESS_TOKEN.startsWith('APP_USR-') && !MERCADOPAGO_ACCESS_TOKEN.startsWith('TEST-')) {
+if (MERCADOPAGO_ACCESS_TOKEN && !MERCADOPAGO_ACCESS_TOKEN.startsWith('APP_USR-') && !MERCADOPAGO_ACCESS_TOKEN.startsWith('TEST-')) {
   console.error('❌ Invalid MercadoPago token format! Should start with APP_USR- or TEST-');
-  console.error('Current token:', MERCADOPAGO_ACCESS_TOKEN);
-  process.exit(1);
+  console.error('⚠️  Server will start but MercadoPago features may not work correctly');
 }
 
 const WEBHOOK_SECRET = process.env.MERCADOPAGO_WEBHOOK_SECRET || 'your-webhook-secret';
@@ -508,7 +507,19 @@ async function handleAbandonedOrders() {
 }
 
 // Run cleanup every 15 minutes (more frequent for better timeout handling)
-setInterval(cleanupAbandonedOrders, 15 * 60 * 1000);
+// Cleanup abandoned orders every 15 minutes
+const cleanupInterval = setInterval(cleanupAbandonedOrders, 15 * 60 * 1000);
+
+// Cleanup interval on process exit
+process.on('SIGTERM', () => {
+  clearInterval(cleanupInterval);
+  console.log('🧹 Cleanup interval stopped');
+});
+
+process.on('SIGINT', () => {
+  clearInterval(cleanupInterval);
+  console.log('🧹 Cleanup interval stopped');
+});
 
 async function updateOrderPaymentStatus(orderReference, paymentStatus, paymentId) {
   try {
@@ -681,7 +692,7 @@ app.post('/api/mercadopago/create-preference', async (req, res) => {
       });
     } else {
       console.error('No preference ID found in response structure');
-      throw new Error('Failed to create preference - no ID returned');
+      throw new Error('Failed to create MercadoPago payment preference - please try again or contact support');
     }
   } catch (error) {
     console.error('MercadoPago preference creation error:', error);
@@ -1422,8 +1433,9 @@ app.post('/api/mercadopago/verify-all-pending', async (req, res) => {
         
         console.log(`✅ Payment ${payment.id} updated: ${payment.status} → ${mpStatus}`);
         
-        // Add a small delay to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Add a small delay to avoid rate limiting (configurable)
+        const rateLimitDelay = parseInt(process.env.RATE_LIMIT_DELAY) || 100;
+        await new Promise(resolve => setTimeout(resolve, rateLimitDelay));
         
       } catch (error) {
         errorCount++;
@@ -1534,8 +1546,9 @@ app.get('/api/mercadopago/verify-all-pending', async (req, res) => {
         
         console.log(`✅ Payment ${payment.id} updated: ${payment.status} → ${mpStatus}`);
         
-        // Add a small delay to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Add a small delay to avoid rate limiting (configurable)
+        const rateLimitDelay = parseInt(process.env.RATE_LIMIT_DELAY) || 100;
+        await new Promise(resolve => setTimeout(resolve, rateLimitDelay));
         
       } catch (error) {
         errorCount++;
@@ -2391,15 +2404,11 @@ app.put('/api/products/:id/order', express.json(), async (req, res) => {
 app.post('/api/products/sync', async (req, res) => {
   try {
     console.log('🔄 Starting product sync...');
-    console.log('📊 Default products count:', defaultProducts.length);
     
     if (process.env.DATABASE_URL) {
-      // Clear and re-initialize with default products
       console.log('🗄️  Using PostgreSQL database');
-      await productOperations.initializeWithDefaults(defaultProducts);
-      console.log('✅ Database synced with default products');
+      console.log('✅ Database ready - products will be read from existing data');
     } else {
-      // Clear current database
       console.log('💾 Using in-memory storage');
       productDatabase.clear();
       
@@ -2413,8 +2422,8 @@ app.post('/api/products/sync', async (req, res) => {
     
     res.json({ 
       success: true, 
-      message: 'Database synced successfully',
-      productsCount: defaultProducts.length
+      message: 'Database ready - products will be read from existing data',
+      databaseMode: process.env.DATABASE_URL ? 'PostgreSQL' : 'In-Memory'
     });
   } catch (error) {
     console.error('Error syncing database:', error);
@@ -2567,7 +2576,8 @@ async function startServer() {
       });
     } catch (fallbackError) {
       console.error('Failed to start server even in fallback mode:', fallbackError);
-      process.exit(1);
+      console.error('⚠️  Server startup failed completely - check configuration and try again');
+      // Don't exit process - let it continue and potentially restart
     }
   }
 }
