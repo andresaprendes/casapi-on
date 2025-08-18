@@ -142,7 +142,7 @@ const orderOperations = {
     const result = await pool.query(query, [orderId]);
     if (result.rows[0]) {
       const row = result.rows[0];
-      return transformOrderRow(row);
+      return orderOperations.transformOrderRow(row);
     }
     return null;
   },
@@ -153,7 +153,7 @@ const orderOperations = {
     const result = await pool.query(query, [orderNumber]);
     if (result.rows[0]) {
       const row = result.rows[0];
-      return transformOrderRow(row);
+      return orderOperations.transformOrderRow(row);
     }
     return null;
   },
