@@ -3179,7 +3179,7 @@ app.get('/', (req, res) => {
     success: true,
     message: 'Casa Piñón API is running',
     timestamp: new Date().toISOString(),
-    version: '2.0.1'
+    version: '2.0.2'
   });
 });
 
