@@ -36,33 +36,34 @@ const CheckoutFailure: React.FC = () => {
   }, []);
 
   const getFailureDetails = async () => {
-    // IMPROVED: Better detection of user cancellations
-    // Check if this is a user cancellation based on URL parameters
-    const isUserCancellation = !paymentId && 
-                              (collectionStatus === 'null' || !collectionStatus) && 
-                              (status === 'null' || !status) && 
-                              externalReference;
+    // CONSOLIDATED: Single cancellation detection function
+    const detectCancellation = () => {
+      // Check if this is a user cancellation based on URL parameters
+      const isUserCancellation = !paymentId && 
+                                (collectionStatus === 'null' || !collectionStatus) && 
+                                (status === 'null' || !status) && 
+                                externalReference;
+      
+      // Check for more cancellation scenarios
+      const isReturnToSite = !paymentId && !externalReference && !errorCode;
+      const isAbandonedPayment = errorCode === 'unknown' || errorCode === 'return_to_site';
+      const isCancelledByUser = collectionStatus === 'cancelled' || status === 'cancelled';
+      
+      // Combined cancellation detection
+      return isUserCancellation || isReturnToSite || isAbandonedPayment || isCancelledByUser;
+    };
+
+    // Check for cancellation first (before any API calls)
+    const isCancellation = detectCancellation();
     
-    // ADDITIONAL: Check for more cancellation scenarios
-    const isReturnToSite = !paymentId && !externalReference && !errorCode;
-    const isAbandonedPayment = errorCode === 'unknown' || errorCode === 'return_to_site';
-    const isCancelledByUser = collectionStatus === 'cancelled' || status === 'cancelled';
-    
-    // Combined cancellation detection
-    const isAnyTypeOfCancellation = isUserCancellation || isReturnToSite || isAbandonedPayment || isCancelledByUser;
-    
-    if (isAnyTypeOfCancellation) {
+    if (isCancellation) {
       console.log('🚫 Detected user cancellation from URL parameters for order:', externalReference);
       console.log('🔍 Cancellation details:', {
         paymentId,
         externalReference,
         errorCode,
         collectionStatus,
-        status,
-        isUserCancellation,
-        isReturnToSite,
-        isAbandonedPayment,
-        isCancelledByUser
+        status
       });
       
       setFailureDetails({
@@ -89,12 +90,7 @@ const CheckoutFailure: React.FC = () => {
         errorMessage: getErrorMessage(isUserCancellation ? 'user_cancelled' : (errorCode || 'unknown'))
       });
       
-      // If this is a user cancellation, trigger the cancellation email
-      if (isUserCancellation && externalReference && !emailSent.has(externalReference)) {
-        triggerCancellationEmail(externalReference);
-        setEmailSent(prev => new Set(prev).add(externalReference));
-      }
-      
+      // No email trigger here since we don't have an order reference
       setIsLoading(false);
       return;
     }
@@ -122,16 +118,12 @@ const CheckoutFailure: React.FC = () => {
           finalErrorCode = 'user_cancelled';
           finalErrorMessage = getErrorMessage('user_cancelled');
           
-          // Trigger cancellation email immediately
-          if (externalReference || orderData?.external_reference) {
+          // Only trigger email if we haven't already detected cancellation from URL parameters
+          if ((externalReference || orderData?.external_reference) && !emailSent.has(externalReference || orderData?.external_reference)) {
             const orderNumber = externalReference || orderData?.external_reference;
-            if (!emailSent.has(orderNumber)) {
-              console.log('🚫 Detected user cancellation, triggering email for order:', orderNumber);
-              triggerCancellationEmail(orderNumber);
-              setEmailSent(prev => new Set(prev).add(orderNumber));
-            } else {
-              console.log('📧 Email already sent for order:', orderNumber);
-            }
+            console.log('🚫 Detected user cancellation from API response, triggering email for order:', orderNumber);
+            triggerCancellationEmail(orderNumber);
+            setEmailSent(prev => new Set(prev).add(orderNumber));
           }
         }
         
@@ -140,16 +132,12 @@ const CheckoutFailure: React.FC = () => {
           finalErrorCode = 'user_cancelled';
           finalErrorMessage = getErrorMessage('user_cancelled');
           
-          // Trigger cancellation email immediately
-          if (externalReference || orderData?.external_reference) {
+          // Only trigger email if we haven't already detected cancellation from URL parameters
+          if ((externalReference || orderData?.external_reference) && !emailSent.has(externalReference || orderData?.external_reference)) {
             const orderNumber = externalReference || orderData?.external_reference;
-            if (!emailSent.has(orderNumber)) {
-              console.log('🚫 Detected cancellation status from API, triggering email for order:', orderNumber);
-              triggerCancellationEmail(orderNumber);
-              setEmailSent(prev => new Set(prev).add(orderNumber));
-            } else {
-              console.log('📧 Email already sent for order:', orderNumber);
-            }
+            console.log('🚫 Detected cancellation status from API, triggering email for order:', orderNumber);
+            triggerCancellationEmail(orderNumber);
+            setEmailSent(prev => new Set(prev).add(orderNumber));
           }
         }
         
@@ -173,16 +161,9 @@ const CheckoutFailure: React.FC = () => {
           errorMessage: getErrorMessage(finalErrorCode)
         });
         
-        // Trigger cancellation email if this is a user cancellation
+        // Only trigger email if we haven't already detected cancellation from URL parameters
         if (isUserCancellation && externalReference && !emailSent.has(externalReference)) {
           console.log('🚫 API call failed, but detected user cancellation for order:', externalReference);
-          triggerCancellationEmail(externalReference);
-          setEmailSent(prev => new Set(prev).add(externalReference));
-        }
-        
-        // ADDITIONAL: Also trigger email if we have external reference but no payment ID
-        if (externalReference && !paymentId && !emailSent.has(externalReference)) {
-          console.log('🚫 API call failed, but have order reference - treating as cancellation for order:', externalReference);
           triggerCancellationEmail(externalReference);
           setEmailSent(prev => new Set(prev).add(externalReference));
         }
@@ -201,16 +182,9 @@ const CheckoutFailure: React.FC = () => {
         errorMessage: getErrorMessage(finalErrorCode)
       });
       
-      // Trigger cancellation email if this is a user cancellation
+      // Only trigger email if we haven't already detected cancellation from URL parameters
       if (isUserCancellation && externalReference && !emailSent.has(externalReference)) {
         console.log('🚫 Connection failed, but detected user cancellation for order:', externalReference);
-        triggerCancellationEmail(externalReference);
-        setEmailSent(prev => new Set(prev).add(externalReference));
-      }
-      
-      // ADDITIONAL: Also trigger email if we have external reference but no payment ID
-      if (externalReference && !paymentId && !emailSent.has(externalReference)) {
-        console.log('🚫 Connection failed, but have order reference - treating as cancellation for order:', externalReference);
         triggerCancellationEmail(externalReference);
         setEmailSent(prev => new Set(prev).add(externalReference));
       }
