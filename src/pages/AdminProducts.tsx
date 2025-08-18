@@ -250,13 +250,7 @@ const AdminProducts = () => {
     }
   }
 
-  const categories = [
-    { id: 'comedor', name: 'Comedor' },
-    { id: 'puertas', name: 'Puertas' },
-    { id: 'habitacion', name: 'Habitación' },
-    { id: 'sala', name: 'Sala' },
-    { id: 'oficina', name: 'Oficina' }
-  ]
+
 
   return (
     <div className="section-padding bg-cream-50 min-h-screen">
@@ -482,7 +476,7 @@ const AdminProducts = () => {
                             onChange={(e) => setFormData(prev => ({ ...prev, subcategory: e.target.value }))}
                           >
                             <option value="">Seleccionar subcategoría</option>
-                            {formData.category && categories.find(cat => cat.id === formData.category)?.subcategories?.map(subcat => (
+                            {formData.category && categories.find(cat => cat.id === formData.category)?.subcategories?.map((subcat: string) => (
                               <option key={subcat} value={subcat}>{subcat}</option>
                             ))}
                           </select>
