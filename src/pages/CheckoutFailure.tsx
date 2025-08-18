@@ -49,8 +49,14 @@ const CheckoutFailure: React.FC = () => {
       const isAbandonedPayment = errorCode === 'unknown' || errorCode === 'return_to_site';
       const isCancelledByUser = collectionStatus === 'cancelled' || status === 'cancelled';
       
+      // Check for MercadoPago template variables (not replaced)
+      const hasTemplateVariables = externalReference && 
+                                 (paymentId === '%7Bpayment_id%7D' || 
+                                  status === '%7Bstatus%7D' || 
+                                  collectionStatus === '%7Bcollection_status%7D');
+      
       // Combined cancellation detection
-      return isUserCancellation || isReturnToSite || isAbandonedPayment || isCancelledByUser;
+      return isUserCancellation || isReturnToSite || isAbandonedPayment || isCancelledByUser || hasTemplateVariables;
     };
 
     // Check for cancellation first (before any API calls)
