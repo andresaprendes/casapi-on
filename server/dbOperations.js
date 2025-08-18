@@ -225,7 +225,7 @@ const orderOperations = {
     const result = await pool.query(query, values);
     
     // Transform database rows using the transformOrderRow function
-    return result.rows.map(row => this.transformOrderRow(row));
+    return result.rows.map(row => orderOperations.transformOrderRow(row));
   },
 
   // Update order
