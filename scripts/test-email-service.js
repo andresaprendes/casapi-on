@@ -7,7 +7,11 @@
  * to ensure it handles edge cases properly.
  */
 
-const { sendOrderConfirmation, sendPaymentStatusEmail } = require('../server/emailService');
+// Load environment variables
+import dotenv from 'dotenv';
+dotenv.config({ path: '../.env' });
+
+import { sendOrderConfirmation, sendPaymentStatusEmail } from '../server/emailService.js';
 
 // Test data with various formats (simulating real database responses)
 const testOrderData = {
@@ -91,15 +95,13 @@ const testCustomerInfo = {
   
   // Format 2: Nested in customer object
   nested: {
-    customer: {
-      name: 'Carlos Rodríguez',
-      email: 'carlos@example.com',
-      phone: '3007778888',
-      address: {
-        street: 'Avenida 321',
-        city: 'Barranquilla',
-        state: 'Atlántico'
-      }
+    name: 'Carlos Rodríguez',
+    email: 'carlos@example.com',
+    phone: '3007778888',
+    address: {
+      street: 'Avenida 321',
+      city: 'Barranquilla',
+      state: 'Atlántico'
     }
   }
 };
@@ -149,8 +151,6 @@ async function testEmailService() {
 }
 
 // Run the test if this script is executed directly
-if (require.main === module) {
-  testEmailService();
-}
+testEmailService();
 
-module.exports = { testEmailService };
+export { testEmailService };

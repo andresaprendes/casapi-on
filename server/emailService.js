@@ -1,4 +1,4 @@
-const nodemailer = require('nodemailer');
+import nodemailer from 'nodemailer';
 
 // Email configuration - optimized for Zoho
 const createTransporter = () => {
@@ -626,7 +626,7 @@ const sendPaymentStatusEmail = async (order, customerInfo, paymentDetails, payme
   }
 };
 
-module.exports = {
+export {
   sendOrderConfirmation,
   sendPaymentStatusEmail
 };
