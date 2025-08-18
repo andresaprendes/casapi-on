@@ -3173,4 +3173,14 @@ async function updateEmailStatus(orderNumber, status, sent) {
 // Track sent emails to prevent duplicates
 const sentEmails = new Set();
 
+// Test endpoint to verify deployment
+app.get('/api/deployment-test', (req, res) => {
+  res.json({
+    success: true,
+    message: 'New webhook implementation deployed',
+    timestamp: new Date().toISOString(),
+    version: '2.0.0'
+  });
+});
+
 export { app, startServer };
