@@ -2187,7 +2187,7 @@ const mimeTypes = {
 
 // Serve static files from public directory with proper MIME types
 // Try multiple possible paths for Railway deployment
-app.use('/images', express.static(path.join(__dirname, '..', 'public', 'images'), {
+app.use('/images', express.static(path.join(__dirname, 'public', 'images'), {
   setHeaders: (res, path) => {
     const ext = path.extname(path).toLowerCase();
     if (mimeTypes[ext]) {
@@ -2198,7 +2198,7 @@ app.use('/images', express.static(path.join(__dirname, '..', 'public', 'images')
 }));
 
 // Fallback for Railway deployment structure
-app.use('/images', express.static(path.join(__dirname, 'public', 'images'), {
+app.use('/images', express.static(path.join(__dirname, '..', 'public', 'images'), {
   setHeaders: (res, path) => {
     const ext = path.extname(path).toLowerCase();
     if (mimeTypes[ext]) {
