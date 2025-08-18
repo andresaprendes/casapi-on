@@ -2223,6 +2223,7 @@ app.get('/api/products', async (req, res) => {
     // Transform database fields to match frontend expectations
     const transformedProducts = products.map(product => ({
       ...product,
+      woodType: product.wood_type || product.woodType,
       estimatedDelivery: product.estimated_delivery || product.estimatedDelivery,
       designVariations: product.design_variations || product.designVariations,
       isCustom: product.is_custom || product.isCustom,
@@ -2264,6 +2265,7 @@ app.get('/api/products/:id', async (req, res) => {
     // Transform database fields to match frontend expectations
     const transformedProduct = {
       ...product,
+      woodType: product.wood_type || product.woodType,
       estimatedDelivery: product.estimated_delivery || product.estimatedDelivery,
       designVariations: product.design_variations || product.designVariations,
       isCustom: product.is_custom || product.isCustom,
@@ -2372,9 +2374,20 @@ app.put('/api/products/:id', express.json(), async (req, res) => {
     
     console.log('✅ Product updated:', id);
     
+    // Transform database fields to match frontend expectations
+    const transformedProduct = {
+      ...updatedProduct,
+      woodType: updatedProduct.wood_type || updatedProduct.woodType,
+      estimatedDelivery: updatedProduct.estimated_delivery || updatedProduct.estimatedDelivery,
+      designVariations: updatedProduct.design_variations || updatedProduct.designVariations,
+      isCustom: updatedProduct.is_custom || updatedProduct.isCustom,
+      createdAt: updatedProduct.created_at || updatedProduct.createdAt,
+      updatedAt: updatedProduct.updated_at || updatedProduct.updatedAt
+    };
+    
     res.json({
       success: true,
-      product: updatedProduct
+      product: transformedProduct
     });
   } catch (error) {
     console.error('Error updating product:', error);
