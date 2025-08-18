@@ -2983,73 +2983,18 @@ app.post('/api/database/sync/reset', async (req, res) => {
 });
 
 // Webhook endpoint for MercadoPago events
-app.post('/api/mercadopago/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+app.post('/api/mercadopago/webhook', express.json(), async (req, res) => {
   try {
     console.log('🔔 Webhook received:', req.headers);
+    console.log('📦 Webhook body:', req.body);
     
-    // Verify webhook signature (security best practice)
-    const signature = req.headers['x-signature'];
-    const timestamp = req.headers['x-timestamp'];
-    
-    // For development/testing, accept webhooks without signature
-    if (process.env.NODE_ENV === 'production' && (!signature || !timestamp)) {
-      console.error('❌ Missing webhook signature or timestamp');
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-    
-    // TODO: Implement signature verification with MercadoPago public key
-    // For now, we'll accept all webhooks in development
-    
-    const eventData = JSON.parse(req.body);
-    console.log('📦 Webhook event data:', JSON.stringify(eventData, null, 2));
-    
-    const { type, data } = eventData;
-    
-    if (!type || !data) {
-      console.error('❌ Invalid webhook payload');
-      return res.status(400).json({ error: 'Invalid payload' });
-    }
-    
-    // Process different event types (simplified for testing)
-    console.log('🔔 Processing webhook event:', type, data.id);
-    
-    switch (type) {
-      case 'payment.created':
-        console.log('💰 Payment created:', data.id);
-        break;
-        
-      case 'payment.updated':
-        console.log('🔄 Payment updated:', data.id);
-        break;
-        
-      case 'payment.pending':
-        console.log('⏳ Payment pending:', data.id);
-        break;
-        
-      case 'payment.approved':
-        console.log('✅ Payment approved:', data.id);
-        break;
-        
-      case 'payment.rejected':
-        console.log('❌ Payment rejected:', data.id);
-        break;
-        
-      case 'payment.cancelled':
-        console.log('🚫 Payment cancelled:', data.id);
-        break;
-        
-      case 'payment.refunded':
-        console.log('💸 Payment refunded:', data.id);
-        break;
-        
-      default:
-        console.log('❓ Unknown webhook type:', type);
-    }
-    
-    // Log webhook event to database (commented out for testing)
-    // await logWebhookEvent(data.id, type, eventData);
-    
-    res.status(200).json({ success: true, message: 'Webhook processed successfully', timestamp: new Date().toISOString() });
+    // Simple response for testing
+    res.status(200).json({ 
+      success: true, 
+      message: 'Webhook received successfully', 
+      timestamp: new Date().toISOString(),
+      received: req.body
+    });
     
   } catch (error) {
     console.error('❌ Webhook processing error:', error);
