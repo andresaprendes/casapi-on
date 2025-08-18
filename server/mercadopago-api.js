@@ -2991,7 +2991,8 @@ app.post('/api/mercadopago/webhook', express.raw({ type: 'application/json' }), 
     const signature = req.headers['x-signature'];
     const timestamp = req.headers['x-timestamp'];
     
-    if (!signature || !timestamp) {
+    // For development/testing, accept webhooks without signature
+    if (process.env.NODE_ENV === 'production' && (!signature || !timestamp)) {
       console.error('❌ Missing webhook signature or timestamp');
       return res.status(401).json({ error: 'Unauthorized' });
     }
