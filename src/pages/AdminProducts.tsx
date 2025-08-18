@@ -522,7 +522,7 @@ const AdminProducts = () => {
                             onChange={(e) => setFormData(prev => ({ ...prev, isCustom: e.target.checked }))}
                           />
                           <label htmlFor="isCustom" className="text-sm font-medium text-gray-700">
-                            Producto Personalizado
+                            Producto Personalizable
                           </label>
                         </div>
                       </div>

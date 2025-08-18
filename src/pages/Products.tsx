@@ -73,6 +73,12 @@ const Products = () => {
                 : 'Descubre nuestra colección de muebles de madera real, puertas, ventanas y piezas personalizadas.'
               }
             </p>
+            <div className="mt-4 p-4 bg-cream-100 rounded-lg border border-brown-200">
+              <p className="text-sm text-brown-700">
+                <span className="font-semibold">💡 Todos nuestros productos son fabricados por pedido</span> - 
+                Cada pieza se elabora artesanalmente según tus especificaciones y preferencias.
+              </p>
+            </div>
           </motion.div>
 
           {/* Search and Filters */}

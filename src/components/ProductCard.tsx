@@ -84,18 +84,13 @@ const ProductCard = ({ product }: ProductCardProps) => {
 
         {/* Badges */}
         <div className="absolute top-3 left-3 space-y-1">
-          {product.madeToOrder && (
-            <span className="bg-orange-600 text-white text-xs px-2 py-1 rounded-full block">
-              Por Pedido
-            </span>
-          )}
           {product.isCustom && (
-            <span className="bg-brown-800 text-cream-50 text-xs px-2 py-1 rounded-full block">
-              Personalizado
+            <span className="bg-purple-600 text-white text-xs px-2 py-1 rounded-full block">
+              Personalizable
             </span>
           )}
           {product.woodType && (
-            <span className="bg-green-600 text-white text-xs px-2 py-1 rounded-full block">
+            <span className="bg-brown-800 text-cream-50 text-xs px-2 py-1 rounded-full block">
               {woodTypes.find(type => type.id === product.woodType)?.name || product.woodType}
             </span>
           )}

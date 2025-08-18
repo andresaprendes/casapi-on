@@ -220,8 +220,8 @@ const ProductDetail = () => {
                     <span className="text-sm text-brown-600 ml-2">4.9 (24 reseñas)</span>
                   </div>
                   {product.isCustom && (
-                    <span className="bg-brown-800 text-cream-50 text-xs px-2 py-1 rounded-full">
-                      Personalizado
+                    <span className="bg-purple-600 text-white text-xs px-2 py-1 rounded-full">
+                      Personalizable
                     </span>
                   )}
                 </div>
