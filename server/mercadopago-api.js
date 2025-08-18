@@ -2686,85 +2686,7 @@ async function startServer() {
 
 // Server startup is now handled by start.js
 
-// Track sent cancellation emails to prevent duplicates
-const sentCancellationEmails = new Set();
 
-// New endpoint to handle cancelled payments (when user clicks "volver al sitio")
-app.post('/api/mercadopago/payment-cancelled', express.json(), async (req, res) => {
-  try {
-    const { orderNumber, customerInfo, reason = 'user_cancelled' } = req.body;
-    
-    if (!orderNumber || !customerInfo) {
-      return res.status(400).json({
-        success: false,
-        error: 'Missing orderNumber or customerInfo'
-      });
-    }
-
-    // Check if cancellation email was already sent for this order
-    if (sentCancellationEmails.has(orderNumber)) {
-      console.log('📧 Cancellation email already sent for order:', orderNumber);
-      return res.json({
-        success: true,
-        message: 'Cancellation email already sent',
-        emailSent: true,
-        alreadySent: true
-      });
-    }
-
-    console.log('🚫 Payment cancelled by user:', { orderNumber, reason });
-
-    // Get the order from database
-    const order = await orderOperations.getByOrderNumber(orderNumber);
-    if (!order) {
-      console.error('❌ Order not found for cancelled payment:', orderNumber);
-      return res.status(404).json({
-        success: false,
-        error: 'Order not found'
-      });
-    }
-
-    // Create a fake payment object for the email
-    const cancelledPayment = {
-      id: null,
-      status: 'cancelled',
-      status_detail: reason,
-      external_reference: orderNumber,
-      transaction_amount: order.total || 0,
-      date_created: new Date().toISOString(),
-      payment_method: {
-        type: 'user_cancellation',
-        id: 'cancelled'
-      }
-    };
-
-    // Send cancellation email
-    const emailResult = await sendPaymentStatusEmail(order, customerInfo, cancelledPayment, 'cancelled');
-    
-    if (emailResult.success) {
-      console.log('✅ Cancellation email sent successfully for order:', orderNumber);
-      // Mark this order as having received a cancellation email
-      sentCancellationEmails.add(orderNumber);
-    } else {
-      console.error('❌ Failed to send cancellation email:', emailResult.error);
-    }
-
-    res.json({
-      success: true,
-      message: 'Payment cancellation processed',
-      emailSent: emailResult.success
-    });
-
-  } catch (error) {
-    console.error('❌ Error processing payment cancellation:', error);
-    console.error('❌ Error stack:', error.stack);
-    res.status(500).json({
-      success: false,
-      error: 'Internal server error',
-      details: error.message
-    });
-  }
-});
 
 // Test endpoint to verify email service is working
 app.post('/api/test-email', express.json(), async (req, res) => {
@@ -3151,5 +3073,195 @@ app.post('/api/database/sync/reset', async (req, res) => {
     });
   }
 });
+
+// Webhook endpoint for MercadoPago events
+app.post('/api/mercadopago/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  try {
+    console.log('🔔 Webhook received:', req.headers);
+    
+    // Verify webhook signature (security best practice)
+    const signature = req.headers['x-signature'];
+    const timestamp = req.headers['x-timestamp'];
+    
+    if (!signature || !timestamp) {
+      console.error('❌ Missing webhook signature or timestamp');
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
+    // TODO: Implement signature verification with MercadoPago public key
+    // For now, we'll accept all webhooks in development
+    
+    const eventData = JSON.parse(req.body);
+    console.log('📦 Webhook event data:', JSON.stringify(eventData, null, 2));
+    
+    const { type, data } = eventData;
+    
+    if (!type || !data) {
+      console.error('❌ Invalid webhook payload');
+      return res.status(400).json({ error: 'Invalid payload' });
+    }
+    
+    // Process different event types
+    switch (type) {
+      case 'payment.created':
+        console.log('💰 Payment created:', data.id);
+        // Don't send email yet - too early
+        break;
+        
+      case 'payment.updated':
+        console.log('🔄 Payment updated:', data.id);
+        // Process status changes
+        await processPaymentStatusChange(data);
+        break;
+        
+      case 'payment.pending':
+        console.log('⏳ Payment pending:', data.id);
+        await sendPaymentStatusEmail(data, 'pending');
+        break;
+        
+      case 'payment.approved':
+        console.log('✅ Payment approved:', data.id);
+        await sendPaymentStatusEmail(data, 'approved');
+        break;
+        
+      case 'payment.rejected':
+        console.log('❌ Payment rejected:', data.id);
+        await sendPaymentStatusEmail(data, 'rejected');
+        break;
+        
+      case 'payment.cancelled':
+        console.log('🚫 Payment cancelled:', data.id);
+        await sendPaymentStatusEmail(data, 'cancelled');
+        break;
+        
+      case 'payment.refunded':
+        console.log('💸 Payment refunded:', data.id);
+        await sendPaymentStatusEmail(data, 'refunded');
+        break;
+        
+      default:
+        console.log('❓ Unknown webhook type:', type);
+    }
+    
+    // Log webhook event to database
+    await logWebhookEvent(data.id, type, eventData);
+    
+    res.status(200).json({ success: true });
+    
+  } catch (error) {
+    console.error('❌ Webhook processing error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Process payment status changes
+async function processPaymentStatusChange(paymentData) {
+  try {
+    const { id, status, external_reference } = paymentData;
+    
+    // Get order details
+    const order = await orderOperations.getByOrderNumber(external_reference);
+    if (!order) {
+      console.error('❌ Order not found for payment:', external_reference);
+      return;
+    }
+    
+    // Update order payment status
+    await orderOperations.updatePaymentStatus(external_reference, status, id);
+    
+    // Send email based on status
+    if (['approved', 'rejected', 'cancelled', 'pending'].includes(status)) {
+      await sendPaymentStatusEmail(paymentData, status);
+    }
+    
+  } catch (error) {
+    console.error('❌ Error processing payment status change:', error);
+  }
+}
+
+// Send payment status email with duplicate prevention
+async function sendPaymentStatusEmail(paymentData, status) {
+  try {
+    const { id, external_reference } = paymentData;
+    
+    // Check if email was already sent for this payment
+    const emailKey = `${external_reference}-${status}`;
+    if (sentEmails.has(emailKey)) {
+      console.log('📧 Email already sent for:', emailKey);
+      return;
+    }
+    
+    // Get order details
+    const order = await orderOperations.getByOrderNumber(external_reference);
+    if (!order) {
+      console.error('❌ Order not found for email:', external_reference);
+      return;
+    }
+    
+    // Extract customer info
+    const customerInfo = order.customer || {
+      name: 'Cliente',
+      email: '',
+      phone: '',
+      address: {}
+    };
+    
+    // Send email
+    const emailResult = await sendPaymentStatusEmail(order, customerInfo, paymentData, status);
+    
+    if (emailResult.success) {
+      console.log('✅ Payment status email sent:', emailKey);
+      sentEmails.add(emailKey);
+      
+      // Update email status in database
+      await updateEmailStatus(external_reference, status, true);
+    } else {
+      console.error('❌ Failed to send payment status email:', emailResult.error);
+    }
+    
+  } catch (error) {
+    console.error('❌ Error sending payment status email:', error);
+  }
+}
+
+// Log webhook event to database
+async function logWebhookEvent(paymentId, eventType, eventData) {
+  try {
+    const query = `
+      INSERT INTO webhook_events (payment_id, event_type, event_data, processed_at)
+      VALUES ($1, $2, $3, NOW())
+    `;
+    
+    await pool.query(query, [paymentId, eventType, JSON.stringify(eventData)]);
+    console.log('📝 Webhook event logged:', paymentId, eventType);
+    
+  } catch (error) {
+    console.error('❌ Error logging webhook event:', error);
+  }
+}
+
+// Update email status in database
+async function updateEmailStatus(orderNumber, status, sent) {
+  try {
+    const query = `
+      UPDATE orders 
+      SET email_status = jsonb_set(
+        COALESCE(email_status, '{}'::jsonb), 
+        '{${status}}', 
+        '{"sent": $1, "sent_at": $2}'::jsonb
+      )
+      WHERE order_number = $3
+    `;
+    
+    await pool.query(query, [sent, new Date().toISOString(), orderNumber]);
+    console.log('📧 Email status updated:', orderNumber, status, sent);
+    
+  } catch (error) {
+    console.error('❌ Error updating email status:', error);
+  }
+}
+
+// Track sent emails to prevent duplicates
+const sentEmails = new Set();
 
 export { app, startServer };

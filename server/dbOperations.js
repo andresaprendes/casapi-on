@@ -295,6 +295,34 @@ const orderOperations = {
     return result.rows[0];
   },
 
+  // Update payment status
+  async updatePaymentStatus(orderNumber, status, paymentId = null) {
+    try {
+      const query = `
+        UPDATE orders 
+        SET 
+          payment_status = $1,
+          payment_id = COALESCE($2, payment_id),
+          updated_at = CURRENT_TIMESTAMP
+        WHERE order_number = $3
+        RETURNING *
+      `;
+      
+      const result = await pool.query(query, [status, paymentId, orderNumber]);
+      
+      if (result.rows[0]) {
+        console.log(`✅ Payment status updated for order ${orderNumber}: ${status}`);
+        return orderOperations.transformOrderRow(result.rows[0]);
+      } else {
+        console.error(`❌ Order not found for payment status update: ${orderNumber}`);
+        return null;
+      }
+    } catch (error) {
+      console.error('❌ Error updating payment status:', error);
+      throw error;
+    }
+  },
+
   // Clean up abandoned orders
   async cleanupAbandoned(hours = 24) {
     const query = `
