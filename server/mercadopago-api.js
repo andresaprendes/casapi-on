@@ -3025,27 +3025,27 @@ app.post('/api/mercadopago/webhook', express.raw({ type: 'application/json' }), 
         
       case 'payment.pending':
         console.log('⏳ Payment pending:', data.id);
-        await sendPaymentStatusEmail(data, 'pending');
+        await sendWebhookPaymentStatusEmail(data, 'pending');
         break;
         
       case 'payment.approved':
         console.log('✅ Payment approved:', data.id);
-        await sendPaymentStatusEmail(data, 'approved');
+        await sendWebhookPaymentStatusEmail(data, 'approved');
         break;
         
       case 'payment.rejected':
         console.log('❌ Payment rejected:', data.id);
-        await sendPaymentStatusEmail(data, 'rejected');
+        await sendWebhookPaymentStatusEmail(data, 'rejected');
         break;
         
       case 'payment.cancelled':
         console.log('🚫 Payment cancelled:', data.id);
-        await sendPaymentStatusEmail(data, 'cancelled');
+        await sendWebhookPaymentStatusEmail(data, 'cancelled');
         break;
         
       case 'payment.refunded':
         console.log('💸 Payment refunded:', data.id);
-        await sendPaymentStatusEmail(data, 'refunded');
+        await sendWebhookPaymentStatusEmail(data, 'refunded');
         break;
         
       default:
@@ -3080,7 +3080,7 @@ async function processPaymentStatusChange(paymentData) {
     
     // Send email based on status
     if (['approved', 'rejected', 'cancelled', 'pending'].includes(status)) {
-      await sendPaymentStatusEmail(paymentData, status);
+      await sendWebhookPaymentStatusEmail(paymentData, status);
     }
     
   } catch (error) {
@@ -3089,7 +3089,7 @@ async function processPaymentStatusChange(paymentData) {
 }
 
 // Send payment status email with duplicate prevention
-async function sendPaymentStatusEmail(paymentData, status) {
+async function sendWebhookPaymentStatusEmail(paymentData, status) {
   try {
     const { id, external_reference } = paymentData;
     
