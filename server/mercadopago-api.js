@@ -3196,54 +3196,6 @@ app.get('/api/deployment-test', (req, res) => {
   });
 });
 
-// Test webhook email endpoint
-app.post('/api/test-webhook-email', express.json(), async (req, res) => {
-  try {
-    const { orderNumber, status } = req.body;
-    
-    console.log('🧪 Testing webhook email for order:', orderNumber, status);
-    
-    // Get order details
-    const order = await orderOperations.getByOrderNumber(orderNumber);
-    if (!order) {
-      return res.status(404).json({ error: 'Order not found' });
-    }
-    
-    console.log('✅ Order found:', order.orderNumber);
-    
-    // Extract customer info
-    const customerInfo = order.customer || {
-      name: 'Cliente',
-      email: '',
-      phone: '',
-      address: {}
-    };
-    
-    console.log('📧 Customer email:', customerInfo.email);
-    
-    // Create payment data
-    const paymentData = {
-      id: 'test-payment',
-      external_reference: orderNumber,
-      status: status,
-      transaction_amount: order.total
-    };
-    
-    // Send email
-    const emailResult = await sendPaymentStatusEmail(order, customerInfo, paymentData, status);
-    
-    res.json({
-      success: true,
-      emailResult,
-      order: orderNumber,
-      customer: customerInfo.email,
-      status: status
-    });
-    
-  } catch (error) {
-    console.error('❌ Test webhook email error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
+
 
 export { app, startServer };
