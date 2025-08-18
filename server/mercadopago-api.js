@@ -3040,8 +3040,8 @@ app.post('/api/mercadopago/webhook', express.json(), async (req, res) => {
         console.log('❓ Unknown webhook type:', type);
     }
     
-    // Log webhook event to database
-    await logWebhookEvent(data.id, type, req.body);
+    // Log webhook event to database (temporarily disabled for testing)
+    // await logWebhookEvent(data.id, type, req.body);
     
     res.status(200).json({ 
       success: true, 
@@ -3115,16 +3115,20 @@ async function sendWebhookPaymentStatusEmail(paymentData, status) {
     
     // Send email
     console.log('📤 Sending email with customer info:', customerInfo.email);
-    const emailResult = await sendPaymentStatusEmail(order, customerInfo, paymentData, status);
-    
-    if (emailResult.success) {
-      console.log('✅ Payment status email sent:', emailKey);
-      sentEmails.add(emailKey);
+    try {
+      const emailResult = await sendPaymentStatusEmail(order, customerInfo, paymentData, status);
       
-      // Update email status in database
-      await updateEmailStatus(external_reference, status, true);
-    } else {
-      console.error('❌ Failed to send payment status email:', emailResult.error);
+      if (emailResult.success) {
+        console.log('✅ Payment status email sent:', emailKey);
+        sentEmails.add(emailKey);
+        
+        // Update email status in database (temporarily disabled)
+        // await updateEmailStatus(external_reference, status, true);
+      } else {
+        console.error('❌ Failed to send payment status email:', emailResult.error);
+      }
+    } catch (emailError) {
+      console.error('❌ Error in email sending:', emailError);
     }
     
   } catch (error) {
