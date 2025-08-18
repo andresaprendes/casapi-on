@@ -2175,13 +2175,51 @@ app.post('/api/upload/image', upload.single('image'), async (req, res) => {
   }
 });
 
-// Serve static files from public directory
-app.use('/images', express.static(path.join(__dirname, '..', 'public', 'images')));
+// Configure MIME types for proper image serving
+const mimeTypes = {
+  '.webp': 'image/webp',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.svg': 'image/svg+xml'
+};
 
-// Railway-specific static file serving (fixes 404 errors)
-app.use('/images', express.static(path.join(__dirname, 'public', 'images')));
-app.use('/images', express.static(path.join(__dirname, '..', 'public', 'images')));
-app.use('/images', express.static(path.join(__dirname, '..', '..', 'public', 'images')));
+// Serve static files from public directory with proper MIME types
+app.use('/images', express.static(path.join(__dirname, '..', 'public', 'images'), {
+  setHeaders: (res, path) => {
+    const ext = path.extname(path).toLowerCase();
+    if (mimeTypes[ext]) {
+      res.setHeader('Content-Type', mimeTypes[ext]);
+    }
+  }
+}));
+
+// Railway-specific static file serving (fixes 404 errors) with proper MIME types
+app.use('/images', express.static(path.join(__dirname, 'public', 'images'), {
+  setHeaders: (res, path) => {
+    const ext = path.extname(path).toLowerCase();
+    if (mimeTypes[ext]) {
+      res.setHeader('Content-Type', mimeTypes[ext]);
+    }
+  }
+}));
+app.use('/images', express.static(path.join(__dirname, '..', 'public', 'images'), {
+  setHeaders: (res, path) => {
+    const ext = path.extname(path).toLowerCase();
+    if (mimeTypes[ext]) {
+      res.setHeader('Content-Type', mimeTypes[ext]);
+    }
+  }
+}));
+app.use('/images', express.static(path.join(__dirname, '..', '..', 'public', 'images'), {
+  setHeaders: (res, path) => {
+    const ext = path.extname(path).toLowerCase();
+    if (mimeTypes[ext]) {
+      res.setHeader('Content-Type', mimeTypes[ext]);
+    }
+  }
+}));
 
 // Product API endpoints
 app.get('/api/products', async (req, res) => {
