@@ -94,6 +94,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
               {woodTypes.find(type => type.id === product.woodType)?.name || product.woodType}
             </span>
           )}
+
         </div>
       </div>
 

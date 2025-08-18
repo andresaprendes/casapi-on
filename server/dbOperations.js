@@ -454,18 +454,20 @@ const productOperations = {
         designVariations,
         estimatedDelivery,
         features,
-        specifications
+        specifications,
+        woodType
       } = productData;
 
       console.log(`🔍 Creating product with ID: ${id}`);
       console.log(`🔍 Product name: ${name}`);
+      console.log(`🔍 Wood type: ${woodType}`);
 
       const query = `
         INSERT INTO products (
           id, name, description, price, category, subcategory,
           images, materials, dimensions, weight, made_to_order, is_custom,
-          design_variations, estimated_delivery, features, specifications
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+          design_variations, estimated_delivery, features, specifications, wood_type
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
         RETURNING *
       `;
 
@@ -485,7 +487,8 @@ const productOperations = {
         designVariations,
         estimatedDelivery,
         JSON.stringify(features),
-        JSON.stringify(specifications)
+        JSON.stringify(specifications),
+        woodType
       ];
 
       console.log(`🔍 Executing query with ${values.length} parameters`);
