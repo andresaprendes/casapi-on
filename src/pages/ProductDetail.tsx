@@ -244,10 +244,15 @@ const ProductDetail = () => {
               <div>
                 <h3 className="text-lg font-semibold text-brown-900 mb-2">Materiales</h3>
                 <div className="flex flex-wrap gap-2">
+                  {product.woodType && (
+                    <span className="px-3 py-1 bg-cream-200 text-brown-700 rounded-full text-sm">
+                      {woodTypes.find(type => type.id === product.woodType)?.name || product.woodType}
+                    </span>
+                  )}
                   {product.materials.map((material, index) => (
                     <span
                       key={index}
-                      className="px-3 py-1 bg-cream-100 text-brown-700 rounded-full text-sm"
+                      className="px-3 py-1 bg-cream-200 text-brown-700 rounded-full text-sm"
                     >
                       {material}
                     </span>
