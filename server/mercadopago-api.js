@@ -3010,42 +3010,36 @@ app.post('/api/mercadopago/webhook', express.raw({ type: 'application/json' }), 
       return res.status(400).json({ error: 'Invalid payload' });
     }
     
-    // Process different event types
+    // Process different event types (simplified for testing)
+    console.log('🔔 Processing webhook event:', type, data.id);
+    
     switch (type) {
       case 'payment.created':
         console.log('💰 Payment created:', data.id);
-        // Don't send email yet - too early
         break;
         
       case 'payment.updated':
         console.log('🔄 Payment updated:', data.id);
-        // Process status changes
-        await processPaymentStatusChange(data);
         break;
         
       case 'payment.pending':
         console.log('⏳ Payment pending:', data.id);
-        await sendWebhookPaymentStatusEmail(data, 'pending');
         break;
         
       case 'payment.approved':
         console.log('✅ Payment approved:', data.id);
-        await sendWebhookPaymentStatusEmail(data, 'approved');
         break;
         
       case 'payment.rejected':
         console.log('❌ Payment rejected:', data.id);
-        await sendWebhookPaymentStatusEmail(data, 'rejected');
         break;
         
       case 'payment.cancelled':
         console.log('🚫 Payment cancelled:', data.id);
-        await sendWebhookPaymentStatusEmail(data, 'cancelled');
         break;
         
       case 'payment.refunded':
         console.log('💸 Payment refunded:', data.id);
-        await sendWebhookPaymentStatusEmail(data, 'refunded');
         break;
         
       default:
