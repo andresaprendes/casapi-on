@@ -114,13 +114,14 @@ const AdminProducts = () => {
         const resizedImage = await resizeImage(file, 800, 800)
         
         // Create FormData for file upload
-        const formData = new FormData()
-        formData.append('image', resizedImage)
+        const uploadFormData = new FormData()
+        uploadFormData.append('image', resizedImage)
+        uploadFormData.append('productName', formData.name || 'product') // Include product name
         
         // Upload to server
         const response = await fetch(`${apiUrl}/api/upload/image`, {
           method: 'POST',
-          body: formData
+          body: uploadFormData
         })
         
         const result = await response.json()
