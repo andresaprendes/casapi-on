@@ -3173,6 +3173,16 @@ async function updateEmailStatus(orderNumber, status, sent) {
 // Track sent emails to prevent duplicates
 const sentEmails = new Set();
 
+// Root endpoint for healthcheck
+app.get('/', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Casa Piñón API is running',
+    timestamp: new Date().toISOString(),
+    version: '2.0.0'
+  });
+});
+
 // Test endpoint to verify deployment
 app.get('/api/deployment-test', (req, res) => {
   res.json({
