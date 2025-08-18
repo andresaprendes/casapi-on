@@ -1,4 +1,4 @@
-const { pool, updateTimestamp } = require('./database');
+import { pool, updateTimestamp } from './database.js';
 
 // Order operations
 const orderOperations = {
@@ -515,7 +515,7 @@ const productOperations = {
   }
 };
 
-module.exports = {
+export {
   orderOperations,
   paymentOperations,
   productOperations

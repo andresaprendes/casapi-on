@@ -1,19 +1,20 @@
-const express = require('express');
-const { getProductImage } = require('./data/productImages');
-const cors = require('cors');
-const crypto = require('crypto');
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
-const { MercadoPagoConfig, Preference, Payment, PaymentMethod } = require('mercadopago');
-const { initializeDatabase } = require('./database');
-const { pool } = require('./database');
-const { orderOperations, paymentOperations, productOperations } = require('./dbOperations');
-const { sendOrderConfirmation, sendPaymentStatusEmail } = require('./emailService');
-const sharp = require('sharp');
+import express from 'express';
+import { getProductImage } from './data/productImages.js';
+import cors from 'cors';
+import crypto from 'crypto';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+import { MercadoPagoConfig, Preference, Payment, PaymentMethod } from 'mercadopago';
+import { initializeDatabase } from './database.js';
+import { pool } from './database.js';
+import { orderOperations, paymentOperations, productOperations } from './dbOperations.js';
+import { sendOrderConfirmation, sendPaymentStatusEmail } from './emailService.js';
+import sharp from 'sharp';
 // Load environment variables - try local first, then parent directory
-require('dotenv').config({ path: '../.env.local' });
-require('dotenv').config({ path: '../.env' });
+import dotenv from 'dotenv';
+dotenv.config({ path: '../.env.local' });
+dotenv.config({ path: '../.env' });
 
 // In-memory storage as fallback (when DATABASE_URL is not available)
 const orderDatabase = new Map();
@@ -3118,4 +3119,4 @@ app.post('/api/database/clear', async (req, res) => {
   }
 });
 
-module.exports = { app, startServer };
+export { app, startServer };

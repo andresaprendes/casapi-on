@@ -42,7 +42,7 @@ const getImageCount = () => {
   return Object.keys(productImages).length;
 };
 
-module.exports = {
+export {
   productImages,
   getProductImage,
   getAllProductImages,

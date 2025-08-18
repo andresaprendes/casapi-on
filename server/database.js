@@ -1,4 +1,4 @@
-const { Pool } = require('pg');
+import { Pool } from 'pg';
 
 // Database configuration
 const pool = new Pool({
@@ -200,7 +200,7 @@ const updateTimestamp = async (table, id) => {
   }
 };
 
-module.exports = {
+export {
   pool,
   initializeDatabase,
   updateTimestamp

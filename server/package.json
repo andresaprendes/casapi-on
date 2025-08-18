@@ -1,6 +1,7 @@
 {
   "name": "casa-pinon-mercadopago-api",
   "version": "1.0.0",
+  "type": "module",
   "description": "Backend API for MercadoPago payment integration - Casa Piñón Ebanistería",
   "main": "mercadopago-api.js",
   "scripts": {
