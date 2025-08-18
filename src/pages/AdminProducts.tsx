@@ -384,14 +384,14 @@ const AdminProducts = () => {
                 {/* Materials and Wood Type */}
                 <div className="flex flex-wrap gap-1">
                   {product.woodType && (
-                    <span className="text-xs bg-amber-50 text-brown-700 px-2 py-1 rounded-full">
+                    <span className="text-xs bg-cream-50 text-brown-700 px-2 py-1 rounded-full">
                       {woodTypes.find(type => type.id === product.woodType)?.name || product.woodType}
                     </span>
                   )}
                   {product.materials.slice(0, 2).map((material, index) => (
                     <span
                       key={index}
-                      className="text-xs bg-amber-50 text-brown-700 px-2 py-1 rounded-full"
+                      className="text-xs bg-cream-50 text-brown-700 px-2 py-1 rounded-full"
                     >
                       {material}
                     </span>
