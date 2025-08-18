@@ -26,11 +26,15 @@ const Header = () => {
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
                 <Phone className="w-4 h-4" />
-                <span>+57 301 466 4444</span>
+                <a href="tel:+573014664444" className="hover:text-cream-200 transition-colors duration-200">
+                  +57 301 466 4444
+                </a>
               </div>
               <div className="flex items-center space-x-2">
                 <Mail className="w-4 h-4" />
-                <span>casapinon3@gmail.com</span>
+                <a href="mailto:info@casapinon.co" className="hover:text-cream-200 transition-colors duration-200">
+                  info@casapinon.co
+                </a>
               </div>
             </div>
             <div className="flex items-center space-x-4">

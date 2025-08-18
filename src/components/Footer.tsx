@@ -45,15 +45,21 @@ const Footer = () => {
             <div className="space-y-2">
               <div className="flex items-center space-x-2 text-sm">
                 <Phone className="w-4 h-4" />
-                <span>+57 301 466 4444</span>
+                <a href="tel:+573014664444" className="hover:text-white transition-colors duration-200">
+                  +57 301 466 4444
+                </a>
               </div>
               <div className="flex items-center space-x-2 text-sm">
                 <Mail className="w-4 h-4" />
-                <span>info@casapinon.co</span>
+                <a href="mailto:info@casapinon.co" className="hover:text-white transition-colors duration-200">
+                  info@casapinon.co
+                </a>
               </div>
               <div className="flex items-center space-x-2 text-sm">
                 <MapPin className="w-4 h-4" />
-                <span>Alto de Carrizales, Antioquia</span>
+                <a href="https://maps.app.goo.gl/nhasHxZeW3RPdzrQA?g_st=ipc" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors duration-200">
+                  Alto de Carrizales, Antioquia
+                </a>
               </div>
             </div>
           </div>
@@ -124,24 +130,25 @@ const Footer = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-8 h-8 bg-cream-200 rounded-full flex items-center justify-center text-brown-900 hover:bg-white transition-colors duration-200"
+                title="Chatear por WhatsApp"
               >
                 <MessageCircle className="w-4 h-4" />
               </a>
               <a
-                href="#"
-                target="_blank"
-                rel="noopener noreferrer"
+                href="mailto:info@casapinon.co"
                 className="w-8 h-8 bg-cream-200 rounded-full flex items-center justify-center text-brown-900 hover:bg-white transition-colors duration-200"
+                title="Enviar Email"
               >
-                <Facebook className="w-4 h-4" />
+                <Mail className="w-4 h-4" />
               </a>
               <a
-                href="#"
+                href="https://maps.app.goo.gl/nhasHxZeW3RPdzrQA?g_st=ipc"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-8 h-8 bg-cream-200 rounded-full flex items-center justify-center text-brown-900 hover:bg-white transition-colors duration-200"
+                title="Ver en Google Maps"
               >
-                <Instagram className="w-4 h-4" />
+                <MapPin className="w-4 h-4" />
               </a>
             </div>
           </div>

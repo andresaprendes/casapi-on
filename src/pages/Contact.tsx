@@ -30,7 +30,7 @@ const Contact = () => {
         from_phone: data.phone,
         subject: data.subject,
         message: data.message,
-        to_email: 'casapinon3@gmail.com'
+        to_email: 'info@casapinon.co'
       }
 
       // Enviar email usando EmailJS
@@ -62,8 +62,8 @@ const Contact = () => {
     {
       icon: Mail,
       title: 'Email',
-      value: 'casapinon3@gmail.com',
-      link: 'mailto:casapinon3@gmail.com',
+      value: 'info@casapinon.co',
+      link: 'mailto:info@casapinon.co',
       description: 'Envíanos un correo electrónico'
     },
     {
@@ -85,7 +85,7 @@ const Contact = () => {
     <>
       <Helmet>
         <title>Contacto - Casa Piñón Ebanistería | Medellín y Oriente Antioqueño</title>
-        <meta name="description" content="Contacta a Casa Piñón Ebanistería. WhatsApp: +57 301 466 4444. Email: casapinon3@gmail.com. Horario: Lunes a Sábado 8AM-5:30PM. Ubicación: Alto de Carrizales, Antioquia." />
+        <meta name="description" content="Contacta a Casa Piñón Ebanistería. WhatsApp: +57 301 466 4444. Email: info@casapinon.co. Horario: Lunes a Sábado 8AM-5:30PM. Ubicación: Alto de Carrizales, Antioquia." />
       </Helmet>
 
       {/* Hero Section */}
@@ -280,14 +280,14 @@ const Contact = () => {
               <div className="bg-brown-100 rounded-lg p-4">
                 <div className="aspect-video rounded-lg overflow-hidden shadow-lg">
                   <iframe
-                    src={`https://www.google.com/maps/embed/v1/place?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8'}&q=4FRJ%2B4M+Retiro,+Antioquia,+Colombia`}
+                    src={`https://www.google.com/maps/embed/v1/place?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8'}&q=Casa+Piñón+Ebanistería,+Alto+de+Carrizales,+Antioquia,+Colombia`}
                     width="100%"
                     height="100%"
                     style={{ border: 0 }}
                     allowFullScreen
                     loading="lazy"
                     referrerPolicy="no-referrer-when-downgrade"
-                    title="Casa Piñón Ebanistería - 4FRJ+4M Retiro, Antioquia"
+                    title="Casa Piñón Ebanistería - Alto de Carrizales, Antioquia"
                   />
                 </div>
                 <div className="mt-4 p-4 bg-white rounded-lg">
