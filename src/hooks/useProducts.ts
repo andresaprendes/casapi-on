@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Product } from '../types'
 import { products as mockProducts } from '../data/mockData'
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://casa-pinon-backend-production.up.railway.app'
+const API_URL = 'https://casa-pinon-backend-production.up.railway.app' // Force production backend
 
 export const useProducts = () => {
   const [products, setProducts] = useState<Product[]>([])
