@@ -3052,8 +3052,8 @@ app.post('/api/mercadopago/webhook', express.raw({ type: 'application/json' }), 
         console.log('❓ Unknown webhook type:', type);
     }
     
-    // Log webhook event to database
-    await logWebhookEvent(data.id, type, eventData);
+    // Log webhook event to database (commented out for testing)
+    // await logWebhookEvent(data.id, type, eventData);
     
     res.status(200).json({ success: true, message: 'Webhook processed successfully', timestamp: new Date().toISOString() });
     
