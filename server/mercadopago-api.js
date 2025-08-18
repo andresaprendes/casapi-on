@@ -2021,20 +2021,22 @@ app.post('/api/upload/image', upload.single('image'), async (req, res) => {
     const inputPath = req.file.path;
     const originalFilename = req.file.filename;
     
-    // Get product name from request body or use original filename
+    // Get product name and ID from request body
     const productName = req.body.productName || 'product';
+    const productId = req.body.productId || null;
     
     // Create clean filename from product name
     const cleanProductName = productName
       .toLowerCase()
       .replace(/[^a-z0-9\s]/g, '') // Remove special characters
       .replace(/\s+/g, '-') // Replace spaces with hyphens
-      .substring(0, 50); // Limit length
+      .substring(0, 30); // Limit length
     
-    // Generate unique filename with product name
+    // Generate unique filename with product name and ID if available
     const timestamp = Date.now();
     const randomSuffix = Math.round(Math.random() * 1E9);
-    const webpFilename = `${cleanProductName}-${timestamp}-${randomSuffix}.webp`;
+    const idSuffix = productId ? `-${productId}` : '';
+    const webpFilename = `${cleanProductName}${idSuffix}-${timestamp}-${randomSuffix}.webp`;
     const outputPath = path.join(__dirname, '..', 'public', 'images', 'products', webpFilename);
 
     // Ensure input and output paths are different
@@ -2077,12 +2079,20 @@ app.post('/api/upload/image', upload.single('image'), async (req, res) => {
     console.log('📁 WebP file saved at:', outputPath);
     console.log('🌐 Accessible at:', relativePath);
     
+    // Log image-product linking info
+    if (productId) {
+      console.log('🔗 Image linked to product ID:', productId);
+    }
+    console.log('📝 Product name used for filename:', productName);
+    
     res.json({
       success: true,
       filename: webpFilename,
       path: relativePath,
       size: req.file.size,
       mimetype: 'image/webp',
+      productId: productId,
+      productName: productName,
       message: 'Image converted to WebP and uploaded successfully!'
     });
 
@@ -2091,6 +2101,58 @@ app.post('/api/upload/image', upload.single('image'), async (req, res) => {
     res.status(500).json({
       success: false,
       error: error.message || 'Error uploading/converting image'
+    });
+  }
+});
+
+// Verify image-product relationships
+app.get('/api/products/verify-images', async (req, res) => {
+  try {
+    if (!process.env.DATABASE_URL) {
+      return res.status(400).json({
+        success: false,
+        error: 'Database connection required for image verification'
+      });
+    }
+
+    const products = await productOperations.getAll();
+    const imageReport = {
+      totalProducts: products.length,
+      productsWithImages: 0,
+      productsWithoutImages: 0,
+      orphanedImages: [],
+      imageProductMapping: []
+    };
+
+    // Check each product's images
+    for (const product of products) {
+      if (product.images && product.images.length > 0) {
+        imageReport.productsWithImages++;
+        
+        // Map each image to its product
+        for (const imagePath of product.images) {
+          imageReport.imageProductMapping.push({
+            productId: product.id,
+            productName: product.name,
+            imagePath: imagePath
+          });
+        }
+      } else {
+        imageReport.productsWithoutImages++;
+      }
+    }
+
+    console.log('🔍 Image verification report:', imageReport);
+    
+    res.json({
+      success: true,
+      report: imageReport
+    });
+  } catch (error) {
+    console.error('Error verifying images:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Error verifying images'
     });
   }
 });

@@ -118,6 +118,11 @@ const AdminProducts = () => {
         uploadFormData.append('image', resizedImage)
         uploadFormData.append('productName', formData.name || 'product') // Include product name
         
+        // Include product ID if editing existing product
+        if (editingProduct?.id) {
+          uploadFormData.append('productId', editingProduct.id)
+        }
+        
         // Upload to server
         const response = await fetch(`${apiUrl}/api/upload/image`, {
           method: 'POST',
