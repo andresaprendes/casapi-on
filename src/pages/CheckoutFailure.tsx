@@ -15,7 +15,6 @@ const CheckoutFailure: React.FC = () => {
   const [searchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(true);
   const [failureDetails, setFailureDetails] = useState<FailureDetails | null>(null);
-  const [emailSent, setEmailSent] = useState<Set<string>>(new Set());
 
   const paymentId = searchParams.get('payment_id');
   const externalReference = searchParams.get('external_reference');
@@ -25,78 +24,34 @@ const CheckoutFailure: React.FC = () => {
 
   useEffect(() => {
     getFailureDetails();
-    
-    // ADDITIONAL: Fallback detection for cancellations
-    // If no URL parameters at all, this might be a direct navigation to failure page
-    const hasNoParameters = !paymentId && !externalReference && !errorCode && !collectionStatus && !status;
-    if (hasNoParameters) {
-      console.log('🚫 No URL parameters detected - this might be a direct cancellation');
-      // We'll handle this in getFailureDetails()
-    }
   }, []);
 
   const getFailureDetails = async () => {
-    // CONSOLIDATED: Single cancellation detection function
-    const detectCancellation = () => {
-      // Check if this is a user cancellation based on URL parameters
-      const isUserCancellation = !paymentId && 
-                                (collectionStatus === 'null' || !collectionStatus) && 
-                                (status === 'null' || !status) && 
-                                externalReference;
-      
-      // Check for more cancellation scenarios
-      const isReturnToSite = !paymentId && !externalReference && !errorCode;
-      const isAbandonedPayment = errorCode === 'unknown' || errorCode === 'return_to_site';
-      const isCancelledByUser = collectionStatus === 'cancelled' || status === 'cancelled';
-      
-      // Check for MercadoPago template variables (not replaced)
-      const hasTemplateVariables = externalReference && 
-                                 (paymentId === '%7Bpayment_id%7D' || 
-                                  status === '%7Bstatus%7D' || 
-                                  collectionStatus === '%7Bcollection_status%7D');
-      
-      // Combined cancellation detection
-      return isUserCancellation || isReturnToSite || isAbandonedPayment || isCancelledByUser || hasTemplateVariables;
-    };
-
-    // Check for cancellation first (before any API calls)
-    const isCancellation = detectCancellation();
+    // Simple cancellation detection
+    const isCancellation = !paymentId || 
+                          paymentId === '%7Bpayment_id%7D' || 
+                          status === '%7Bstatus%7D' || 
+                          collectionStatus === '%7Bcollection_status%7D' ||
+                          collectionStatus === 'null' || 
+                          status === 'null' ||
+                          collectionStatus === 'cancelled' || 
+                          status === 'cancelled';
     
     if (isCancellation) {
-      console.log('🚫 Detected user cancellation from URL parameters for order:', externalReference);
-      console.log('🔍 Cancellation details:', {
-        paymentId,
-        externalReference,
-        errorCode,
-        collectionStatus,
-        status
-      });
-      
       setFailureDetails({
         errorCode: 'user_cancelled',
         errorMessage: getErrorMessage('user_cancelled'),
         externalReference: externalReference || undefined
       });
-      
-      // Trigger cancellation email immediately if we have an order reference
-      if (externalReference && !emailSent.has(externalReference)) {
-        triggerCancellationEmail(externalReference);
-        setEmailSent(prev => new Set(prev).add(externalReference));
-      }
       setIsLoading(false);
       return;
     }
     
     if (!paymentId && !externalReference) {
-      // Check if this is a user cancellation (no payment attempt made)
-      const isUserCancellation = errorCode === 'unknown' || !errorCode;
-      
       setFailureDetails({
-        errorCode: isUserCancellation ? 'user_cancelled' : (errorCode || 'unknown'),
-        errorMessage: getErrorMessage(isUserCancellation ? 'user_cancelled' : (errorCode || 'unknown'))
+        errorCode: 'user_cancelled',
+        errorMessage: getErrorMessage('user_cancelled')
       });
-      
-      // No email trigger here since we don't have an order reference
       setIsLoading(false);
       return;
     }
@@ -114,38 +69,8 @@ const CheckoutFailure: React.FC = () => {
       if (result.success) {
         const orderData = result.order || result.payment;
         
-        // Determine if this was a user cancellation
         let finalErrorCode = errorCode || orderData?.error_code || 'payment_failed';
         let finalErrorMessage = getErrorMessage(finalErrorCode);
-        
-        // IMPROVED: Better detection of user cancellations
-        // If no payment ID and no specific error code, this is likely a user cancellation
-        if (!paymentId && !orderData?.payment_id && (!errorCode || errorCode === 'unknown')) {
-          finalErrorCode = 'user_cancelled';
-          finalErrorMessage = getErrorMessage('user_cancelled');
-          
-          // Only trigger email if we haven't already detected cancellation from URL parameters
-          if ((externalReference || orderData?.external_reference) && !emailSent.has(externalReference || orderData?.external_reference)) {
-            const orderNumber = externalReference || orderData?.external_reference;
-            console.log('🚫 Detected user cancellation from API response, triggering email for order:', orderNumber);
-            triggerCancellationEmail(orderNumber);
-            setEmailSent(prev => new Set(prev).add(orderNumber));
-          }
-        }
-        
-        // ADDITIONAL: Check for explicit cancellation status from API
-        if (orderData?.status === 'cancelled' || orderData?.collection_status === 'cancelled') {
-          finalErrorCode = 'user_cancelled';
-          finalErrorMessage = getErrorMessage('user_cancelled');
-          
-          // Only trigger email if we haven't already detected cancellation from URL parameters
-          if ((externalReference || orderData?.external_reference) && !emailSent.has(externalReference || orderData?.external_reference)) {
-            const orderNumber = externalReference || orderData?.external_reference;
-            console.log('🚫 Detected cancellation status from API, triggering email for order:', orderNumber);
-            triggerCancellationEmail(orderNumber);
-            setEmailSent(prev => new Set(prev).add(orderNumber));
-          }
-        }
         
         setFailureDetails({
           paymentId: paymentId || orderData?.payment_id,
@@ -156,128 +81,23 @@ const CheckoutFailure: React.FC = () => {
           orderNumber: orderData?.orderNumber || orderData?.external_reference
         });
       } else {
-        // If API call fails, assume user cancellation if no payment ID
-        const isUserCancellation = !paymentId;
-        const finalErrorCode = isUserCancellation ? 'user_cancelled' : 'verification_failed';
-        
         setFailureDetails({
           paymentId: paymentId || undefined,
           externalReference: externalReference || undefined,
-          errorCode: finalErrorCode,
-          errorMessage: getErrorMessage(finalErrorCode)
+          errorCode: 'verification_failed',
+          errorMessage: getErrorMessage('verification_failed')
         });
-        
-        // Only trigger email if we haven't already detected cancellation from URL parameters
-        if (isUserCancellation && externalReference && !emailSent.has(externalReference)) {
-          console.log('🚫 API call failed, but detected user cancellation for order:', externalReference);
-          triggerCancellationEmail(externalReference);
-          setEmailSent(prev => new Set(prev).add(externalReference));
-        }
       }
     } catch (error) {
       console.error('Error getting failure details:', error);
-      
-      // If connection fails, assume user cancellation if no payment ID
-      const isUserCancellation = !paymentId;
-      const finalErrorCode = isUserCancellation ? 'user_cancelled' : 'connection_error';
-      
       setFailureDetails({
         paymentId: paymentId || undefined,
         externalReference: externalReference || undefined,
-        errorCode: finalErrorCode,
-        errorMessage: getErrorMessage(finalErrorCode)
+        errorCode: 'connection_error',
+        errorMessage: getErrorMessage('connection_error')
       });
-      
-      // Only trigger email if we haven't already detected cancellation from URL parameters
-      if (isUserCancellation && externalReference && !emailSent.has(externalReference)) {
-        console.log('🚫 Connection failed, but detected user cancellation for order:', externalReference);
-        triggerCancellationEmail(externalReference);
-        setEmailSent(prev => new Set(prev).add(externalReference));
-      }
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  // Function to trigger cancellation email when user cancels payment
-  const triggerCancellationEmail = async (orderNumber: string) => {
-    console.log('📧 Starting cancellation email process for order:', orderNumber);
-    
-    try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'https://casa-pinon-backend-production.up.railway.app';
-      console.log('🌐 Using API URL:', apiUrl);
-      
-      // Get order details to extract customer info
-      console.log('🔍 Fetching order details from:', `${apiUrl}/api/orders/${orderNumber}`);
-      const orderResponse = await fetch(`${apiUrl}/api/orders/${orderNumber}`);
-      const orderResult = await orderResponse.json();
-      
-      if (orderResult.success && orderResult.order) {
-        const order = orderResult.order;
-        
-        // Prepare customer info for the email
-        const customerInfo = {
-          name: order.customer?.name || 'Cliente',
-          email: order.customer?.email || '',
-          phone: order.customer?.phone || '',
-          address: order.customer?.address || {}
-        };
-        
-        // Call the cancellation endpoint to send email
-        console.log('📤 Sending cancellation email request to:', `${apiUrl}/api/mercadopago/payment-cancelled`);
-        console.log('📋 Request payload:', { orderNumber, customerInfo, reason: 'user_cancelled' });
-        
-        const emailResponse = await fetch(`${apiUrl}/api/mercadopago/payment-cancelled`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            orderNumber,
-            customerInfo,
-            reason: 'user_cancelled'
-          })
-        });
-        
-        console.log('📥 Email API response status:', emailResponse.status);
-        const emailResult = await emailResponse.json();
-        console.log('📥 Email API response:', emailResult);
-        
-        if (emailResult.success) {
-          console.log('✅ Cancellation email triggered successfully');
-        } else {
-          console.error('❌ Failed to trigger cancellation email:', emailResult.error);
-        }
-      } else {
-        // If order not found, still try to send cancellation email with basic info
-        console.log('⚠️ Order not found, sending cancellation email with basic info');
-        
-        const emailResponse = await fetch(`${apiUrl}/api/mercadopago/payment-cancelled`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            orderNumber,
-            customerInfo: {
-              name: 'Cliente',
-              email: '',
-              phone: '',
-              address: {}
-            },
-            reason: 'user_cancelled'
-          })
-        });
-        
-        const emailResult = await emailResponse.json();
-        if (emailResult.success) {
-          console.log('✅ Cancellation email triggered successfully (with basic info)');
-        } else {
-          console.error('❌ Failed to trigger cancellation email:', emailResult.error);
-        }
-      }
-    } catch (error) {
-      console.error('❌ Error triggering cancellation email:', error);
     }
   };
 
@@ -309,7 +129,6 @@ const CheckoutFailure: React.FC = () => {
       'verification_failed': 'No se pudo verificar el pago',
       'connection_error': 'Error de conexión',
       'unknown': 'Error desconocido',
-      // Add specific codes for user cancellations
       'user_cancelled': 'Has cancelado el proceso de pago',
       'return_to_site': 'Has regresado al sitio sin completar el pago',
       'abandoned_payment': 'El pago fue abandonado'
