@@ -3027,6 +3027,7 @@ app.post('/api/mercadopago/webhook', express.json(), async (req, res) => {
         
       case 'payment.cancelled':
         console.log('🚫 Payment cancelled:', data.id);
+        console.log('📧 Attempting to send cancellation email for order:', data.external_reference);
         await sendWebhookPaymentStatusEmail(data, 'cancelled');
         break;
         
@@ -3085,6 +3086,8 @@ async function sendWebhookPaymentStatusEmail(paymentData, status) {
   try {
     const { id, external_reference } = paymentData;
     
+    console.log('📧 Starting email process for:', external_reference, status);
+    
     // Check if email was already sent for this payment
     const emailKey = `${external_reference}-${status}`;
     if (sentEmails.has(emailKey)) {
@@ -3093,11 +3096,14 @@ async function sendWebhookPaymentStatusEmail(paymentData, status) {
     }
     
     // Get order details
+    console.log('🔍 Looking up order:', external_reference);
     const order = await orderOperations.getByOrderNumber(external_reference);
     if (!order) {
       console.error('❌ Order not found for email:', external_reference);
       return;
     }
+    
+    console.log('✅ Order found:', order.orderNumber);
     
     // Extract customer info
     const customerInfo = order.customer || {
@@ -3108,6 +3114,7 @@ async function sendWebhookPaymentStatusEmail(paymentData, status) {
     };
     
     // Send email
+    console.log('📤 Sending email with customer info:', customerInfo.email);
     const emailResult = await sendPaymentStatusEmail(order, customerInfo, paymentData, status);
     
     if (emailResult.success) {
