@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Search, Plus, Edit3, Trash2, Save, X, Upload, LogOut, Package, Package as PackageIcon, BarChart3, ArrowUpDown } from 'lucide-react'
+import { Search, Plus, Edit3, Trash2, Save, X, Upload, LogOut, Package, Package as PackageIcon, BarChart3, ArrowUpDown, Star } from 'lucide-react'
 import { Product } from '../types'
 import { useAuth } from '../store/AuthContext'
 import { useProducts } from '../hooks/useProducts'
@@ -337,16 +337,90 @@ const AdminProducts = () => {
                     </div>
                   </div>
                 )}
+
+                {/* Badges */}
+                <div className="absolute top-3 left-3 space-y-1">
+                  {product.isCustom && (
+                    <span className="bg-purple-600 text-white text-xs px-2 py-1 rounded-full block">
+                      Personalizable
+                    </span>
+                  )}
+                </div>
               </div>
 
               {/* Product Info */}
-              <div className="p-4">
-                <h3 className="font-semibold text-brown-900 mb-2 line-clamp-2">{product.name}</h3>
-                <p className="text-brown-600 text-sm mb-2 line-clamp-2">{product.description}</p>
-                <p className="text-lg font-bold text-brown-800 mb-3">{formatCurrency(product.price)}</p>
-                
-                {/* Wood Type Badge in grid removed intentionally */}
+              <div className="p-4 space-y-3">
+                <div>
+                  <h3 
+                    className="font-serif font-semibold text-lg text-brown-900 mb-1 overflow-hidden" 
+                    style={{
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      maxHeight: '3rem',
+                      lineHeight: '1.5rem'
+                    }}
+                  >
+                    {product.name}
+                  </h3>
+                  <p 
+                    className="text-sm text-brown-600 overflow-hidden" 
+                    style={{
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      maxHeight: '2.5rem',
+                      lineHeight: '1.25rem'
+                    }}
+                  >
+                    {product.description}
+                  </p>
+                </div>
+
+                {/* Materials and Wood Type */}
+                <div className="flex flex-wrap gap-1">
+                  {product.woodType && (
+                    <span className="text-xs bg-cream-100 text-brown-700 px-2 py-1 rounded-full">
+                      {woodTypes.find(type => type.id === product.woodType)?.name || product.woodType}
+                    </span>
+                  )}
+                  {product.materials.slice(0, 2).map((material, index) => (
+                    <span
+                      key={index}
+                      className="text-xs bg-cream-100 text-brown-700 px-2 py-1 rounded-full"
+                    >
+                      {material}
+                    </span>
+                  ))}
+                  {product.materials.length > 2 && (
+                    <span className="text-xs text-brown-500">
+                      +{product.materials.length - 2} más
+                    </span>
+                  )}
+                </div>
+
+                {/* Price and Rating */}
                 <div className="flex items-center justify-between">
+                  <div className="text-2xl font-bold text-brown-900">
+                    {formatCurrency(product.price)}
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <Star className="w-4 h-4 fill-current text-yellow-400" />
+                    <span className="text-sm font-medium text-brown-700">4.9</span>
+                  </div>
+                </div>
+
+                {/* Delivery Info */}
+                <div className="text-sm font-medium text-brown-700">
+                  <span className="font-semibold">Entrega:</span> {product.estimatedDelivery}
+                </div>
+
+                {/* Admin Actions */}
+                <div className="flex items-center justify-between pt-2">
                   <div className="flex space-x-2">
                     <button
                       onClick={() => handleEditProduct(product)}
