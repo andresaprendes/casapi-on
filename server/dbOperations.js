@@ -19,43 +19,103 @@ const orderOperations = {
       estimatedDelivery
     } = orderData;
 
-    const query = `
-      INSERT INTO orders (
-        id, order_number, customer_name, customer_email, customer_phone,
-        customer_address, items, subtotal, shipping, tax, total,
-        shipping_zone, payment_method, notes, estimated_delivery
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
-      RETURNING *
-    `;
+    // Check if we're using Supabase schema (customer_info JSONB) or PostgreSQL schema (separate columns)
+    const isSupabaseSchema = await checkSupabaseSchema();
+    
+    if (isSupabaseSchema) {
+      // Supabase schema - use customer_info JSONB
+      const query = `
+        INSERT INTO orders (
+          order_number, customer_info, items, total_amount,
+          status, payment_status, estimated_delivery, notes
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        RETURNING *
+      `;
 
-    const values = [
-      id,
-      orderNumber,
-      customer.name,
-      customer.email,
-      customer.phone,
-      JSON.stringify(customer.address),
-      JSON.stringify(items),
-      subtotal,
-      shipping,
-      tax,
-      total,
-      shippingZone,
-      paymentMethod,
-      notes,
-      estimatedDelivery
-    ];
+      const values = [
+        orderNumber,
+        JSON.stringify(customer),
+        JSON.stringify(items),
+        total,
+        'pending',
+        'pending',
+        estimatedDelivery,
+        notes
+      ];
 
-    const result = await pool.query(query, values);
-    return result.rows[0];
+      const result = await pool.query(query, values);
+      return result.rows[0];
+    } else {
+      // PostgreSQL schema - use separate customer columns
+      const query = `
+        INSERT INTO orders (
+          id, order_number, customer_name, customer_email, customer_phone,
+          customer_address, items, subtotal, shipping, tax, total,
+          shipping_zone, payment_method, notes, estimated_delivery
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+        RETURNING *
+      `;
+
+      const values = [
+        id,
+        orderNumber,
+        customer.name,
+        customer.email,
+        customer.phone,
+        JSON.stringify(customer.address),
+        JSON.stringify(items),
+        subtotal,
+        shipping,
+        tax,
+        total,
+        shippingZone,
+        paymentMethod,
+        notes,
+        estimatedDelivery
+      ];
+
+      const result = await pool.query(query, values);
+      return result.rows[0];
+    }
   },
 
-  // Get order by ID
-  async getById(orderId) {
-    const query = 'SELECT * FROM orders WHERE id = $1';
-    const result = await pool.query(query, [orderId]);
-    if (result.rows[0]) {
-      const row = result.rows[0];
+  // Helper function to check if we're using Supabase schema
+  async checkSupabaseSchema() {
+    try {
+      const result = await pool.query(`
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = 'orders' AND column_name = 'customer_info'
+      `);
+      return result.rows.length > 0;
+    } catch (error) {
+      console.log('Schema check error:', error.message);
+      return false;
+    }
+  },
+
+  // Transform order row to standard format
+  transformOrderRow(row) {
+    if (row.customer_info) {
+      // Supabase schema - customer_info is JSONB
+      const customer = typeof row.customer_info === 'string' 
+        ? JSON.parse(row.customer_info) 
+        : row.customer_info;
+      
+      return {
+        ...row,
+        orderNumber: row.order_number,
+        paymentStatus: row.payment_status,
+        paymentMethod: row.payment_method,
+        paymentId: row.payment_id,
+        estimatedDelivery: row.estimated_delivery,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+        customer: customer,
+        total: row.total_amount
+      };
+    } else {
+      // PostgreSQL schema - separate customer columns
       return {
         ...row,
         orderNumber: row.order_number,
@@ -74,6 +134,16 @@ const orderOperations = {
         }
       };
     }
+  },
+
+  // Get order by ID
+  async getById(orderId) {
+    const query = 'SELECT * FROM orders WHERE id = $1';
+    const result = await pool.query(query, [orderId]);
+    if (result.rows[0]) {
+      const row = result.rows[0];
+      return transformOrderRow(row);
+    }
     return null;
   },
 
@@ -83,23 +153,7 @@ const orderOperations = {
     const result = await pool.query(query, [orderNumber]);
     if (result.rows[0]) {
       const row = result.rows[0];
-      return {
-        ...row,
-        orderNumber: row.order_number,
-        paymentStatus: row.payment_status,
-        paymentMethod: row.payment_method,
-        paymentId: row.payment_id,
-        shippingZone: row.shipping_zone,
-        estimatedDelivery: row.estimated_delivery,
-        createdAt: row.created_at,
-        updatedAt: row.updated_at,
-        customer: {
-          name: row.customer_name,
-          email: row.customer_email,
-          phone: row.customer_phone,
-          address: row.customer_address
-        }
-      };
+      return transformOrderRow(row);
     }
     return null;
   },
@@ -141,7 +195,15 @@ const orderOperations = {
     }
 
     if (filters.search) {
-      query += ` AND (order_number ILIKE $${valueIndex} OR customer_name ILIKE $${valueIndex} OR customer_email ILIKE $${valueIndex})`;
+      // Check if we're using Supabase schema
+      const isSupabaseSchema = await this.checkSupabaseSchema();
+      if (isSupabaseSchema) {
+        // Supabase schema - search in customer_info JSONB
+        query += ` AND (order_number ILIKE $${valueIndex} OR customer_info::text ILIKE $${valueIndex})`;
+      } else {
+        // PostgreSQL schema - search in separate customer columns
+        query += ` AND (order_number ILIKE $${valueIndex} OR customer_name ILIKE $${valueIndex} OR customer_email ILIKE $${valueIndex})`;
+      }
       values.push(`%${filters.search}%`);
       valueIndex++;
     }
@@ -162,24 +224,8 @@ const orderOperations = {
 
     const result = await pool.query(query, values);
     
-    // Transform database rows to include customer object and camelCase fields
-    return result.rows.map(row => ({
-      ...row,
-      orderNumber: row.order_number,
-      paymentStatus: row.payment_status,
-      paymentMethod: row.payment_method,
-      paymentId: row.payment_id,
-      shippingZone: row.shipping_zone,
-      estimatedDelivery: row.estimated_delivery,
-      createdAt: row.created_at,
-      updatedAt: row.updated_at,
-      customer: {
-        name: row.customer_name,
-        email: row.customer_email,
-        phone: row.customer_phone,
-        address: row.customer_address
-      }
-    }));
+    // Transform database rows using the transformOrderRow function
+    return result.rows.map(row => this.transformOrderRow(row));
   },
 
   // Update order
