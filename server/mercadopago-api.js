@@ -2186,37 +2186,24 @@ const mimeTypes = {
 };
 
 // Serve static files from public directory with proper MIME types
+// Try multiple possible paths for Railway deployment
 app.use('/images', express.static(path.join(__dirname, '..', 'public', 'images'), {
   setHeaders: (res, path) => {
     const ext = path.extname(path).toLowerCase();
     if (mimeTypes[ext]) {
       res.setHeader('Content-Type', mimeTypes[ext]);
+      res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
     }
   }
 }));
 
-// Railway-specific static file serving (fixes 404 errors) with proper MIME types
+// Fallback for Railway deployment structure
 app.use('/images', express.static(path.join(__dirname, 'public', 'images'), {
   setHeaders: (res, path) => {
     const ext = path.extname(path).toLowerCase();
     if (mimeTypes[ext]) {
       res.setHeader('Content-Type', mimeTypes[ext]);
-    }
-  }
-}));
-app.use('/images', express.static(path.join(__dirname, '..', 'public', 'images'), {
-  setHeaders: (res, path) => {
-    const ext = path.extname(path).toLowerCase();
-    if (mimeTypes[ext]) {
-      res.setHeader('Content-Type', mimeTypes[ext]);
-    }
-  }
-}));
-app.use('/images', express.static(path.join(__dirname, '..', '..', 'public', 'images'), {
-  setHeaders: (res, path) => {
-    const ext = path.extname(path).toLowerCase();
-    if (mimeTypes[ext]) {
-      res.setHeader('Content-Type', mimeTypes[ext]);
+      res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
     }
   }
 }));
