@@ -2988,12 +2988,65 @@ app.post('/api/mercadopago/webhook', express.json(), async (req, res) => {
     console.log('🔔 Webhook received:', req.headers);
     console.log('📦 Webhook body:', req.body);
     
-    // Simple response for testing
+    const { type, data } = req.body;
+    
+    if (!type || !data) {
+      console.error('❌ Invalid webhook payload');
+      return res.status(400).json({ error: 'Invalid payload' });
+    }
+    
+    // Process different event types
+    console.log('🔔 Processing webhook event:', type, data.id);
+    
+    switch (type) {
+      case 'payment.created':
+        console.log('💰 Payment created:', data.id);
+        // Don't send email yet - too early
+        break;
+        
+      case 'payment.updated':
+        console.log('🔄 Payment updated:', data.id);
+        // Process status changes
+        await processPaymentStatusChange(data);
+        break;
+        
+      case 'payment.pending':
+        console.log('⏳ Payment pending:', data.id);
+        await sendWebhookPaymentStatusEmail(data, 'pending');
+        break;
+        
+      case 'payment.approved':
+        console.log('✅ Payment approved:', data.id);
+        await sendWebhookPaymentStatusEmail(data, 'approved');
+        break;
+        
+      case 'payment.rejected':
+        console.log('❌ Payment rejected:', data.id);
+        await sendWebhookPaymentStatusEmail(data, 'rejected');
+        break;
+        
+      case 'payment.cancelled':
+        console.log('🚫 Payment cancelled:', data.id);
+        await sendWebhookPaymentStatusEmail(data, 'cancelled');
+        break;
+        
+      case 'payment.refunded':
+        console.log('💸 Payment refunded:', data.id);
+        await sendWebhookPaymentStatusEmail(data, 'refunded');
+        break;
+        
+      default:
+        console.log('❓ Unknown webhook type:', type);
+    }
+    
+    // Log webhook event to database
+    await logWebhookEvent(data.id, type, req.body);
+    
     res.status(200).json({ 
       success: true, 
-      message: 'Webhook received successfully', 
+      message: 'Webhook processed successfully', 
       timestamp: new Date().toISOString(),
-      received: req.body
+      event: { type, paymentId: data.id }
     });
     
   } catch (error) {
