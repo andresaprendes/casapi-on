@@ -94,6 +94,11 @@ const ProductCard = ({ product }: ProductCardProps) => {
               Personalizado
             </span>
           )}
+          {product.woodType && (
+            <span className="bg-green-600 text-white text-xs px-2 py-1 rounded-full block">
+              {woodTypes.find(type => type.id === product.woodType)?.name || product.woodType}
+            </span>
+          )}
         </div>
       </div>
 
@@ -147,15 +152,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
           )}
         </div>
 
-        {/* Wood Type */}
-        {product.woodType && (
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-brown-600">Madera:</span>
-            <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full font-medium">
-              {woodTypes.find(type => type.id === product.woodType)?.name || product.woodType}
-            </span>
-          </div>
-        )}
+
 
         {/* Price and Rating */}
         <div className="flex items-center justify-between">
