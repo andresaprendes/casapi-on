@@ -2208,6 +2208,26 @@ app.use('/images', express.static(path.join(__dirname, '..', 'public', 'images')
   }
 }));
 
+// Test endpoint to check if images are accessible
+app.get('/api/test-images', (req, res) => {
+  const fs = require('fs');
+  const imagePath = path.join(__dirname, 'public', 'images', 'products', 'product-1.webp');
+  const fallbackPath = path.join(__dirname, '..', 'public', 'images', 'products', 'product-1.webp');
+  
+  console.log('🔍 Testing image paths:');
+  console.log('  Primary path:', imagePath, 'exists:', fs.existsSync(imagePath));
+  console.log('  Fallback path:', fallbackPath, 'exists:', fs.existsSync(fallbackPath));
+  
+  res.json({
+    success: true,
+    primaryPath: imagePath,
+    primaryExists: fs.existsSync(imagePath),
+    fallbackPath: fallbackPath,
+    fallbackExists: fs.existsSync(fallbackPath),
+    currentDir: __dirname
+  });
+});
+
 // Product API endpoints
 app.get('/api/products', async (req, res) => {
   try {
