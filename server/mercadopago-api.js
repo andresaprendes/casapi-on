@@ -2640,6 +2640,9 @@ async function startServer() {
 
 // Server startup is now handled by start.js
 
+// Track sent cancellation emails to prevent duplicates
+const sentCancellationEmails = new Set();
+
 // New endpoint to handle cancelled payments (when user clicks "volver al sitio")
 app.post('/api/mercadopago/payment-cancelled', express.json(), async (req, res) => {
   try {
@@ -2649,6 +2652,17 @@ app.post('/api/mercadopago/payment-cancelled', express.json(), async (req, res) 
       return res.status(400).json({
         success: false,
         error: 'Missing orderNumber or customerInfo'
+      });
+    }
+
+    // Check if cancellation email was already sent for this order
+    if (sentCancellationEmails.has(orderNumber)) {
+      console.log('📧 Cancellation email already sent for order:', orderNumber);
+      return res.json({
+        success: true,
+        message: 'Cancellation email already sent',
+        emailSent: true,
+        alreadySent: true
       });
     }
 
@@ -2683,6 +2697,8 @@ app.post('/api/mercadopago/payment-cancelled', express.json(), async (req, res) 
     
     if (emailResult.success) {
       console.log('✅ Cancellation email sent successfully for order:', orderNumber);
+      // Mark this order as having received a cancellation email
+      sentCancellationEmails.add(orderNumber);
     } else {
       console.error('❌ Failed to send cancellation email:', emailResult.error);
     }

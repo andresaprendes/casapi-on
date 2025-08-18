@@ -15,6 +15,7 @@ const CheckoutFailure: React.FC = () => {
   const [searchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(true);
   const [failureDetails, setFailureDetails] = useState<FailureDetails | null>(null);
+  const [emailSent, setEmailSent] = useState<Set<string>>(new Set());
 
   const paymentId = searchParams.get('payment_id');
   const externalReference = searchParams.get('external_reference');
@@ -71,8 +72,9 @@ const CheckoutFailure: React.FC = () => {
       });
       
       // Trigger cancellation email immediately if we have an order reference
-      if (externalReference) {
+      if (externalReference && !emailSent.has(externalReference)) {
         triggerCancellationEmail(externalReference);
+        setEmailSent(prev => new Set(prev).add(externalReference));
       }
       setIsLoading(false);
       return;
@@ -88,8 +90,9 @@ const CheckoutFailure: React.FC = () => {
       });
       
       // If this is a user cancellation, trigger the cancellation email
-      if (isUserCancellation && externalReference) {
+      if (isUserCancellation && externalReference && !emailSent.has(externalReference)) {
         triggerCancellationEmail(externalReference);
+        setEmailSent(prev => new Set(prev).add(externalReference));
       }
       
       setIsLoading(false);
@@ -122,8 +125,13 @@ const CheckoutFailure: React.FC = () => {
           // Trigger cancellation email immediately
           if (externalReference || orderData?.external_reference) {
             const orderNumber = externalReference || orderData?.external_reference;
-            console.log('🚫 Detected user cancellation, triggering email for order:', orderNumber);
-            triggerCancellationEmail(orderNumber);
+            if (!emailSent.has(orderNumber)) {
+              console.log('🚫 Detected user cancellation, triggering email for order:', orderNumber);
+              triggerCancellationEmail(orderNumber);
+              setEmailSent(prev => new Set(prev).add(orderNumber));
+            } else {
+              console.log('📧 Email already sent for order:', orderNumber);
+            }
           }
         }
         
@@ -135,8 +143,13 @@ const CheckoutFailure: React.FC = () => {
           // Trigger cancellation email immediately
           if (externalReference || orderData?.external_reference) {
             const orderNumber = externalReference || orderData?.external_reference;
-            console.log('🚫 Detected cancellation status from API, triggering email for order:', orderNumber);
-            triggerCancellationEmail(orderNumber);
+            if (!emailSent.has(orderNumber)) {
+              console.log('🚫 Detected cancellation status from API, triggering email for order:', orderNumber);
+              triggerCancellationEmail(orderNumber);
+              setEmailSent(prev => new Set(prev).add(orderNumber));
+            } else {
+              console.log('📧 Email already sent for order:', orderNumber);
+            }
           }
         }
         
@@ -161,15 +174,17 @@ const CheckoutFailure: React.FC = () => {
         });
         
         // Trigger cancellation email if this is a user cancellation
-        if (isUserCancellation && externalReference) {
+        if (isUserCancellation && externalReference && !emailSent.has(externalReference)) {
           console.log('🚫 API call failed, but detected user cancellation for order:', externalReference);
           triggerCancellationEmail(externalReference);
+          setEmailSent(prev => new Set(prev).add(externalReference));
         }
         
         // ADDITIONAL: Also trigger email if we have external reference but no payment ID
-        if (externalReference && !paymentId) {
+        if (externalReference && !paymentId && !emailSent.has(externalReference)) {
           console.log('🚫 API call failed, but have order reference - treating as cancellation for order:', externalReference);
           triggerCancellationEmail(externalReference);
+          setEmailSent(prev => new Set(prev).add(externalReference));
         }
       }
     } catch (error) {
@@ -187,15 +202,17 @@ const CheckoutFailure: React.FC = () => {
       });
       
       // Trigger cancellation email if this is a user cancellation
-      if (isUserCancellation && externalReference) {
+      if (isUserCancellation && externalReference && !emailSent.has(externalReference)) {
         console.log('🚫 Connection failed, but detected user cancellation for order:', externalReference);
         triggerCancellationEmail(externalReference);
+        setEmailSent(prev => new Set(prev).add(externalReference));
       }
       
       // ADDITIONAL: Also trigger email if we have external reference but no payment ID
-      if (externalReference && !paymentId) {
+      if (externalReference && !paymentId && !emailSent.has(externalReference)) {
         console.log('🚫 Connection failed, but have order reference - treating as cancellation for order:', externalReference);
         triggerCancellationEmail(externalReference);
+        setEmailSent(prev => new Set(prev).add(externalReference));
       }
     } finally {
       setIsLoading(false);
