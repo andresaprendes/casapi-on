@@ -7,7 +7,7 @@ import { toast } from 'react-hot-toast'
 import { Link } from 'react-router-dom'
 import ProductReorder from '../components/ProductReorder'
 import { getImageUrl } from '../utils/imageUtils'
-import { woodTypes } from '../data/mockData'
+import { woodTypes, categories } from '../data/mockData'
 
 const AdminProducts = () => {
   const { products, addProduct, updateProduct, deleteProduct } = useProducts()
@@ -463,7 +463,7 @@ const AdminProducts = () => {
                             required
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brown-500 focus:border-transparent"
                             value={formData.category}
-                            onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
+                            onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value, subcategory: '' }))}
                           >
                             <option value="">Seleccionar categoría</option>
                             {categories.map(cat => (
@@ -476,12 +476,16 @@ const AdminProducts = () => {
                           <label className="block text-sm font-medium text-gray-700 mb-2">
                             Subcategoría
                           </label>
-                          <input
-                            type="text"
+                          <select
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brown-500 focus:border-transparent"
                             value={formData.subcategory}
                             onChange={(e) => setFormData(prev => ({ ...prev, subcategory: e.target.value }))}
-                          />
+                          >
+                            <option value="">Seleccionar subcategoría</option>
+                            {formData.category && categories.find(cat => cat.id === formData.category)?.subcategories?.map(subcat => (
+                              <option key={subcat} value={subcat}>{subcat}</option>
+                            ))}
+                          </select>
                         </div>
                       </div>
 
