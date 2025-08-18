@@ -2769,19 +2769,31 @@ app.post('/api/mercadopago/payment-cancelled', express.json(), async (req, res) 
 // Test endpoint to verify email service is working
 app.post('/api/test-email', express.json(), async (req, res) => {
   try {
-    console.log('🧪 Testing email service...');
+    const { email } = req.body;
     
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        error: 'Email address required'
+      });
+    }
+
+    console.log('🔍 Email configuration check:');
+    console.log('EMAIL_USER:', process.env.EMAIL_USER ? 'SET' : 'NOT SET');
+    console.log('EMAIL_PASSWORD:', process.env.EMAIL_PASSWORD ? 'SET' : 'NOT SET');
+    console.log('NODE_ENV:', process.env.NODE_ENV);
+
     // Test with minimal data
     const testOrder = {
       id: 'test',
       orderNumber: 'TEST-123',
       total: 5000,
-      customer: { name: 'Test User', email: 'test@test.com' }
+      customer: { name: 'Test User', email: email }
     };
     
     const testCustomerInfo = {
       name: 'Test User',
-      email: 'pagos@casapinon.co', // Use your Zoho email for testing
+      email: email, // Use the email from request
       phone: '3001234567',
       address: { city: 'Test City' }
     };
@@ -2793,7 +2805,7 @@ app.post('/api/test-email', express.json(), async (req, res) => {
       transaction_amount: 5000
     };
     
-    console.log('📧 Attempting to send test email...');
+    console.log('📧 Attempting to send test email to:', email);
     const emailResult = await sendPaymentStatusEmail(testOrder, testCustomerInfo, testPayment, 'cancelled');
     
     console.log('📧 Email result:', emailResult);
@@ -2801,7 +2813,13 @@ app.post('/api/test-email', express.json(), async (req, res) => {
     res.json({
       success: true,
       message: 'Email test completed',
-      emailResult
+      emailResult,
+      emailConfig: {
+        hasEmailUser: !!process.env.EMAIL_USER,
+        hasEmailPassword: !!process.env.EMAIL_PASSWORD,
+        emailUser: process.env.EMAIL_USER || 'NOT SET',
+        nodeEnv: process.env.NODE_ENV
+      }
     });
     
   } catch (error) {
@@ -2810,7 +2828,12 @@ app.post('/api/test-email', express.json(), async (req, res) => {
       success: false,
       error: 'Email test failed',
       details: error.message,
-      stack: error.stack
+      emailConfig: {
+        hasEmailUser: !!process.env.EMAIL_USER,
+        hasEmailPassword: !!process.env.EMAIL_PASSWORD,
+        emailUser: process.env.EMAIL_USER || 'NOT SET',
+        nodeEnv: process.env.NODE_ENV
+      }
     });
   }
 });
