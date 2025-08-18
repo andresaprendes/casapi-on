@@ -14,7 +14,6 @@ export const useProducts = () => {
     try {
       setLoading(true)
       setError(null)
-      
       const response = await fetch(`${API_URL}/api/products`)
       const data = await response.json()
       

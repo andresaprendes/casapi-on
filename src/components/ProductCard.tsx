@@ -89,12 +89,6 @@ const ProductCard = ({ product }: ProductCardProps) => {
               Personalizable
             </span>
           )}
-          {product.woodType && (
-            <span className="bg-brown-800 text-cream-50 text-xs px-2 py-1 rounded-full block">
-              {woodTypes.find(type => type.id === product.woodType)?.name || product.woodType}
-            </span>
-          )}
-
         </div>
       </div>
 
@@ -131,8 +125,13 @@ const ProductCard = ({ product }: ProductCardProps) => {
           </p>
         </div>
 
-        {/* Materials */}
+        {/* Materials and Wood Type */}
         <div className="flex flex-wrap gap-1">
+          {product.woodType && (
+            <span className="text-xs bg-cream-100 text-brown-700 px-2 py-1 rounded-full">
+              {woodTypes.find(type => type.id === product.woodType)?.name || product.woodType}
+            </span>
+          )}
           {product.materials.slice(0, 2).map((material, index) => (
             <span
               key={index}

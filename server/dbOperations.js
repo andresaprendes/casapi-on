@@ -449,7 +449,6 @@ const productOperations = {
         materials,
         dimensions,
         weight,
-        madeToOrder,
         isCustom,
         designVariations,
         estimatedDelivery,
@@ -465,9 +464,9 @@ const productOperations = {
       const query = `
         INSERT INTO products (
           id, name, description, price, category, subcategory,
-          images, materials, dimensions, weight, made_to_order, is_custom,
+          images, materials, dimensions, weight, is_custom,
           design_variations, estimated_delivery, features, specifications, wood_type
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
         RETURNING *
       `;
 
@@ -482,7 +481,6 @@ const productOperations = {
         JSON.stringify(materials),
         JSON.stringify(dimensions),
         weight,
-        madeToOrder,
         isCustom,
         designVariations,
         estimatedDelivery,

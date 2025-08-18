@@ -30,7 +30,6 @@ const AdminProducts = () => {
     woodType: '',
     images: [] as string[],
     materials: [] as string[],
-    madeToOrder: true,
     isCustom: false,
     designVariations: '',
     estimatedDelivery: '',
@@ -70,7 +69,6 @@ const AdminProducts = () => {
       woodType: product.woodType || '',
       images: [...product.images],
       materials: [...product.materials],
-      madeToOrder: product.madeToOrder,
       isCustom: product.isCustom,
       designVariations: product.designVariations || '',
       estimatedDelivery: product.estimatedDelivery,
@@ -91,7 +89,6 @@ const AdminProducts = () => {
       woodType: '',
       images: [],
       materials: [],
-      madeToOrder: true,
       isCustom: false,
       designVariations: '',
       estimatedDelivery: '',
@@ -348,22 +345,8 @@ const AdminProducts = () => {
                 <p className="text-brown-600 text-sm mb-2 line-clamp-2">{product.description}</p>
                 <p className="text-lg font-bold text-brown-800 mb-3">{formatCurrency(product.price)}</p>
                 
-                {/* Wood Type Badge */}
-                {product.woodType && (
-                  <div className="mb-3">
-                    <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                      {woodTypes.find(w => w.id === product.woodType)?.name || product.woodType}
-                    </span>
-                  </div>
-                )}
-                
+                {/* Wood Type Badge in grid removed intentionally */}
                 <div className="flex items-center justify-between">
-                  <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                    product.madeToOrder ? 'bg-orange-100 text-orange-800' : 'bg-red-100 text-red-800'
-                  }`}>
-                    {product.madeToOrder ? 'Por Pedido' : 'Sin Disponibilidad'}
-                  </span>
-                  
                   <div className="flex space-x-2">
                     <button
                       onClick={() => handleEditProduct(product)}
@@ -498,19 +481,6 @@ const AdminProducts = () => {
                               <option key={wood.id} value={wood.id}>{wood.name}</option>
                             ))}
                           </select>
-                        </div>
-
-                        <div className="flex items-center">
-                          <input
-                            type="checkbox"
-                            id="madeToOrder"
-                            className="mr-2"
-                            checked={formData.madeToOrder}
-                            onChange={(e) => setFormData(prev => ({ ...prev, madeToOrder: e.target.checked }))}
-                          />
-                          <label htmlFor="madeToOrder" className="text-sm font-medium text-gray-700">
-                            Hecho por Pedido
-                          </label>
                         </div>
 
                         <div className="flex items-center">

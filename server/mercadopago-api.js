@@ -2223,7 +2223,6 @@ app.get('/api/products', async (req, res) => {
     // Transform database fields to match frontend expectations
     const transformedProducts = products.map(product => ({
       ...product,
-      madeToOrder: product.made_to_order || product.madeToOrder,
       estimatedDelivery: product.estimated_delivery || product.estimatedDelivery,
       designVariations: product.design_variations || product.designVariations,
       isCustom: product.is_custom || product.isCustom,
@@ -2265,7 +2264,6 @@ app.get('/api/products/:id', async (req, res) => {
     // Transform database fields to match frontend expectations
     const transformedProduct = {
       ...product,
-      madeToOrder: product.made_to_order || product.madeToOrder,
       estimatedDelivery: product.estimated_delivery || product.estimatedDelivery,
       designVariations: product.design_variations || product.designVariations,
       isCustom: product.is_custom || product.isCustom,
