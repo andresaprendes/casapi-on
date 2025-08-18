@@ -2612,22 +2612,22 @@ process.on('unhandledRejection', (reason, promise) => {
 async function startServer() {
   try {
     console.log('🚀 Starting server...');
-    console.log('🔍 DATABASE_URL:', process.env.DATABASE_URL ? 'Set' : 'Not set');
     console.log('🔍 NODE_ENV:', process.env.NODE_ENV);
+    console.log('🔍 DATABASE_URL:', process.env.DATABASE_URL ? 'Set (Supabase)' : 'Not set');
     
-    // Check if DATABASE_URL is available
+    // Check if DATABASE_URL is available (Supabase)
     if (process.env.DATABASE_URL) {
-      console.log('🔧 Initializing PostgreSQL database...');
-      // Initialize database tables
-      await initializeDatabase();
+      console.log('🔧 Connecting to Supabase database...');
+      // Test connection
+      const testResult = await pool.query('SELECT NOW()');
+      console.log('✅ Connected to Supabase:', testResult.rows[0]);
       
-      console.log('✅ Database initialized successfully');
+      console.log('✅ Supabase database ready');
     } else {
       console.log('⚠️  No DATABASE_URL found, using in-memory storage');
       console.log('⚠️  Orders will not persist across deployments');
       
-      // Fallback to in-memory storage for now
-      // Initialize with default products in memory
+      // Fallback to in-memory storage
       defaultProducts.forEach(product => {
         productDatabase.set(product.id, product);
       });
@@ -2638,6 +2638,7 @@ async function startServer() {
     const PORT = process.env.PORT || 3001;
     app.listen(PORT, () => {
       console.log(`MercadoPago API server running on port ${PORT}`);
+      console.log(`💾 Using ${process.env.DATABASE_URL ? 'Supabase' : 'In-Memory'} storage`);
       console.log(`Available endpoints:`);
       console.log(`- POST /api/mercadopago/create-preference`);
       console.log(`- GET  /api/mercadopago/payment-status/:paymentId`);
@@ -2984,184 +2985,138 @@ app.post('/api/database/sync/production-to-local', async (req, res) => {
   }
 });
 
+// ===== SUPABASE DATABASE MANAGEMENT =====
+
+// Get database statistics
+app.get('/api/database/stats', async (req, res) => {
+  try {
+    console.log('📊 Fetching Supabase statistics...');
+    
+    if (process.env.DATABASE_URL) {
+      // Get products count
+      const productsResult = await pool.query('SELECT COUNT(*) as count FROM products');
+      const totalProducts = parseInt(productsResult.rows[0].count);
+
+      // Get orders count
+      const ordersResult = await pool.query('SELECT COUNT(*) as count FROM orders');
+      const totalOrders = parseInt(ordersResult.rows[0].count);
+
+      // Get database size (approximate)
+      const sizeResult = await pool.query(`
+        SELECT pg_size_pretty(pg_database_size(current_database())) as size
+      `);
+      const databaseSize = sizeResult.rows[0].size;
+
+      const stats = {
+        totalProducts: totalProducts,
+        totalOrders: totalOrders,
+        totalCustomers: totalOrders, // Each order = 1 customer
+        databaseSize: databaseSize,
+        lastBackup: 'Automatic (Supabase)',
+        lastSync: 'Real-time (Supabase)',
+        provider: 'Supabase'
+      };
+
+      console.log('✅ Supabase statistics fetched successfully');
+      res.json({
+        success: true,
+        stats: stats
+      });
+    } else {
+      // Fallback to in-memory stats
+      const stats = {
+        totalProducts: productDatabase.size,
+        totalOrders: orderDatabase.size,
+        totalCustomers: orderDatabase.size,
+        databaseSize: 'In-Memory',
+        lastBackup: 'N/A - In-Memory Storage',
+        lastSync: 'N/A - In-Memory Storage',
+        provider: 'In-Memory'
+      };
+
+      res.json({
+        success: true,
+        stats: stats
+      });
+    }
+  } catch (error) {
+    console.error('❌ Error fetching statistics:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Stats failed',
+      details: error.message
+    });
+  }
+});
+
+// Simple reset to default products (Supabase)
 app.post('/api/database/sync/reset', async (req, res) => {
   try {
-    console.log('🔄 Resetting database to default products...');
+    console.log('🔄 Resetting to default products (Supabase)...');
     
     if (process.env.DATABASE_URL) {
       // Clear existing products
       await pool.query('DELETE FROM products');
       
-      // Re-initialize with default products
-      await initializeDatabase();
+      // Re-insert default products
+      for (const product of defaultProducts) {
+        const query = `
+          INSERT INTO products (
+            id, name, description, price, category, subcategory,
+            images, materials, dimensions, weight, made_to_order,
+            is_custom, design_variations, estimated_delivery,
+            features, specifications, display_order, wood_type
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+        `;
+        
+        const values = [
+          product.id,
+          product.name,
+          product.description,
+          product.price,
+          product.category,
+          product.subcategory,
+          JSON.stringify(product.images),
+          JSON.stringify(product.materials),
+          JSON.stringify(product.dimensions),
+          product.weight,
+          product.made_to_order,
+          product.is_custom,
+          product.design_variations,
+          product.estimated_delivery,
+          JSON.stringify(product.features),
+          JSON.stringify(product.specifications),
+          product.display_order,
+          product.wood_type
+        ];
+        
+        await pool.query(query, values);
+      }
       
-      console.log('✅ Database reset completed');
+      console.log('✅ Supabase reset completed');
+      res.json({
+        success: true,
+        message: 'Supabase reset completed',
+        productsCount: defaultProducts.length
+      });
     } else {
-      // Clear in-memory storage
+      // Fallback to in-memory
       productDatabase.clear();
-      
-      // Re-initialize with default products
       defaultProducts.forEach(product => {
         productDatabase.set(product.id, product);
       });
       
-      console.log('✅ In-memory database reset completed');
+      res.json({
+        success: true,
+        message: 'In-memory reset completed',
+        productsCount: productDatabase.size
+      });
     }
-    
-    res.json({
-      success: true,
-      message: 'Database reset completed'
-    });
   } catch (error) {
     console.error('❌ Error resetting database:', error);
     res.status(500).json({
       success: false,
       error: 'Reset failed',
-      details: error.message
-    });
-  }
-});
-
-// Database backup endpoint
-app.post('/api/database/backup', async (req, res) => {
-  try {
-    console.log('💾 Creating database backup...');
-    
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const filename = `backup-${timestamp}.json`;
-    
-    let backupData = {
-      timestamp: new Date().toISOString(),
-      products: [],
-      orders: [],
-      version: '1.0'
-    };
-
-    if (process.env.DATABASE_URL) {
-      // Get products from database
-      const productsResult = await pool.query('SELECT * FROM products');
-      backupData.products = productsResult.rows;
-
-      // Get orders from database
-      const ordersResult = await pool.query('SELECT * FROM orders');
-      backupData.orders = ordersResult.rows;
-
-      // Log backup
-      await pool.query(`
-        INSERT INTO backup_log (type, filename, created_at) 
-        VALUES ($1, $2, $3)
-      `, ['backup', filename, new Date()]);
-    } else {
-      // Get data from in-memory storage
-      backupData.products = Array.from(productDatabase.values());
-      backupData.orders = Array.from(orderDatabase.values());
-    }
-
-    console.log('✅ Database backup created successfully');
-    res.json({
-      success: true,
-      message: 'Backup created successfully',
-      filename: filename,
-      data: backupData
-    });
-  } catch (error) {
-    console.error('❌ Error creating backup:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Backup failed',
-      details: error.message
-    });
-  }
-});
-
-// Database restore endpoint
-app.post('/api/database/restore', upload.single('backup'), async (req, res) => {
-  try {
-    console.log('🔄 Restoring database from backup...');
-    
-    if (!req.file) {
-      return res.status(400).json({
-        success: false,
-        error: 'No backup file provided'
-      });
-    }
-
-    const backupData = JSON.parse(req.file.buffer.toString());
-    
-    if (process.env.DATABASE_URL) {
-      // Clear existing data
-      await pool.query('DELETE FROM products');
-      await pool.query('DELETE FROM orders');
-      
-      // Restore products
-      for (const product of backupData.products) {
-        await productOperations.create(product);
-      }
-      
-      // Log restore
-      await pool.query(`
-        INSERT INTO backup_log (type, filename, created_at) 
-        VALUES ($1, $2, $3)
-      `, ['restore', req.file.originalname, new Date()]);
-    } else {
-      // Clear in-memory storage
-      productDatabase.clear();
-      orderDatabase.clear();
-      
-      // Restore data
-      backupData.products.forEach(product => {
-        productDatabase.set(product.id, product);
-      });
-      backupData.orders.forEach(order => {
-        orderDatabase.set(order.id, order);
-      });
-    }
-
-    console.log('✅ Database restore completed');
-    res.json({
-      success: true,
-      message: 'Database restored successfully'
-    });
-  } catch (error) {
-    console.error('❌ Error restoring database:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Restore failed',
-      details: error.message
-    });
-  }
-});
-
-// Database clear endpoint
-app.post('/api/database/clear', async (req, res) => {
-  try {
-    console.log('🗑️ Clearing database...');
-    
-    if (process.env.DATABASE_URL) {
-      // Clear all tables
-      await pool.query('DELETE FROM products');
-      await pool.query('DELETE FROM orders');
-      await pool.query('DELETE FROM payments');
-      
-      console.log('✅ Database cleared successfully');
-    } else {
-      // Clear in-memory storage
-      productDatabase.clear();
-      orderDatabase.clear();
-      paymentDatabase.clear();
-      
-      console.log('✅ In-memory database cleared successfully');
-    }
-    
-    res.json({
-      success: true,
-      message: 'Database cleared successfully'
-    });
-  } catch (error) {
-    console.error('❌ Error clearing database:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Clear failed',
       details: error.message
     });
   }

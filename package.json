@@ -22,6 +22,7 @@
     "framer-motion": "^10.16.4",
     "lucide-react": "^0.292.0",
     "mercadopago": "^2.8.0",
+    "pg": "^8.16.3",
     "react": "^18.2.0",
     "react-beautiful-dnd": "^13.1.1",
     "react-dom": "^18.2.0",
