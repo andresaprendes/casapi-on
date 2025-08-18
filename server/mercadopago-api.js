@@ -649,9 +649,9 @@ app.post('/api/mercadopago/create-preference', async (req, res) => {
       ],
       external_reference: orderId,
                 back_urls: {
-            success: 'https://xn--casapion-i3a.co/checkout/success',
-            failure: 'https://xn--casapion-i3a.co/checkout/failure',
-            pending: 'https://xn--casapion-i3a.co/checkout/pending'
+            success: 'https://xn--casapion-i3a.co/checkout/success?payment_id={payment_id}&status={status}&external_reference={external_reference}',
+            failure: 'https://xn--casapion-i3a.co/checkout/failure?payment_id={payment_id}&status={status}&external_reference={external_reference}',
+            pending: 'https://xn--casapion-i3a.co/checkout/pending?payment_id={payment_id}&status={status}&external_reference={external_reference}'
           },
       auto_return: 'all'
     };
