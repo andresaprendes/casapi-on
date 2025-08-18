@@ -2019,10 +2019,22 @@ app.post('/api/upload/image', upload.single('image'), async (req, res) => {
     }
 
     const inputPath = req.file.path;
-    const filename = req.file.filename;
+    const originalFilename = req.file.filename;
     
-    // Convert filename to WebP
-    const webpFilename = filename.replace(/\.[^/.]+$/, '.webp');
+    // Get product name from request body or use original filename
+    const productName = req.body.productName || 'product';
+    
+    // Create clean filename from product name
+    const cleanProductName = productName
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, '') // Remove special characters
+      .replace(/\s+/g, '-') // Replace spaces with hyphens
+      .substring(0, 50); // Limit length
+    
+    // Generate unique filename with product name
+    const timestamp = Date.now();
+    const randomSuffix = Math.round(Math.random() * 1E9);
+    const webpFilename = `${cleanProductName}-${timestamp}-${randomSuffix}.webp`;
     const outputPath = path.join(__dirname, '..', 'public', 'images', 'products', webpFilename);
 
     // Ensure input and output paths are different
