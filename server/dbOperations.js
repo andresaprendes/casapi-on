@@ -20,7 +20,7 @@ const orderOperations = {
     } = orderData;
 
     // Check if we're using Supabase schema (customer_info JSONB) or PostgreSQL schema (separate columns)
-    const isSupabaseSchema = await checkSupabaseSchema();
+    const isSupabaseSchema = await this.checkSupabaseSchema();
     
     if (isSupabaseSchema) {
       // Supabase schema - use customer_info JSONB
