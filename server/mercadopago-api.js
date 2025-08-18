@@ -3270,7 +3270,7 @@ app.get('/api/deployment-test', (req, res) => {
   });
 });
 
-const { v2: cloudinary } = require('cloudinary');
+import { v2 as cloudinary } from 'cloudinary';
 
 // Cloudinary configuration
 cloudinary.config({
