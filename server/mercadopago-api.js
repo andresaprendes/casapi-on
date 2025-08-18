@@ -5,6 +5,12 @@ import crypto from 'crypto';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+// ES module equivalent of __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 import { MercadoPagoConfig, Preference, Payment, PaymentMethod } from 'mercadopago';
 import { initializeDatabase } from './database.js';
 import { pool } from './database.js';
@@ -1780,21 +1786,9 @@ app.post('/api/mercadopago/trigger-webhook/:paymentId', async (req, res) => {
 // 6. Order Management Endpoints
 
 // Helper functions
-function generateOrderNumber() {
-  return 'ORD-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9).toUpperCase();
-}
+// generateOrderNumber is already defined above
 
-function calculateEstimatedDelivery(shippingZone) {
-  const deliveryDays = {
-    'bogota': '1-2 días',
-    'medellin': '2-3 días',
-    'cali': '2-3 días',
-    'barranquilla': '3-4 días',
-    'cartagena': '3-4 días',
-    'other': '5-7 días'
-  };
-  return deliveryDays[shippingZone] || '5-7 días';
-}
+// calculateEstimatedDelivery is already defined above
 
 // Create a new order
 app.post('/api/orders', express.json(), async (req, res) => {
