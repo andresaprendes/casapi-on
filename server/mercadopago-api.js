@@ -2008,7 +2008,7 @@ app.put('/api/orders/:orderId', express.json(), (req, res) => {
   }
 });
 
-// File upload endpoints - OPTIMIZED for performance
+// File upload endpoints - CLOUDINARY INTEGRATION
 app.post('/api/upload/image', upload.single('image'), async (req, res) => {
   try {
     if (!req.file) {
@@ -2025,75 +2025,60 @@ app.post('/api/upload/image', upload.single('image'), async (req, res) => {
     const productName = req.body.productName || 'product';
     const productId = req.body.productId || null;
     
-    // Create clean filename from product name
+    // Create clean public_id for Cloudinary
     const cleanProductName = productName
       .toLowerCase()
       .replace(/[^a-z0-9\s]/g, '') // Remove special characters
       .replace(/\s+/g, '-') // Replace spaces with hyphens
       .substring(0, 30); // Limit length
     
-    // Generate unique filename with product name and ID if available
     const timestamp = Date.now();
     const randomSuffix = Math.round(Math.random() * 1E9);
     const idSuffix = productId ? `-${productId}` : '';
-    const webpFilename = `${cleanProductName}${idSuffix}-${timestamp}-${randomSuffix}.webp`;
-    const outputPath = path.join(__dirname, '..', 'public', 'images', 'products', webpFilename);
+    const publicId = `casa-pinon/products/${cleanProductName}${idSuffix}-${timestamp}-${randomSuffix}`;
 
-    // Ensure input and output paths are different
-    if (inputPath === outputPath) {
-      // If paths are the same, create a temporary output path
-      const tempOutputPath = path.join(__dirname, '..', 'public', 'images', 'products', `temp_${webpFilename}`);
-      
-      // Convert to WebP with optimization
-      await sharp(inputPath)
-        .webp({ 
-          quality: 80,        // Good quality
-          effort: 6,          // Good compression
-          nearLossless: true  // Better quality
-        })
-        .toFile(tempOutputPath);
-
-      // Delete original file
-      fs.unlinkSync(inputPath);
-      
-      // Rename temp file to final name
-      fs.renameSync(tempOutputPath, outputPath);
-    } else {
-      // Convert to WebP with optimization
-      await sharp(inputPath)
-        .webp({ 
-          quality: 80,        // Good quality
-          effort: 6,          // Good compression
-          nearLossless: true  // Better quality
-        })
-        .toFile(outputPath);
-
-      // Delete original file
-      fs.unlinkSync(inputPath);
-    }
-
-    // Return WebP path
-    const relativePath = `/images/products/${webpFilename}`;
+    // Upload to Cloudinary with transformations
+    console.log('☁️ Uploading to Cloudinary...');
     
-    console.log('✅ Image converted to WebP successfully:', webpFilename);
-    console.log('📁 WebP file saved at:', outputPath);
-    console.log('🌐 Accessible at:', relativePath);
+    const uploadResult = await cloudinary.uploader.upload(inputPath, {
+      public_id: publicId,
+      folder: 'casa-pinon/products',
+      transformation: [
+        { width: 800, height: 800, crop: 'limit', quality: 'auto:good' },
+        { format: 'webp' }
+      ],
+      resource_type: 'image',
+      overwrite: true
+    });
+
+    // Delete local file after upload
+    fs.unlinkSync(inputPath);
+    
+    console.log('✅ Image uploaded to Cloudinary successfully');
+    console.log('☁️ Cloudinary URL:', uploadResult.secure_url);
     
     // Log image-product linking info
     if (productId) {
       console.log('🔗 Image linked to product ID:', productId);
     }
-    console.log('📝 Product name used for filename:', productName);
+    console.log('📝 Product name used for public_id:', productName);
+    
+    // Generate multiple image sizes
+    const imageUrls = generateCloudinaryUrls(uploadResult.public_id, productName);
     
     res.json({
       success: true,
-      filename: webpFilename,
-      path: relativePath,
-      size: req.file.size,
+      filename: uploadResult.public_id.split('/').pop(),
+      path: imageUrls.optimized, // Use optimized version as default
+      cloudinary_id: uploadResult.public_id,
+      urls: imageUrls, // All available sizes
+      size: uploadResult.bytes,
+      width: uploadResult.width,
+      height: uploadResult.height,
       mimetype: 'image/webp',
       productId: productId,
       productName: productName,
-      message: 'Image converted to WebP and uploaded successfully!'
+      message: 'Image uploaded to Cloudinary successfully!'
     });
 
   } catch (error) {
@@ -2156,6 +2141,21 @@ app.get('/api/products/verify-images', async (req, res) => {
     });
   }
 });
+
+// Cloudinary utility functions
+const generateCloudinaryUrls = (publicId, productName) => {
+  const baseUrl = `https://res.cloudinary.com/dstbttvrn/image/upload`;
+  
+  return {
+    original: `${baseUrl}/v1/${publicId}`,
+    thumbnail: `${baseUrl}/c_thumb,w_150,h_150,g_face/${publicId}`,
+    small: `${baseUrl}/c_thumb,w_300,h_300,g_face/${publicId}`,
+    medium: `${baseUrl}/c_thumb,w_800,h_800,g_face/${publicId}`,
+    large: `${baseUrl}/c_thumb,w_1200,h_1200,g_face/${publicId}`,
+    webp: `${baseUrl}/f_webp/${publicId}`,
+    optimized: `${baseUrl}/f_webp,q_auto:good/${publicId}`
+  };
+};
 
 // Configure MIME types for proper image serving
 const mimeTypes = {
@@ -3270,6 +3270,13 @@ app.get('/api/deployment-test', (req, res) => {
   });
 });
 
+const { v2: cloudinary } = require('cloudinary');
 
+// Cloudinary configuration
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'dstbttvrn',
+  api_key: process.env.CLOUDINARY_API_KEY || '818938823496785',
+  api_secret: process.env.CLOUDINARY_API_SECRET || '8QPRY4HKE38dje4DYT2hL3FYp1g'
+});
 
 export { app, startServer };
