@@ -1,0 +1,11 @@
+# Rounded Favicon Placeholder
+
+This file should be replaced with an actual rounded favicon image.
+
+To create a rounded favicon:
+1. Take the existing logo.png
+2. Apply rounded corners (typically 8-12px radius for 32x32 favicon)
+3. Save as favicon-rounded.png
+4. Update the HTML to reference this new file
+
+The favicon should be 32x32 pixels or 16x16 pixels for optimal browser display.
