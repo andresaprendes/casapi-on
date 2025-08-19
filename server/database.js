@@ -89,6 +89,7 @@ const initializeDatabase = async () => {
         images JSONB,
         materials JSONB,
         dimensions JSONB,
+        size_options JSONB,
         weight DECIMAL(8,2),
         is_custom BOOLEAN DEFAULT FALSE,
         design_variations TEXT,
@@ -111,6 +112,13 @@ const initializeDatabase = async () => {
     // Add wood_type column
     try {
       await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS wood_type VARCHAR(100)`);
+    } catch (error) {
+      // Column might already exist
+    }
+
+    // Add size_options column
+    try {
+      await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS size_options JSONB`);
     } catch (error) {
       // Column might already exist
     }
