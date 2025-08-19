@@ -2227,6 +2227,7 @@ app.get('/api/products', async (req, res) => {
       estimatedDelivery: product.estimated_delivery || product.estimatedDelivery,
       designVariations: product.design_variations || product.designVariations,
       isCustom: product.is_custom || product.isCustom,
+      sizeOptions: product.size_options || product.sizeOptions,
       createdAt: product.created_at || product.createdAt,
       updatedAt: product.updated_at || product.updatedAt
     }));
@@ -2269,6 +2270,7 @@ app.get('/api/products/:id', async (req, res) => {
       estimatedDelivery: product.estimated_delivery || product.estimatedDelivery,
       designVariations: product.design_variations || product.designVariations,
       isCustom: product.is_custom || product.isCustom,
+      sizeOptions: product.size_options || product.sizeOptions,
       createdAt: product.created_at || product.createdAt,
       updatedAt: product.updated_at || product.updatedAt
     };
@@ -2381,6 +2383,7 @@ app.put('/api/products/:id', express.json(), async (req, res) => {
       estimatedDelivery: updatedProduct.estimated_delivery || updatedProduct.estimatedDelivery,
       designVariations: updatedProduct.design_variations || updatedProduct.designVariations,
       isCustom: updatedProduct.is_custom || updatedProduct.isCustom,
+      sizeOptions: updatedProduct.size_options || updatedProduct.sizeOptions,
       createdAt: updatedProduct.created_at || updatedProduct.createdAt,
       updatedAt: updatedProduct.updated_at || updatedProduct.updatedAt
     };
