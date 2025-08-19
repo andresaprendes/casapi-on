@@ -2213,7 +2213,6 @@ app.get('/api/test-images', (req, res) => {
 // Product API endpoints
 app.get('/api/products', async (req, res) => {
   try {
-    const includeAdminOnly = req.query.includeAdminOnly === '1' || req.query.includeAdminOnly === 'true';
     let products;
     if (process.env.DATABASE_URL) {
       products = await productOperations.getAll();
@@ -2222,21 +2221,15 @@ app.get('/api/products', async (req, res) => {
     }
     
     // Transform database fields to match frontend expectations
-    let transformedProducts = products.map(product => ({
+    const transformedProducts = products.map(product => ({
       ...product,
       woodType: product.wood_type || product.woodType,
       estimatedDelivery: product.estimated_delivery || product.estimatedDelivery,
       designVariations: product.design_variations || product.designVariations,
       isCustom: product.is_custom || product.isCustom,
-      sizeOptions: product.size_options || product.sizeOptions,
-      adminOnly: product.admin_only || product.adminOnly,
       createdAt: product.created_at || product.createdAt,
       updatedAt: product.updated_at || product.updatedAt
     }));
-    
-    if (!includeAdminOnly) {
-      transformedProducts = transformedProducts.filter(p => !p.adminOnly);
-    }
     
     res.json({
       success: true,
@@ -2276,7 +2269,6 @@ app.get('/api/products/:id', async (req, res) => {
       estimatedDelivery: product.estimated_delivery || product.estimatedDelivery,
       designVariations: product.design_variations || product.designVariations,
       isCustom: product.is_custom || product.isCustom,
-      sizeOptions: product.size_options || product.sizeOptions,
       createdAt: product.created_at || product.createdAt,
       updatedAt: product.updated_at || product.updatedAt
     };
@@ -2389,7 +2381,6 @@ app.put('/api/products/:id', express.json(), async (req, res) => {
       estimatedDelivery: updatedProduct.estimated_delivery || updatedProduct.estimatedDelivery,
       designVariations: updatedProduct.design_variations || updatedProduct.designVariations,
       isCustom: updatedProduct.is_custom || updatedProduct.isCustom,
-      sizeOptions: updatedProduct.size_options || updatedProduct.sizeOptions,
       createdAt: updatedProduct.created_at || updatedProduct.createdAt,
       updatedAt: updatedProduct.updated_at || updatedProduct.updatedAt
     };
@@ -2630,13 +2621,7 @@ async function startServer() {
       // Test connection
       const testResult = await pool.query('SELECT NOW()');
       console.log('✅ Connected to Supabase:', testResult.rows[0]);
-      // Initialize/migrate database schema
-      try {
-        await initializeDatabase();
-        console.log('✅ Database schema initialized/migrated');
-      } catch (initErr) {
-        console.error('❌ Database initialization error:', initErr);
-      }
+      
       console.log('✅ Supabase database ready');
     } else {
       console.log('⚠️  No DATABASE_URL found, using in-memory storage');

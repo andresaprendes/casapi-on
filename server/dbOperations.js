@@ -448,7 +448,6 @@ const productOperations = {
         images,
         materials,
         dimensions,
-        sizeOptions,
         weight,
         isCustom,
         designVariations,
@@ -465,9 +464,9 @@ const productOperations = {
       const query = `
         INSERT INTO products (
           id, name, description, price, category, subcategory,
-          images, materials, dimensions, size_options, weight, is_custom,
+          images, materials, dimensions, weight, is_custom,
           design_variations, estimated_delivery, features, specifications, wood_type
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
         RETURNING *
       `;
 
@@ -481,7 +480,6 @@ const productOperations = {
         JSON.stringify(images),
         JSON.stringify(materials),
         JSON.stringify(dimensions),
-        JSON.stringify(sizeOptions || []),
         weight,
         isCustom,
         designVariations,
@@ -528,7 +526,7 @@ const productOperations = {
         setClause.push(`${dbKey} = $${valueIndex}`);
         
         // Handle JSON fields properly
-        if (['images', 'materials', 'dimensions', 'features', 'specifications', 'sizeOptions'].includes(key)) {
+        if (['images', 'materials', 'dimensions', 'features', 'specifications'].includes(key)) {
           values.push(JSON.stringify(updates[key]));
         } else {
           values.push(updates[key]);
