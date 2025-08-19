@@ -187,6 +187,9 @@ const formatCurrency = (amount) => {
   }
 };
 
+// URLs
+const FRONTEND_URL = process.env.BASE_URL || 'https://xn--casapion-i3a.co';
+
 // Email templates
 const createOrderConfirmationEmail = (order, customerInfo) => {
   // Use enhanced helper functions for better data extraction
@@ -224,8 +227,7 @@ const createOrderConfirmationEmail = (order, customerInfo) => {
   const itemsList = extractItemsList(order);
 
   // Create payment status link (will be updated when payment is processed)
-  const frontendUrl = 'https://casapi-on-production.up.railway.app';
-  const paymentStatusLink = `${frontendUrl}/payment-status?order=${orderNumber}`;
+  const paymentStatusLink = `${FRONTEND_URL}/payment-status?order=${orderNumber}`;
 
   return {
     subject: `Confirmación de Pedido #${orderNumber} - Casa Piñón Ebanistería`,
@@ -385,9 +387,8 @@ const createPaymentStatusEmail = (order, customerInfo, paymentDetails, paymentSt
     itemsList = 'Error al cargar productos';
   }
 
-  // Create real payment status link - use frontend URL
-  const frontendUrl = 'https://xn--casapion-i3a.co';
-  const paymentStatusLink = `${frontendUrl}/payment-status?order=${orderNumber}`;
+  // Create real payment status link - use unified frontend URL
+  const paymentStatusLink = `${FRONTEND_URL}/payment-status?order=${orderNumber}`;
 
   // Email content based on payment status
   const getStatusContent = () => {
@@ -585,7 +586,7 @@ const sendOrderConfirmation = async (order, customerInfo) => {
     const emailContent = createOrderConfirmationEmail(order, customerInfo);
 
     const mailOptions = {
-      from: process.env.EMAIL_USER || 'pagos@casapinon.co',
+      from: `"Casa Piñón" <${process.env.EMAIL_USER || 'pagos@casapinon.co'}>`,
       to: customerInfo.email,
       subject: emailContent.subject,
       html: emailContent.html
@@ -611,7 +612,7 @@ const sendPaymentStatusEmail = async (order, customerInfo, paymentDetails, payme
     const emailContent = createPaymentStatusEmail(order, customerInfo, paymentDetails, paymentStatus);
 
     const mailOptions = {
-      from: process.env.EMAIL_USER || 'pagos@casapinon.co',
+      from: `"Casa Piñón" <${process.env.EMAIL_USER || 'pagos@casapinon.co'}>`,
       to: customerInfo.email,
       subject: emailContent.subject,
       html: emailContent.html

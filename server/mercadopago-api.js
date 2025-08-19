@@ -601,7 +601,7 @@ const client = new MercadoPagoConfig({
 });
 
 // Environment variables for URLs
-const BASE_URL = process.env.BASE_URL || 'https://casapi-on-production.up.railway.app';
+const BASE_URL = process.env.BASE_URL || 'https://xn--casapion-i3a.co';
 const API_URL = process.env.API_URL || 'https://casa-pinon-backend-production.up.railway.app';
 
 // Root endpoint to test if server is running
@@ -638,7 +638,7 @@ app.post('/api/mercadopago/create-preference', async (req, res) => {
       });
     }
 
-    // Simple MercadoPago preference - exactly what they need
+    // Simple MercadoPago preference - with unified URLs and explicit redirects
     const preference = {
       items: [
         {
@@ -648,11 +648,11 @@ app.post('/api/mercadopago/create-preference', async (req, res) => {
         }
       ],
       external_reference: orderId,
-                back_urls: {
-            success: `https://xn--casapion-i3a.co/checkout/success?payment_id={payment_id}&status={status}&collection_id={collection_id}&external_reference=${orderId}`,
-            failure: `https://xn--casapion-i3a.co/checkout/failure?payment_id={payment_id}&status={status}&collection_id={collection_id}&external_reference=${orderId}`,
-            pending: `https://xn--casapion-i3a.co/checkout/pending?payment_id={payment_id}&status={status}&collection_id={collection_id}&external_reference=${orderId}`
-          },
+      back_urls: {
+        success: `${BASE_URL}/checkout/success?payment_id={payment_id}&status={status}&collection_id={collection_id}&external_reference=${orderId}`,
+        failure: `${BASE_URL}/checkout/failure?payment_id={payment_id}&status={status}&collection_id={collection_id}&external_reference=${orderId}`,
+        pending: `${BASE_URL}/checkout/pending?payment_id={payment_id}&status={status}&collection_id={collection_id}&external_reference=${orderId}`
+      },
       auto_return: 'all'
     };
 
@@ -3138,6 +3138,53 @@ app.post('/api/mercadopago/webhook', express.json(), async (req, res) => {
   } catch (error) {
     console.error('❌ Webhook processing error:', error);
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Explicit cancellation notify (fallback when user returns without webhook)
+app.post('/api/mercadopago/notify-cancelled', express.json(), async (req, res) => {
+  try {
+    const { external_reference, customer_email } = req.body || {};
+    if (!external_reference) {
+      return res.status(400).json({ success: false, error: 'external_reference required' });
+    }
+
+    let order;
+    if (process.env.DATABASE_URL) {
+      order = await orderOperations.getByOrderNumber(external_reference);
+    } else {
+      order = orderDatabase.get(external_reference);
+    }
+
+    if (!order) {
+      return res.status(404).json({ success: false, error: 'Order not found' });
+    }
+
+    const customerInfo = order.customer || {
+      name: order.customer_name || 'Cliente',
+      email: customer_email || order.customer_email || '',
+      phone: order.customer_phone || '',
+      address: order.customer_address || {}
+    };
+
+    const payment = {
+      id: 'cancelled-return',
+      status: 'cancelled',
+      external_reference,
+      transaction_amount: order.total || 0
+    };
+
+    const emailResult = await sendPaymentStatusEmail(order, customerInfo, payment, 'cancelled');
+
+    // Update order status to failed/cancelled
+    try {
+      await updateOrderPaymentStatus(external_reference, 'failed', payment.id);
+    } catch {}
+
+    return res.json({ success: true, emailResult });
+  } catch (error) {
+    console.error('❌ notify-cancelled error:', error);
+    return res.status(500).json({ success: false, error: error.message });
   }
 });
 

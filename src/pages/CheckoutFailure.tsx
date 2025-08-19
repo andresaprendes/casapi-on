@@ -43,6 +43,15 @@ const CheckoutFailure: React.FC = () => {
         errorMessage: getErrorMessage('user_cancelled'),
         externalReference: externalReference || undefined
       });
+      // Fire-and-forget: notify backend to send cancellation email (fallback)
+      try {
+        const apiUrl = import.meta.env.VITE_API_URL || 'https://casa-pinon-backend-production.up.railway.app';
+        fetch(`${apiUrl}/api/mercadopago/notify-cancelled`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ external_reference: externalReference })
+        }).catch(() => {});
+      } catch {}
       setIsLoading(false);
       return;
     }
