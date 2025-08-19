@@ -2624,7 +2624,14 @@ async function startServer() {
       // Test connection
       const testResult = await pool.query('SELECT NOW()');
       console.log('✅ Connected to Supabase:', testResult.rows[0]);
-      
+      // Ensure schema up to date
+      try {
+        const { initializeDatabase } = await import('./database.js');
+        await initializeDatabase();
+        console.log('✅ Database schema verified/updated');
+      } catch (e) {
+        console.error('Schema initialization error:', e.message);
+      }
       console.log('✅ Supabase database ready');
     } else {
       console.log('⚠️  No DATABASE_URL found, using in-memory storage');
