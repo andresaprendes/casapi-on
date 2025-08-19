@@ -1,3 +1,14 @@
+export interface SizeOption {
+  id: string
+  label: string
+  dimensions: {
+    length: number
+    width: number
+    height: number
+  }
+  price: number
+}
+
 export interface Product {
   id: string
   name: string
@@ -14,11 +25,13 @@ export interface Product {
     height: number
   }
   weight?: number
+  adminOnly?: boolean
   isCustom: boolean
   designVariations?: string
   estimatedDelivery: string
   features: string[]
   specifications: Record<string, string>
+  sizeOptions?: SizeOption[]
 }
 
 export interface CartItem {
