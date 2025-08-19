@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Product } from '../types'
 import { products as mockProducts } from '../data/mockData'
+import { useAuth } from '../store/AuthContext'
 
 const API_URL = 'https://casa-pinon-backend-production.up.railway.app' // Force production backend
 
@@ -8,13 +9,15 @@ export const useProducts = () => {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const { isAuthenticated } = useAuth()
 
   // Load products from database
   const fetchProducts = async () => {
     try {
       setLoading(true)
       setError(null)
-      const response = await fetch(`${API_URL}/api/products`)
+      const includeAdmin = isAuthenticated ? '?includeAdminOnly=1' : ''
+      const response = await fetch(`${API_URL}/api/products${includeAdmin}`)
       const data = await response.json()
       
       if (data.success) {
@@ -36,7 +39,7 @@ export const useProducts = () => {
 
   useEffect(() => {
     fetchProducts()
-  }, [])
+  }, [isAuthenticated])
 
   // Add a new product
   const addProduct = async (product: Omit<Product, 'id'>) => {

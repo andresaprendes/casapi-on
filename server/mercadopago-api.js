@@ -2213,6 +2213,7 @@ app.get('/api/test-images', (req, res) => {
 // Product API endpoints
 app.get('/api/products', async (req, res) => {
   try {
+    const includeAdminOnly = req.query.includeAdminOnly === '1' || req.query.includeAdminOnly === 'true';
     let products;
     if (process.env.DATABASE_URL) {
       products = await productOperations.getAll();
@@ -2221,15 +2222,20 @@ app.get('/api/products', async (req, res) => {
     }
     
     // Transform database fields to match frontend expectations
-    const transformedProducts = products.map(product => ({
+    let transformedProducts = products.map(product => ({
       ...product,
       woodType: product.wood_type || product.woodType,
       estimatedDelivery: product.estimated_delivery || product.estimatedDelivery,
       designVariations: product.design_variations || product.designVariations,
       isCustom: product.is_custom || product.isCustom,
+      adminOnly: product.admin_only || product.adminOnly,
       createdAt: product.created_at || product.createdAt,
       updatedAt: product.updated_at || product.updatedAt
     }));
+    
+    if (!includeAdminOnly) {
+      transformedProducts = transformedProducts.filter(p => !p.adminOnly);
+    }
     
     res.json({
       success: true,

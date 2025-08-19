@@ -30,6 +30,7 @@ const AdminProducts = () => {
     woodType: '',
     images: [] as string[],
     materials: [] as string[],
+    adminOnly: false,
     isCustom: false,
     designVariations: '',
     estimatedDelivery: '',
