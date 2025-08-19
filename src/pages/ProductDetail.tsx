@@ -337,19 +337,11 @@ const ProductDetail = () => {
                       </option>
                     ))}
                   </select>
-                </div>
-              ) : null}
-
-              {/* Dimensions */}
-              {(product.sizeOptions && product.sizeOptions.length > 0) ? (
-                <div>
-                  <h3 className="text-lg font-semibold text-brown-900 mb-2">Dimensiones</h3>
+                  {/* Inline dimensions helper */}
                   {(() => {
                     const size = product.sizeOptions!.find(s => s.id === (selectedSizeId || product.sizeOptions![0].id))!
                     return (
-                      <p className="text-brown-600">
-                        Largo: {size.dimensions.length}cm × Ancho: {size.dimensions.width}cm × Alto: {size.dimensions.height}cm
-                      </p>
+                      <p className="text-sm text-brown-600 mt-2">Dimensiones: {size.dimensions.length}cm × {size.dimensions.width}cm × {size.dimensions.height}cm</p>
                     )
                   })()}
                 </div>
