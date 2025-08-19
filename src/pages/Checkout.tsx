@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { useCart } from '../store/CartContext'
 import { shippingZones } from '../data/mockData'
+import { FREE_SHIPPING_THRESHOLD, computeShipping, computeShippingSavings, isFreeShipping } from '../utils/shipping'
 import MercadoPagoPayment from '../components/MercadoPagoPayment'
 import { getImageUrl } from '../utils/imageUtils'
 
@@ -40,11 +41,15 @@ const Checkout = () => {
   const [orderNumber, setOrderNumber] = useState<string>('')
   const [isCreatingOrder, setIsCreatingOrder] = useState(false)
 
-  const { register, handleSubmit, formState: { errors } } = useForm<CustomerInfo>()
+  const { register, handleSubmit, formState: { errors }, watch } = useForm<CustomerInfo>()
 
-  // Calculate totals - IVA and shipping included in product prices
+  // Calculate totals
   const subtotal = items.reduce((sum: number, item: any) => sum + (item.product.price * item.quantity), 0)
-  const total = subtotal // No additional taxes or shipping
+  const watchedZone = watch('shippingZone')
+  const selectedZoneName = (customerInfo?.shippingZone || watchedZone || '') as string
+  const shippingAmount = computeShipping(subtotal, selectedZoneName)
+  const shippingSavings = computeShippingSavings(subtotal, selectedZoneName)
+  const totalWithShipping = subtotal + shippingAmount
 
   // Track order state changes
   useEffect(() => {
@@ -167,6 +172,7 @@ const Checkout = () => {
       // Create order in database
       const apiUrl = import.meta.env.VITE_API_URL || 'https://casa-pinon-backend-production.up.railway.app'
       
+      const computedShipping = computeShipping(subtotal, customerData.shippingZone)
       const orderData = {
         customer: {
           name: `${customerData.firstName} ${customerData.lastName}`,
@@ -182,9 +188,9 @@ const Checkout = () => {
         },
         items: validatedItems,
         subtotal: subtotal || 0,
-        shipping: 0, // No shipping cost
+        shipping: computedShipping,
         tax: 0, // IVA included in product prices
-        total: total || 0,
+        total: (subtotal + computedShipping) || 0,
         shippingZone: customerData.shippingZone || 'No especificada',
         paymentMethod: paymentInfo?.method || 'mercadopago',
         notes: customerData.notes || '',
@@ -508,12 +514,23 @@ const Checkout = () => {
                     <option value="">Selecciona zona</option>
                     {shippingZones.map((zone) => (
                       <option key={zone.name} value={zone.name}>
-                        {zone.name} - ${zone.basePrice.toLocaleString()}
+                        {isFreeShipping(subtotal)
+                          ? `${zone.name} - $${zone.basePrice.toLocaleString()} → GRATIS`
+                          : `${zone.name} - $${zone.basePrice.toLocaleString()}`}
                       </option>
                     ))}
                   </select>
                   {errors.shippingZone && (
                     <p className="text-red-600 text-sm mt-1">{errors.shippingZone.message}</p>
+                  )}
+                  {isFreeShipping(subtotal) ? (
+                    <div className="mt-2 inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-green-100 text-green-800">
+                      Envío GRATIS por compras desde ${FREE_SHIPPING_THRESHOLD.toLocaleString()}
+                    </div>
+                  ) : (
+                    <p className="text-sm mt-2 text-brown-600">
+                      Envío gratis desde ${FREE_SHIPPING_THRESHOLD.toLocaleString()}. Selecciona tu zona para ver el costo.
+                    </p>
                   )}
                 </div>
               </div>
@@ -596,7 +613,7 @@ const Checkout = () => {
                     <>
                       {console.log('✅ MercadoPago component rendering with real order:', orderNumber)}
                       <MercadoPagoPayment
-                        amount={total}
+                        amount={totalWithShipping}
                         orderId={orderNumber} // Use real order ID
                         customerEmail={customerInfo.email}
                         customerName={`${customerInfo.firstName} ${customerInfo.lastName}`}
@@ -621,9 +638,23 @@ const Checkout = () => {
                 <div className="bg-white rounded-lg shadow-md p-6 sticky top-4">
                   <h2 className="text-xl font-semibold text-brown-900 mb-4">Resumen del Pedido</h2>
                   <div className="space-y-3">
-                    <div className="flex justify-between text-lg font-semibold">
+                    <div className="flex justify-between text-sm">
+                      <span>Subtotal:</span>
+                      <span>${subtotal.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span>Envío:</span>
+                      <span>{isFreeShipping(subtotal) && selectedZoneName ? 'Gratis' : (selectedZoneName ? `$${computeShipping(subtotal, selectedZoneName).toLocaleString()}` : 'Según zona')}</span>
+                    </div>
+                    {isFreeShipping(subtotal) && selectedZoneName && (
+                      <div className="flex justify-between text-sm text-green-700">
+                        <span>Ahorro en Envío:</span>
+                        <span>${shippingSavings.toLocaleString()}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-lg font-semibold pt-2 border-t">
                       <span>Total:</span>
-                      <span>${total.toLocaleString()}</span>
+                      <span>${totalWithShipping.toLocaleString()}</span>
                     </div>
                   </div>
                 </div>
@@ -652,7 +683,7 @@ const Checkout = () => {
                 <h2 className="text-xl font-semibold text-brown-900 mb-4">Detalles de la Orden</h2>
                 <div className="space-y-2 text-brown-700">
                   <p><strong>Número de Orden:</strong> {orderNumber}</p>
-                  <p><strong>Total:</strong> ${total.toLocaleString()}</p>
+                  <p><strong>Total:</strong> ${totalWithShipping.toLocaleString()}</p>
                   <p><strong>Método de Pago:</strong> {paymentInfo?.method}</p>
                   <p><strong>Fecha:</strong> {new Date().toLocaleDateString('es-CO')}</p>
                 </div>
