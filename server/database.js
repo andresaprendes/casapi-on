@@ -114,6 +114,18 @@ const initializeDatabase = async () => {
     } catch (error) {
       // Column might already exist
     }
+    // Add size_options column
+    try {
+      await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS size_options JSONB`);
+    } catch (error) {
+      // Column might already exist
+    }
+    // Add admin_only column
+    try {
+      await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS admin_only BOOLEAN DEFAULT FALSE`);
+    } catch (error) {
+      // Column might already exist
+    }
     
     // Optional cleanup: drop legacy made_to_order column if present
     try {
