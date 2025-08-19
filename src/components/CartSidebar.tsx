@@ -97,6 +97,9 @@ const CartSidebar = () => {
                         <p className="text-sm text-brown-600 mb-2">
                           {formatPrice(item.product.price)}
                         </p>
+                        {item.product.id.includes('__') && (
+                          <p className="text-xs text-brown-500 mb-1">Tamaño seleccionado</p>
+                        )}
                         
                         {/* Quantity Controls */}
                         <div className="flex items-center space-x-2">

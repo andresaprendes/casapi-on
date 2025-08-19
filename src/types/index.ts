@@ -14,7 +14,6 @@ export interface Product {
     height: number
   }
   weight?: number
-  adminOnly?: boolean
   isCustom: boolean
   designVariations?: string
   estimatedDelivery: string

@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ShoppingCart, Eye, Star } from 'lucide-react'
 import { Product } from '../types'
@@ -13,6 +13,7 @@ interface ProductCardProps {
 
 const ProductCard = ({ product }: ProductCardProps) => {
   const { addItem } = useCart()
+  const navigate = useNavigate()
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('es-CO', {
@@ -24,6 +25,10 @@ const ProductCard = ({ product }: ProductCardProps) => {
   }
 
   const handleAddToCart = () => {
+    if (product.sizeOptions && product.sizeOptions.length > 0) {
+      navigate(`/producto/${product.id}`)
+      return
+    }
     addItem(product, 1)
     toast.success(`${product.name} agregado al carrito`)
   }
@@ -152,7 +157,10 @@ const ProductCard = ({ product }: ProductCardProps) => {
         {/* Price and Rating */}
         <div className="flex items-center justify-between">
           <div className="text-2xl font-bold text-brown-900">
-            {formatPrice(product.price)}
+            {product.sizeOptions && product.sizeOptions.length > 0
+              ? `Desde ${formatPrice(Math.min(...product.sizeOptions.map(s => s.price)))}`
+              : formatPrice(product.price)
+            }
           </div>
           <div className="flex items-center space-x-1">
             <Star className="w-4 h-4 fill-current text-yellow-400" />

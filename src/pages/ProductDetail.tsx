@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import { useProducts } from '../hooks/useProducts'
 import { useCart } from '../store/CartContext'
+import { SizeOption } from '../types'
 import { toast } from 'react-hot-toast'
 import { woodTypes } from '../data/mockData'
 import { getImageUrl } from '../utils/imageUtils'
@@ -27,6 +28,7 @@ const ProductDetail = () => {
   const { addItem } = useCart()
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const [quantity, setQuantity] = useState(1)
+  const [selectedSizeId, setSelectedSizeId] = useState<string | null>(null)
 
   const product = products.find(p => p.id === id)
 
@@ -41,14 +43,40 @@ const ProductDetail = () => {
 
   const handleAddToCart = () => {
     if (product) {
-      addItem(product, quantity)
+      let productToAdd = product
+      if (product.sizeOptions && product.sizeOptions.length > 0) {
+        const size: SizeOption | undefined = product.sizeOptions.find(s => s.id === (selectedSizeId || product.sizeOptions![0].id))
+        if (size) {
+          productToAdd = {
+            ...product,
+            id: `${product.id}__${size.id}`,
+            name: `${product.name} (${size.label || `${size.dimensions.length}x${size.dimensions.width}x${size.dimensions.height}cm`})`,
+            price: size.price,
+            dimensions: size.dimensions
+          }
+        }
+      }
+      addItem(productToAdd, quantity)
       toast.success(`${product.name} agregado al carrito`)
     }
   }
 
   const handleBuyNow = () => {
     if (product) {
-      addItem(product, quantity)
+      let productToAdd = product
+      if (product.sizeOptions && product.sizeOptions.length > 0) {
+        const size: SizeOption | undefined = product.sizeOptions.find(s => s.id === (selectedSizeId || product.sizeOptions![0].id))
+        if (size) {
+          productToAdd = {
+            ...product,
+            id: `${product.id}__${size.id}`,
+            name: `${product.name} (${size.label || `${size.dimensions.length}x${size.dimensions.width}x${size.dimensions.height}cm`})`,
+            price: size.price,
+            dimensions: size.dimensions
+          }
+        }
+      }
+      addItem(productToAdd, quantity)
       // Redirect to checkout
       window.location.href = '/checkout'
     }
@@ -229,7 +257,11 @@ const ProductDetail = () => {
 
               {/* Price */}
               <div className="text-3xl font-bold text-brown-900">
-                {formatPrice(product.price)}
+                {formatPrice(
+                  product.sizeOptions && product.sizeOptions.length > 0
+                    ? (product.sizeOptions.find(s => s.id === (selectedSizeId || product.sizeOptions![0].id))?.price || product.price)
+                    : product.price
+                )}
               </div>
 
               {/* Description */}
@@ -290,14 +322,46 @@ const ProductDetail = () => {
                 </div>
               )}
 
+              {/* Size Selection */}
+              {product.sizeOptions && product.sizeOptions.length > 0 ? (
+                <div>
+                  <h3 className="text-lg font-semibold text-brown-900 mb-2">Tamaño</h3>
+                  <select
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brown-500 focus:border-transparent"
+                    value={selectedSizeId || product.sizeOptions[0].id}
+                    onChange={(e) => setSelectedSizeId(e.target.value)}
+                  >
+                    {product.sizeOptions.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.label || `${s.dimensions.length}x${s.dimensions.width}x${s.dimensions.height}cm`} — {formatPrice(s.price)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : null}
+
               {/* Dimensions */}
-              {product.dimensions && (
+              {(product.sizeOptions && product.sizeOptions.length > 0) ? (
                 <div>
                   <h3 className="text-lg font-semibold text-brown-900 mb-2">Dimensiones</h3>
-                  <p className="text-brown-600">
-                    Largo: {product.dimensions.length}cm × Ancho: {product.dimensions.width}cm × Alto: {product.dimensions.height}cm
-                  </p>
+                  {(() => {
+                    const size = product.sizeOptions!.find(s => s.id === (selectedSizeId || product.sizeOptions![0].id))!
+                    return (
+                      <p className="text-brown-600">
+                        Largo: {size.dimensions.length}cm × Ancho: {size.dimensions.width}cm × Alto: {size.dimensions.height}cm
+                      </p>
+                    )
+                  })()}
                 </div>
+              ) : (
+                product.dimensions && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-brown-900 mb-2">Dimensiones</h3>
+                    <p className="text-brown-600">
+                      Largo: {product.dimensions.length}cm × Ancho: {product.dimensions.width}cm × Alto: {product.dimensions.height}cm
+                    </p>
+                  </div>
+                )
               )}
 
               {/* Features */}
