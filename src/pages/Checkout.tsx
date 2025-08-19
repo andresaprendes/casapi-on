@@ -10,8 +10,9 @@ import {
   MessageCircle
 } from 'lucide-react'
 import { useCart } from '../store/CartContext'
+import { useAuth } from '../store/AuthContext'
 import { shippingZones } from '../data/mockData'
-import { FREE_SHIPPING_THRESHOLD, computeShipping, computeShippingSavings, isFreeShipping } from '../utils/shipping'
+import { FREE_SHIPPING_THRESHOLD, computeShipping, isFreeShipping, getZoneBasePrice } from '../utils/shipping'
 import MercadoPagoPayment from '../components/MercadoPagoPayment'
 import { getImageUrl } from '../utils/imageUtils'
 
@@ -34,6 +35,7 @@ interface PaymentInfo {
 
 const Checkout = () => {
   const { state } = useCart()
+  const { isAuthenticated: isAdmin } = useAuth()
   const { items } = state
   const [currentStep, setCurrentStep] = useState<'cart' | 'shipping' | 'payment' | 'confirmation'>('cart')
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null)
@@ -47,8 +49,10 @@ const Checkout = () => {
   const subtotal = items.reduce((sum: number, item: any) => sum + (item.product.price * item.quantity), 0)
   const watchedZone = watch('shippingZone')
   const selectedZoneName = (customerInfo?.shippingZone || watchedZone || '') as string
-  const shippingAmount = computeShipping(subtotal, selectedZoneName)
-  const shippingSavings = computeShippingSavings(subtotal, selectedZoneName)
+  const freeEligible = isAdmin || isFreeShipping(subtotal)
+  const shippingAmount = isAdmin ? 0 : computeShipping(subtotal, selectedZoneName)
+  const basePriceForZone = getZoneBasePrice(selectedZoneName)
+  const shippingSavings = freeEligible && selectedZoneName ? basePriceForZone : 0
   const totalWithShipping = subtotal + shippingAmount
 
   // Track order state changes
@@ -172,7 +176,7 @@ const Checkout = () => {
       // Create order in database
       const apiUrl = import.meta.env.VITE_API_URL || 'https://casa-pinon-backend-production.up.railway.app'
       
-      const computedShipping = computeShipping(subtotal, customerData.shippingZone)
+      const computedShipping = isAdmin ? 0 : computeShipping(subtotal, customerData.shippingZone)
       const orderData = {
         customer: {
           name: `${customerData.firstName} ${customerData.lastName}`,
@@ -514,7 +518,7 @@ const Checkout = () => {
                     <option value="">Selecciona zona</option>
                     {shippingZones.map((zone) => (
                       <option key={zone.name} value={zone.name}>
-                        {isFreeShipping(subtotal)
+                        {freeEligible
                           ? `${zone.name} - $${zone.basePrice.toLocaleString()} → GRATIS`
                           : `${zone.name} - $${zone.basePrice.toLocaleString()}`}
                       </option>
@@ -523,7 +527,7 @@ const Checkout = () => {
                   {errors.shippingZone && (
                     <p className="text-red-600 text-sm mt-1">{errors.shippingZone.message}</p>
                   )}
-                  {isFreeShipping(subtotal) ? (
+                  {freeEligible ? (
                     <div className="mt-2 inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-green-100 text-green-800">
                       Envío GRATIS por compras desde ${FREE_SHIPPING_THRESHOLD.toLocaleString()}
                     </div>
@@ -644,9 +648,9 @@ const Checkout = () => {
                     </div>
                     <div className="flex justify-between text-sm">
                       <span>Envío:</span>
-                      <span>{isFreeShipping(subtotal) && selectedZoneName ? 'Gratis' : (selectedZoneName ? `$${computeShipping(subtotal, selectedZoneName).toLocaleString()}` : 'Según zona')}</span>
+                      <span>{freeEligible && selectedZoneName ? 'Gratis' : (selectedZoneName ? `$${computeShipping(subtotal, selectedZoneName).toLocaleString()}` : 'Según zona')}</span>
                     </div>
-                    {isFreeShipping(subtotal) && selectedZoneName && (
+                    {freeEligible && selectedZoneName && (
                       <div className="flex justify-between text-sm text-green-700">
                         <span>Ahorro en Envío:</span>
                         <span>${shippingSavings.toLocaleString()}</span>
