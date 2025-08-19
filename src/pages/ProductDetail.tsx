@@ -326,21 +326,25 @@ const ProductDetail = () => {
               {product.sizeOptions && product.sizeOptions.length > 0 ? (
                 <div>
                   <h3 className="text-lg font-semibold text-brown-900 mb-2">Tamaño</h3>
-                  <select
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brown-500 focus:border-transparent"
-                    value={selectedSizeId || product.sizeOptions[0].id}
-                    onChange={(e) => setSelectedSizeId(e.target.value)}
-                  >
+                  <div role="radiogroup" className="flex flex-wrap gap-2">
                     {product.sizeOptions.map((s, i) => {
                       const label = (s.label || '').trim()
-                      // If label contains measurements after a name (e.g., "Compact 180x70x75 cm"), strip everything from first digit onward
                       const cleaned = label.replace(/\s*\d[\s\S]*$/, '').trim()
                       const display = cleaned || (label ? label : `Opción ${i + 1}`)
+                      const selected = (selectedSizeId || product.sizeOptions![0].id) === s.id
                       return (
-                        <option key={s.id} value={s.id}>{display}</option>
+                        <button
+                          key={s.id}
+                          role="radio"
+                          aria-checked={selected}
+                          onClick={() => setSelectedSizeId(s.id)}
+                          className={`px-4 py-2 rounded-full border text-sm transition-colors ${selected ? 'bg-brown-600 text-white border-brown-600' : 'border-brown-300 text-brown-800 hover:bg-cream-200'}`}
+                        >
+                          {display}
+                        </button>
                       )
                     })}
-                  </select>
+                  </div>
                 </div>
               ) : (
                 product.dimensions && (
