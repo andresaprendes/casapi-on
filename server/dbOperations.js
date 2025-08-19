@@ -525,10 +525,11 @@ const productOperations = {
     Object.keys(updates).forEach(key => {
       if (key !== 'id' && key !== 'created_at') {
         const dbKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
-        setClause.push(`${dbKey} = $${valueIndex}`);
+        const isJsonField = ['images', 'materials', 'dimensions', 'features', 'specifications', 'sizeOptions'].includes(key);
+        // Cast JSON fields explicitly to jsonb to avoid driver type inference issues
+        setClause.push(`${dbKey} = $${valueIndex}${isJsonField ? '::jsonb' : ''}`);
         
-        // Handle JSON fields properly
-        if (['images', 'materials', 'dimensions', 'features', 'specifications', 'sizeOptions'].includes(key)) {
+        if (isJsonField) {
           values.push(JSON.stringify(updates[key]));
         } else {
           values.push(updates[key]);
