@@ -156,11 +156,16 @@ const ProductCard = ({ product }: ProductCardProps) => {
 
         {/* Price and Rating */}
         <div className="flex items-center justify-between">
-          <div className="text-2xl font-bold text-brown-900">
-            {product.sizeOptions && product.sizeOptions.length > 0
-              ? `Desde ${formatPrice(Math.min(...product.sizeOptions.map(s => s.price)))}`
-              : formatPrice(product.price)
-            }
+          <div>
+            {product.sizeOptions && product.sizeOptions.length > 0 && (
+              <div className="text-xs text-brown-500 leading-none mb-1">Desde</div>
+            )}
+            <div className="text-2xl font-bold text-brown-900">
+              {product.sizeOptions && product.sizeOptions.length > 0
+                ? formatPrice(Math.min(...product.sizeOptions.map(s => s.price)))
+                : formatPrice(product.price)
+              }
+            </div>
           </div>
           <div className="flex items-center space-x-1">
             <Star className="w-4 h-4 fill-current text-yellow-400" />
