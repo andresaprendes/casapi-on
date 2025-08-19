@@ -331,19 +331,12 @@ const ProductDetail = () => {
                     value={selectedSizeId || product.sizeOptions[0].id}
                     onChange={(e) => setSelectedSizeId(e.target.value)}
                   >
-                    {product.sizeOptions.map((s) => (
+                    {product.sizeOptions.map((s, i) => (
                       <option key={s.id} value={s.id}>
-                        {s.label || `${s.dimensions.length}x${s.dimensions.width}x${s.dimensions.height}cm`} — {formatPrice(s.price)}
+                        {(s.label && s.label.trim()) || `Opción ${i + 1}`}
                       </option>
                     ))}
                   </select>
-                  {/* Inline dimensions helper */}
-                  {(() => {
-                    const size = product.sizeOptions!.find(s => s.id === (selectedSizeId || product.sizeOptions![0].id))!
-                    return (
-                      <p className="text-sm text-brown-600 mt-2">Dimensiones: {size.dimensions.length}cm × {size.dimensions.width}cm × {size.dimensions.height}cm</p>
-                    )
-                  })()}
                 </div>
               ) : (
                 product.dimensions && (
@@ -354,6 +347,21 @@ const ProductDetail = () => {
                     </p>
                   </div>
                 )
+              )}
+
+              {/* Dimensions (separate block) */}
+              {product.sizeOptions && product.sizeOptions.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold text-brown-900 mb-2">Dimensiones</h3>
+                  {(() => {
+                    const size = product.sizeOptions!.find(s => s.id === (selectedSizeId || product.sizeOptions![0].id))!
+                    return (
+                      <p className="text-brown-600">
+                        Largo: {size.dimensions.length}cm × Ancho: {size.dimensions.width}cm × Alto: {size.dimensions.height}cm
+                      </p>
+                    )
+                  })()}
+                </div>
               )}
 
               {/* Features */}
