@@ -21,10 +21,12 @@ import { SizeOption } from '../types'
 import { toast } from 'react-hot-toast'
 import { woodTypes } from '../data/mockData'
 import { getImageUrl } from '../utils/imageUtils'
+import { useAuth } from '../store/AuthContext'
 
 const ProductDetail = () => {
   const { id } = useParams()
   const { products, loading, error } = useProducts()
+  const { isAuthenticated } = useAuth()
   const { addItem } = useCart()
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const [quantity, setQuantity] = useState(1)
@@ -110,7 +112,7 @@ const ProductDetail = () => {
     )
   }
 
-  if (error || !product) {
+  if (error || !product || (product.adminOnly && !isAuthenticated)) {
     return (
       <div className="section-padding">
         <div className="container-custom">

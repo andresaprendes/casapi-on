@@ -6,17 +6,20 @@ import { Search, Grid, List } from 'lucide-react'
 import ProductCard from '../components/ProductCard'
 import { categories, woodTypes } from '../data/mockData'
 import { useProducts } from '../hooks/useProducts'
+import { useAuth } from '../store/AuthContext'
 
 const Products = () => {
   const { category } = useParams()
   const { products } = useProducts()
+  const { isAuthenticated } = useAuth()
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedWoodType, setSelectedWoodType] = useState('')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [filteredProducts, setFilteredProducts] = useState(products)
 
   useEffect(() => {
-    let filtered = products
+    // Hide adminOnly products for non-admins
+    let filtered = products.filter(p => isAuthenticated || !p.adminOnly)
 
     // Filter by category if specified
     if (category) {
@@ -40,7 +43,7 @@ const Products = () => {
     }
 
     setFilteredProducts(filtered)
-  }, [products, category, selectedWoodType, searchTerm])
+  }, [products, category, selectedWoodType, searchTerm, isAuthenticated])
 
   const currentCategory = categories.find(cat => cat.slug === category)
 

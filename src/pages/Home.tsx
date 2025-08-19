@@ -8,10 +8,13 @@ import TestimonialCard from '../components/TestimonialCard'
 import PaymentStatusWidget from '../components/PaymentStatusWidget'
 import { testimonials, woodTypes } from '../data/mockData'
 import { useProducts } from '../hooks/useProducts'
+import { useAuth } from '../store/AuthContext'
 
 const Home = () => {
   const { products } = useProducts()
-  const featuredProducts = products.slice(0, 6)
+  const { isAuthenticated } = useAuth()
+  const visibleProducts = products.filter(p => isAuthenticated || !p.adminOnly)
+  const featuredProducts = visibleProducts.slice(0, 6)
   const featuredTestimonials = testimonials.slice(0, 3)
 
   const features = [
