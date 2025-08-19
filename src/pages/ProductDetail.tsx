@@ -331,11 +331,15 @@ const ProductDetail = () => {
                     value={selectedSizeId || product.sizeOptions[0].id}
                     onChange={(e) => setSelectedSizeId(e.target.value)}
                   >
-                    {product.sizeOptions.map((s, i) => (
-                      <option key={s.id} value={s.id}>
-                        {(s.label && s.label.trim()) || `Opción ${i + 1}`}
-                      </option>
-                    ))}
+                    {product.sizeOptions.map((s, i) => {
+                      const label = (s.label || '').trim()
+                      // If label contains measurements after a name (e.g., "Compact 180x70x75 cm"), strip everything from first digit onward
+                      const cleaned = label.replace(/\s*\d[\s\S]*$/, '').trim()
+                      const display = cleaned || (label ? label : `Opción ${i + 1}`)
+                      return (
+                        <option key={s.id} value={s.id}>{display}</option>
+                      )
+                    })}
                   </select>
                 </div>
               ) : (
