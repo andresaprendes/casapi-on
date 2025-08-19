@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Search, Plus, Edit3, Trash2, Save, X, Upload, LogOut, Package, Package as PackageIcon, BarChart3, ArrowUpDown, Star } from 'lucide-react'
-import { Product } from '../types'
+import { Product, SizeOption } from '../types'
 import { useAuth } from '../store/AuthContext'
 import { useProducts } from '../hooks/useProducts'
 import { toast } from 'react-hot-toast'
@@ -35,7 +35,8 @@ const AdminProducts = () => {
     designVariations: '',
     estimatedDelivery: '',
     features: [] as string[],
-    specifications: {} as Record<string, string>
+    specifications: {} as Record<string, string>,
+    sizeOptions: [] as SizeOption[]
   })
 
   // Image upload state
@@ -75,7 +76,8 @@ const AdminProducts = () => {
       designVariations: product.designVariations || '',
       estimatedDelivery: product.estimatedDelivery,
       features: [...product.features],
-      specifications: { ...product.specifications }
+      specifications: { ...product.specifications },
+      sizeOptions: product.sizeOptions ? [...product.sizeOptions] : []
     })
     setShowEditModal(true)
   }
@@ -96,7 +98,8 @@ const AdminProducts = () => {
       designVariations: '',
       estimatedDelivery: '',
       features: [],
-      specifications: {}
+      specifications: {},
+      sizeOptions: []
     })
     setShowAddModal(true)
   }
@@ -337,6 +340,124 @@ const AdminProducts = () => {
                     <div className="text-center p-6">
                       <Package className="w-12 h-12 text-brown-400 mx-auto mb-2" />
                       <p className="text-brown-600 text-sm">Sin imagen</p>
+                    </div>
+                  </div>
+
+                  {/* Size Options Section */}
+                  <div className="mt-6">
+                    <h3 className="text-lg font-semibold text-brown-900 mb-3">Tamaños y precios</h3>
+                    <p className="text-sm text-brown-600 mb-4">Agrega variaciones de tamaño. Si existen, el precio se basará en el tamaño seleccionado; el precio base se usa cuando no hay tamaños.</p>
+                    <div className="space-y-3">
+                      {formData.sizeOptions.length === 0 && (
+                        <div className="text-sm text-brown-600">No hay tamaños. Agrega uno abajo.</div>
+                      )}
+                      {formData.sizeOptions.map((opt, idx) => (
+                        <div key={opt.id || idx} className="grid grid-cols-1 md:grid-cols-6 gap-3 items-end bg-cream-50 p-3 rounded-lg border border-cream-200">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Etiqueta</label>
+                            <input
+                              type="text"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brown-500 focus:border-transparent"
+                              value={opt.label}
+                              onChange={(e) => {
+                                const val = e.target.value
+                                setFormData(prev => ({
+                                  ...prev,
+                                  sizeOptions: prev.sizeOptions.map((o, i) => i === idx ? { ...o, label: val } : o)
+                                }))
+                              }}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Largo (cm)</label>
+                            <input
+                              type="number"
+                              min="0"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brown-500 focus:border-transparent"
+                              value={opt.dimensions?.length || 0}
+                              onChange={(e) => {
+                                const val = parseInt(e.target.value) || 0
+                                setFormData(prev => ({
+                                  ...prev,
+                                  sizeOptions: prev.sizeOptions.map((o, i) => i === idx ? { ...o, dimensions: { ...o.dimensions, length: val } as any } : o)
+                                }))
+                              }}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Ancho (cm)</label>
+                            <input
+                              type="number"
+                              min="0"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brown-500 focus:border-transparent"
+                              value={opt.dimensions?.width || 0}
+                              onChange={(e) => {
+                                const val = parseInt(e.target.value) || 0
+                                setFormData(prev => ({
+                                  ...prev,
+                                  sizeOptions: prev.sizeOptions.map((o, i) => i === idx ? { ...o, dimensions: { ...o.dimensions, width: val } as any } : o)
+                                }))
+                              }}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Alto (cm)</label>
+                            <input
+                              type="number"
+                              min="0"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brown-500 focus:border-transparent"
+                              value={opt.dimensions?.height || 0}
+                              onChange={(e) => {
+                                const val = parseInt(e.target.value) || 0
+                                setFormData(prev => ({
+                                  ...prev,
+                                  sizeOptions: prev.sizeOptions.map((o, i) => i === idx ? { ...o, dimensions: { ...o.dimensions, height: val } as any } : o)
+                                }))
+                              }}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Precio (COP)</label>
+                            <input
+                              type="number"
+                              min="0"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brown-500 focus:border-transparent"
+                              value={opt.price}
+                              onChange={(e) => {
+                                const val = parseInt(e.target.value) || 0
+                                setFormData(prev => ({
+                                  ...prev,
+                                  sizeOptions: prev.sizeOptions.map((o, i) => i === idx ? { ...o, price: val } : o)
+                                }))
+                              }}
+                            />
+                          </div>
+                          <div className="flex md:justify-end">
+                            <button
+                              type="button"
+                              onClick={() => setFormData(prev => ({ ...prev, sizeOptions: prev.sizeOptions.filter((_, i) => i !== idx) }))}
+                              className="px-3 py-2 text-red-600 bg-red-50 rounded-lg hover:bg-red-100"
+                            >
+                              Eliminar
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-3">
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({
+                          ...prev,
+                          sizeOptions: [
+                            ...prev.sizeOptions,
+                            { id: `size_${Date.now()}_${Math.random().toString(36).slice(2,7)}`, label: '', dimensions: { length: 0, width: 0, height: 0 }, price: 0 }
+                          ]
+                        }))}
+                        className="px-4 py-2 bg-brown-600 text-white rounded-lg hover:bg-brown-700"
+                      >
+                        Agregar tamaño
+                      </button>
                     </div>
                   </div>
                 )}
