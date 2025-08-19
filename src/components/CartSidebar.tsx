@@ -2,7 +2,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X, Trash2, Plus, Minus, ShoppingBag, ShoppingCart } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useCart } from '../store/CartContext'
-import { FREE_SHIPPING_THRESHOLD, isFreeShipping } from '../utils/shipping'
 
 const CartSidebar = () => {
   const { state, removeItem, updateQuantity, closeCart, getTotalPrice } = useCart()

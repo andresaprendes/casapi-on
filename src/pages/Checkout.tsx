@@ -355,7 +355,7 @@ const Checkout = () => {
                   <div className="space-y-3">
                     <div className="flex justify-between text-lg font-semibold">
                       <span>Total:</span>
-                      <span>${total.toLocaleString()}</span>
+                      <span>${subtotal.toLocaleString()}</span>
                     </div>
                   </div>
                   
