@@ -57,7 +57,7 @@ const Footer = () => {
               </div>
               <div className="flex items-center space-x-2 text-sm">
                 <MapPin className="w-4 h-4" />
-                <a href="https://maps.app.goo.gl/nhasHxZeW3RPdzrQA?g_st=ipc" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors duration-200">
+                <a href="https://maps.app.goo.gl/hWwg7QJZqJR1p4y86" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors duration-200">
                   Alto de Carrizales, Antioquia
                 </a>
               </div>
@@ -142,7 +142,7 @@ const Footer = () => {
                 <Mail className="w-4 h-4" />
               </a>
               <a
-                href="https://maps.app.goo.gl/nhasHxZeW3RPdzrQA?g_st=ipc"
+                href="https://maps.app.goo.gl/hWwg7QJZqJR1p4y86"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-8 h-8 bg-cream-200 rounded-full flex items-center justify-center text-brown-900 hover:bg-white transition-colors duration-200"

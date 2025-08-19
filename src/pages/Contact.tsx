@@ -76,7 +76,7 @@ const Contact = () => {
       icon: MapPin,
       title: 'Ubicación',
       value: 'Alto de Carrizales, Antioquia',
-      link: 'https://maps.app.goo.gl/nhasHxZeW3RPdzrQA?g_st=ipc',
+      link: 'https://maps.app.goo.gl/hWwg7QJZqJR1p4y86',
       description: 'Visítanos en nuestro taller'
     }
   ]
@@ -280,7 +280,7 @@ const Contact = () => {
               <div className="bg-brown-100 rounded-lg p-4">
                 <div className="aspect-video rounded-lg overflow-hidden shadow-lg">
                   <iframe
-                    src={`https://www.google.com/maps/embed/v1/place?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8'}&q=Casa+Piñón+Ebanistería,+Alto+de+Carrizales,+Antioquia,+Colombia`}
+                    src={`https://www.google.com/maps/embed/v1/place?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8'}&q=place_id:ChIJqcPNLt2dRo4Rj-gDdQTzJ-0&zoom=17`}
                     width="100%"
                     height="100%"
                     style={{ border: 0 }}
@@ -298,7 +298,7 @@ const Contact = () => {
                     Alto de Carrizales, Antioquia, Colombia
                   </p>
                   <a
-                    href="https://maps.app.goo.gl/nhasHxZeW3RPdzrQA?g_st=ipc"
+                    href="https://maps.app.goo.gl/hWwg7QJZqJR1p4y86"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-brown-800 hover:text-brown-600 transition-colors duration-200 font-medium inline-flex items-center space-x-1"
