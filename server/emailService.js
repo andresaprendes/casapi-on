@@ -467,7 +467,9 @@ const createPaymentStatusEmail = (order, customerInfo, paymentDetails, paymentSt
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <div style="text-align: center; margin-bottom: 30px;">
           <div style="margin-bottom: 15px;">
-            <img src="https://casapinon.co/logo.png" alt="Casa Piñón" width="80" height="80" style="border-radius: 8px; display: block; margin: 0 auto 15px;" />
+            <a href="https://casapinon.co" target="_blank" rel="noopener">
+              <img src="cid:logo-email@casapinon" alt="Casa Piñón" width="80" height="80" style="border-radius: 8px; display: block; margin: 0 auto 15px;" />
+            </a>
           </div>
           <h1 style="color: ${statusContent.statusColor}; margin: 0; font-size: 28px;">${statusContent.title}</h1>
           <p style="color: #666; margin: 5px 0; font-size: 16px;">Casa Piñón Ebanistería</p>
@@ -598,9 +600,9 @@ const sendOrderConfirmation = async (order, customerInfo) => {
       },
       attachments: [
         {
-          filename: 'logo.png',
-          path: `${FRONTEND_URL}/logo.png`,
-          cid: 'logo@casapinon'
+          filename: 'logo-email.png',
+          path: `${FRONTEND_URL}/logo-email.png`,
+          cid: 'logo-email@casapinon'
         }
       ]
     };
@@ -637,9 +639,9 @@ const sendPaymentStatusEmail = async (order, customerInfo, paymentDetails, payme
       },
       attachments: [
         {
-          filename: 'logo.png',
-          path: `${FRONTEND_URL}/logo.png`,
-          cid: 'logo@casapinon'
+          filename: 'logo-email.png',
+          path: `${FRONTEND_URL}/logo-email.png`,
+          cid: 'logo-email@casapinon'
         }
       ]
     };
