@@ -1,5 +1,7 @@
 import nodemailer from 'nodemailer';
 
+const EMAIL_SENDING_ENABLED = process.env.EMAIL_SENDING_ENABLED !== '0';
+
 // Email configuration - optimized for Zoho
 const createTransporter = () => {
   return nodemailer.createTransport({
@@ -579,6 +581,10 @@ const createPaymentStatusEmail = (order, customerInfo, paymentDetails, paymentSt
 // Email sending functions
 const sendOrderConfirmation = async (order, customerInfo) => {
   try {
+    if (!EMAIL_SENDING_ENABLED) {
+      console.log('⚠️ Email sending disabled by EMAIL_SENDING_ENABLED');
+      return { success: false, error: 'Email sending disabled' };
+    }
     if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
       console.log('⚠️ Email credentials not configured, skipping email send');
       return { success: false, error: 'Email credentials not configured' };
@@ -618,6 +624,10 @@ const sendOrderConfirmation = async (order, customerInfo) => {
 
 const sendPaymentStatusEmail = async (order, customerInfo, paymentDetails, paymentStatus) => {
   try {
+    if (!EMAIL_SENDING_ENABLED) {
+      console.log('⚠️ Email sending disabled by EMAIL_SENDING_ENABLED');
+      return { success: false, error: 'Email sending disabled' };
+    }
     if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
       console.log('⚠️ Email credentials not configured, skipping email send');
       return { success: false, error: 'Email credentials not configured' };
