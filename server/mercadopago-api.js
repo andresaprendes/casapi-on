@@ -2841,6 +2841,43 @@ app.post('/api/test-success-email', express.json(), async (req, res) => {
   }
 });
 
+// Test endpoint to verify pending payment email
+app.post('/api/test-pending-email', express.json(), async (req, res) => {
+  try {
+    console.log('🧪 Testing pending payment email...');
+    const { email } = req.body || {};
+
+    const testOrder = {
+      id: 'test-pending',
+      orderNumber: 'TEST-PENDING-123',
+      total: 5000,
+      customer: { name: 'Test User', email: email || 'test@test.com' }
+    };
+
+    const testCustomerInfo = {
+      name: 'Test User',
+      email: email || 'pagos@casapinon.co',
+      phone: '3001234567',
+      address: { city: 'Test City' }
+    };
+
+    const testPayment = {
+      id: 'test-pending-payment',
+      status: 'pending',
+      external_reference: 'TEST-PENDING-123',
+      transaction_amount: 5000
+    };
+
+    console.log('📧 Attempting to send pending payment email...');
+    const emailResult = await sendPaymentStatusEmail(testOrder, testCustomerInfo, testPayment, 'pending');
+
+    return res.json({ success: true, message: 'Pending payment email test completed', emailResult });
+  } catch (error) {
+    console.error('❌ Pending email test failed:', error);
+    return res.status(500).json({ success: false, error: 'Pending email test failed', details: error.message });
+  }
+});
+
 // ===== DATABASE MANAGEMENT ENDPOINTS =====
 
 // Get database statistics
