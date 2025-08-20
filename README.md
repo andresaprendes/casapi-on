@@ -132,7 +132,7 @@ src/
 ## 📞 Contacto
 
 - **WhatsApp**: +57 301 466 4444
-- **Email**: info@casapinon.com
+- **Email**: info@casapinon.co
 - **Ubicación**: Alto de Carrizales, Antioquia
 
 ## 🚀 Despliegue
