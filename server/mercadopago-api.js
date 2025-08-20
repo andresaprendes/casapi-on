@@ -29,6 +29,22 @@ const productDatabase = new Map();
 
 const app = express();
 
+// Require admin token for test endpoints (production only)
+function requireAdminToken(req, res, next) {
+  try {
+    if (process.env.NODE_ENV === 'production') {
+      const headerToken = req.header('x-admin-token');
+      const expectedToken = process.env.ADMIN_TEST_TOKEN || '';
+      if (!expectedToken || headerToken !== expectedToken) {
+        return res.status(404).json({ success: false, error: 'Not found' });
+      }
+    }
+    return next();
+  } catch (_e) {
+    return res.status(404).json({ success: false, error: 'Not found' });
+  }
+}
+
 // Middleware
 app.use(cors({
   origin: [
@@ -927,7 +943,7 @@ app.get('/api/mercadopago/payment-methods', async (req, res) => {
 });
 
 // 5. Test endpoint
-app.get('/api/mercadopago/test', (req, res) => {
+app.get('/api/mercadopago/test', requireAdminToken, (req, res) => {
   if (process.env.NODE_ENV === 'production') {
     return res.status(404).json({ success: false, error: 'Not found' });
   }
@@ -939,7 +955,7 @@ app.get('/api/mercadopago/test', (req, res) => {
 });
 
 // 5.1. Email test endpoint (disabled in production)
-app.get('/api/test-email', async (req, res) => {
+app.get('/api/test-email', requireAdminToken, async (req, res) => {
   if (process.env.NODE_ENV === 'production') {
     return res.status(404).json({ success: false, error: 'Not found' });
   }
@@ -986,7 +1002,7 @@ app.get('/api/test-email', async (req, res) => {
 });
 
 // 5.2. Orders status check endpoint (disabled in production)
-app.get('/api/orders-status-check', async (req, res) => {
+app.get('/api/orders-status-check', requireAdminToken, async (req, res) => {
   if (process.env.NODE_ENV === 'production') {
     return res.status(404).json({ success: false, error: 'Not found' });
   }
@@ -1114,7 +1130,7 @@ app.get('/api/orders-status-check', async (req, res) => {
 });
 
 // 5.3. Manual cleanup trigger endpoint (disabled in production)
-app.post('/api/trigger-cleanup', async (req, res) => {
+app.post('/api/trigger-cleanup', requireAdminToken, async (req, res) => {
   if (process.env.NODE_ENV === 'production') {
     return res.status(404).json({ success: false, error: 'Not found' });
   }
@@ -1140,7 +1156,7 @@ app.post('/api/trigger-cleanup', async (req, res) => {
 });
 
 // 6. Webhook test endpoint
-app.get('/api/mercadopago/webhook-test', (req, res) => {
+app.get('/api/mercadopago/webhook-test', requireAdminToken, (req, res) => {
   if (process.env.NODE_ENV === 'production') {
     return res.status(404).json({ success: false, error: 'Not found' });
   }
@@ -2206,7 +2222,7 @@ app.use('/images', express.static(path.join(__dirname, '..', 'public', 'images')
 }));
 
 // Test endpoint to check if images are accessible
-app.get('/api/test-images', (req, res) => {
+app.get('/api/test-images', requireAdminToken, (req, res) => {
   if (process.env.NODE_ENV === 'production') {
     return res.status(404).json({ success: false, error: 'Not found' });
   }
@@ -2567,7 +2583,7 @@ app.post('/api/products/initialize', async (req, res) => {
 });
 
 // TEST ENDPOINT - Check database connection and products
-app.get('/api/products/test', async (req, res) => {
+app.get('/api/products/test', requireAdminToken, async (req, res) => {
   if (process.env.NODE_ENV === 'production') {
     return res.status(404).json({ success: false, error: 'Not found' });
   }
@@ -2713,7 +2729,7 @@ async function startServer() {
 
 
 // Test endpoint to verify email service is working
-app.post('/api/test-email', express.json(), async (req, res) => {
+app.post('/api/test-email', requireAdminToken, express.json(), async (req, res) => {
   if (process.env.NODE_ENV === 'production') {
     return res.status(404).json({ success: false, error: 'Not found' });
   }
@@ -2788,7 +2804,7 @@ app.post('/api/test-email', express.json(), async (req, res) => {
 });
 
 // Test endpoint to verify successful payment email
-app.post('/api/test-success-email', express.json(), async (req, res) => {
+app.post('/api/test-success-email', requireAdminToken, express.json(), async (req, res) => {
   try {
     console.log('🧪 Testing successful payment email...');
     const { email } = req.body || {};
@@ -2842,7 +2858,7 @@ app.post('/api/test-success-email', express.json(), async (req, res) => {
 });
 
 // Test endpoint to verify pending payment email
-app.post('/api/test-pending-email', express.json(), async (req, res) => {
+app.post('/api/test-pending-email', requireAdminToken, express.json(), async (req, res) => {
   try {
     console.log('🧪 Testing pending payment email...');
     const { email } = req.body || {};
@@ -3391,7 +3407,7 @@ app.get('/', (req, res) => {
 });
 
 // Test endpoint to verify deployment
-app.get('/api/deployment-test', (req, res) => {
+app.get('/api/deployment-test', requireAdminToken, (req, res) => {
   res.json({
     success: true,
     message: 'New webhook implementation deployed',
