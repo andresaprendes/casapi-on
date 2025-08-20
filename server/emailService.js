@@ -237,7 +237,7 @@ const createOrderConfirmationEmail = (order, customerInfo) => {
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <div style="text-align: center; margin-bottom: 30px;">
           <div style="margin-bottom: 15px;">
-            <img src="cid:logo-email@casapinon" alt="Casa Piñón" width="160" height="160" style="display:block; margin:0 auto 15px; border-radius:8px; max-width:100%; height:auto;" />
+            <img src="cid:logo-email-v2@casapinon" alt="Casa Piñón" width="240" style="display:block; margin:0 auto 15px; border-radius:8px; max-width:100%; height:auto;" />
           </div>
           <h1 style="color: #8B4513; margin: 0; font-size: 28px;">Casa Piñón Ebanistería</h1>
           <p style="color: #666; margin: 5px 0; font-size: 16px;">Artesanía en madera de piñón</p>
@@ -468,7 +468,7 @@ const createPaymentStatusEmail = (order, customerInfo, paymentDetails, paymentSt
         <div style="text-align: center; margin-bottom: 30px;">
           <div style="margin-bottom: 15px;">
             <a href="https://casapinon.co" target="_blank" rel="noopener">
-              <img src="cid:logo-email@casapinon" alt="Casa Piñón" width="160" height="160" style="display:block; margin:0 auto 15px; border-radius:8px; max-width:100%; height:auto;" />
+              <img src="cid:logo-email-v2@casapinon" alt="Casa Piñón" width="240" style="display:block; margin:0 auto 15px; border-radius:8px; max-width:100%; height:auto;" />
             </a>
           </div>
           <h1 style="color: ${statusContent.statusColor}; margin: 0; font-size: 28px;">${statusContent.title}</h1>
@@ -602,7 +602,7 @@ const sendOrderConfirmation = async (order, customerInfo) => {
         {
           filename: 'logo-email.png',
           path: `${FRONTEND_URL}/logo-email.png`,
-          cid: 'logo-email@casapinon'
+          cid: 'logo-email-v2@casapinon'
         }
       ]
     };
@@ -641,7 +641,7 @@ const sendPaymentStatusEmail = async (order, customerInfo, paymentDetails, payme
         {
           filename: 'logo-email.png',
           path: `${FRONTEND_URL}/logo-email.png`,
-          cid: 'logo-email@casapinon'
+          cid: 'logo-email-v2@casapinon'
         }
       ]
     };
