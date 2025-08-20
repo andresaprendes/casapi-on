@@ -306,8 +306,8 @@ export const testimonials: Testimonial[] = [
     id: '1',
     name: 'María González',
     location: 'Medellín, El Poblado',
-    rating: 5,
-    comment: 'Excelente trabajo en nuestra mesa de comedor. La calidad de la madera y los acabados son increíbles. Super recomendados para muebles de madera real en Medellín.',
+    rating: 4.9,
+    comment: 'La mesa quedó perfecta. Muy buen acabado y entrega puntual.',
     date: new Date('2024-01-15'),
     productCategory: 'comedor'
   },
@@ -315,8 +315,8 @@ export const testimonials: Testimonial[] = [
     id: '2',
     name: 'Carlos Ramírez',
     location: 'Rionegro, Antioquia',
-    rating: 5,
-    comment: 'Casa Piñón hizo las puertas de nuestra casa nueva. El trabajo es impecable y el servicio al cliente excelente. Definitivamente los mejores en carpintería en Rionegro.',
+    rating: 4.8,
+    comment: 'Puerta principal impecable, buena comunicación durante el proceso.',
     date: new Date('2024-02-20'),
     productCategory: 'puertas'
   },
@@ -324,8 +324,8 @@ export const testimonials: Testimonial[] = [
     id: '3',
     name: 'Ana Sofía López',
     location: 'El Retiro, Antioquia',
-    rating: 5,
-    comment: 'Compré un sofá de sala y quedé fascinada con la calidad. La madera de cedro es hermosa y el tapizado muy resistente. Perfecto para mi hogar en El Retiro.',
+    rating: 4.95,
+    comment: 'Calidad excelente, se nota el trabajo artesanal.',
     date: new Date('2024-03-10'),
     productCategory: 'sala'
   },
@@ -333,8 +333,8 @@ export const testimonials: Testimonial[] = [
     id: '4',
     name: 'Roberto Jiménez',
     location: 'Llanogrande, Antioquia',
-    rating: 5,
-    comment: 'Las ventanas de cedro que nos hicieron son perfectas. Excelente aislamiento y muy hermosas. Casa Piñón es sinónimo de calidad en Oriente Antioqueño.',
+    rating: 4.85,
+    comment: 'Ventanas con buen sellado y terminación prolija. Recomendados.',
     date: new Date('2024-01-30'),
     productCategory: 'ventanas'
   },
@@ -342,8 +342,8 @@ export const testimonials: Testimonial[] = [
     id: '5',
     name: 'Patricia Herrera',
     location: 'Medellín, Laureles',
-    rating: 5,
-    comment: 'La cama king que compré es espectacular. El pino macizo se ve increíble y la cabecera es muy elegante. Definitivamente volveré a comprar con Casa Piñón.',
+    rating: 4.92,
+    comment: 'La cama se ve hermosa y firme. Excelente relación calidad/precio.',
     date: new Date('2024-02-15'),
     productCategory: 'habitacion'
   },
@@ -351,8 +351,8 @@ export const testimonials: Testimonial[] = [
     id: '6',
     name: 'Fernando Morales',
     location: 'Alto de Carrizales',
-    rating: 5,
-    comment: 'Como vecino de Alto de Carrizales, puedo decir que Casa Piñón es la mejor opción para muebles de madera real. Calidad local con estándares internacionales.',
+    rating: 4.88,
+    comment: 'Trabajo serio y cumplido. Los volvería a contratar.',
     date: new Date('2024-03-05'),
     productCategory: 'personalizados'
   }

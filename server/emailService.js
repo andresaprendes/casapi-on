@@ -228,6 +228,8 @@ const createOrderConfirmationEmail = (order, customerInfo) => {
 
   // Create payment status link (will be updated when payment is processed)
   const paymentStatusLink = `${FRONTEND_URL}/payment-status?order=${orderNumber}`;
+  const unsubscribeUrl = `${FRONTEND_URL}/unsubscribe?email=${encodeURIComponent(customerEmail)}`;
+  const browserViewUrl = `${FRONTEND_URL}/emails/view?template=order-confirmation&order=${encodeURIComponent(orderNumber)}`;
 
   return {
     subject: `Confirmación de Pedido #${orderNumber} - Casa Piñón Ebanistería`,
@@ -235,10 +237,7 @@ const createOrderConfirmationEmail = (order, customerInfo) => {
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <div style="text-align: center; margin-bottom: 30px;">
           <div style="margin-bottom: 15px;">
-            <!-- Placeholder for company logo - replace with actual logo URL -->
-            <div style="width: 80px; height: 80px; background-color: #8B4513; border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center;">
-              <span style="color: white; font-size: 24px; font-weight: bold;">CP</span>
-            </div>
+            <img src="cid:logo@casapinon" alt="Casa Piñón" width="80" height="80" style="border-radius: 8px; display: block; margin: 0 auto 15px;" />
           </div>
           <h1 style="color: #8B4513; margin: 0; font-size: 28px;">Casa Piñón Ebanistería</h1>
           <p style="color: #666; margin: 5px 0; font-size: 16px;">Artesanía en madera de piñón</p>
@@ -315,8 +314,8 @@ const createOrderConfirmationEmail = (order, customerInfo) => {
             Si tienes alguna pregunta sobre tu pedido, no dudes en contactarnos:
           </p>
           <p style="color: #155724; margin-bottom: 0;">
-            <strong>WhatsApp:</strong> +57 300 123 4567<br>
-            <strong>Email:</strong> info@casapinon.com
+            <strong>WhatsApp:</strong> +57 301 466 4444 (<a href="https://wa.me/573014664444" style="color: #155724; text-decoration: underline;">chatear</a>)<br>
+            <strong>Email:</strong> info@casapinon.co
           </p>
         </div>
 
@@ -327,17 +326,18 @@ const createOrderConfirmationEmail = (order, customerInfo) => {
             <div style="margin: 10px 0;">
               <a href="https://instagram.com/casapinon" style="color: #8B4513; text-decoration: none; margin: 0 10px;">📸 Instagram</a>
               <a href="https://facebook.com/casapinon" style="color: #8B4513; text-decoration: none; margin: 0 10px;">📘 Facebook</a>
-              <a href="https://wa.me/573001234567" style="color: #8B4513; text-decoration: none; margin: 0 10px;">💬 WhatsApp</a>
+              <a href="https://wa.me/573014664444" style="color: #8B4513; text-decoration: none; margin: 0 10px;">💬 WhatsApp</a>
             </div>
             <p style="margin: 5px 0; font-size: 11px;">
               Este email fue enviado a ${customerEmail}. 
-              <a href="#" style="color: #8B4513;">Cancelar suscripción</a> | 
-              <a href="#" style="color: #8B4513;">Ver en navegador</a>
+              <a href="${unsubscribeUrl}" style="color: #8B4513;">Cancelar suscripción</a> | 
+              <a href="${browserViewUrl}" style="color: #8B4513;">Ver en navegador</a>
             </p>
           </div>
         </div>
       </div>
-    `
+    `,
+    text: `Casa Piñón Ebanistería\n\nConfirmación de Pedido #${orderNumber}\nFecha: ${orderDate}\nEstado del pago: ${paymentStatus === 'paid' ? 'Pagado' : paymentStatus === 'pending' ? 'Pendiente' : 'Fallido'}\n\nProductos:\n${itemsList}\n\nTotal: ${total}\n\nEntrega\nNombre: ${customerName}\nEmail: ${customerEmail}\nTeléfono: ${customerPhone}\nDirección: ${customerAddress}\nZona de envío: ${shippingZone}\nEntrega Estimada: ${estimatedDelivery}\n\nVerificar estado del pago: ${paymentStatusLink}\nContacto WhatsApp: https://wa.me/573014664444\nEmail: info@casapinon.co\n\nCancelar suscripción: ${unsubscribeUrl}\nVer en navegador: ${browserViewUrl}`
   };
 };
 
@@ -389,6 +389,8 @@ const createPaymentStatusEmail = (order, customerInfo, paymentDetails, paymentSt
 
   // Create real payment status link - use unified frontend URL
   const paymentStatusLink = `${FRONTEND_URL}/payment-status?order=${orderNumber}`;
+  const unsubscribeUrl = `${FRONTEND_URL}/unsubscribe?email=${encodeURIComponent(customerEmail)}`;
+  const browserViewUrl = `${FRONTEND_URL}/emails/view?template=payment-status&status=${encodeURIComponent(paymentStatus)}&order=${encodeURIComponent(orderNumber)}`;
 
   // Email content based on payment status
   const getStatusContent = () => {
@@ -465,10 +467,7 @@ const createPaymentStatusEmail = (order, customerInfo, paymentDetails, paymentSt
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <div style="text-align: center; margin-bottom: 30px;">
           <div style="margin-bottom: 15px;">
-            <!-- Placeholder for company logo - replace with actual logo URL -->
-            <div style="width: 80px; height: 80px; background-color: #8B4513; border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center;">
-              <span style="color: white; font-size: 24px; font-weight: bold;">CP</span>
-            </div>
+            <img src="https://casapinon.co/logo.png" alt="Casa Piñón" width="80" height="80" style="border-radius: 8px; display: block; margin: 0 auto 15px;" />
           </div>
           <h1 style="color: ${statusContent.statusColor}; margin: 0; font-size: 28px;">${statusContent.title}</h1>
           <p style="color: #666; margin: 5px 0; font-size: 16px;">Casa Piñón Ebanistería</p>
@@ -548,7 +547,7 @@ const createPaymentStatusEmail = (order, customerInfo, paymentDetails, paymentSt
             Si tienes alguna pregunta sobre tu pedido:
           </p>
           <p style="color: #856404; margin-bottom: 0;">
-            <strong>WhatsApp:</strong> +57 300 123 4567<br>
+            <strong>WhatsApp:</strong> +57 301 466 4444 (<a href="https://wa.me/573014664444" style="color: #856404; text-decoration: underline;">chatear</a>)<br>
             <strong>Email:</strong> info@casapinon.co
           </p>
         </div>
@@ -560,17 +559,18 @@ const createPaymentStatusEmail = (order, customerInfo, paymentDetails, paymentSt
             <div style="margin: 10px 0;">
               <a href="https://instagram.com/casapinon" style="color: #8B4513; text-decoration: none; margin: 0 10px;">📸 Instagram</a>
               <a href="https://facebook.com/casapinon" style="color: #8B4513; text-decoration: none; margin: 0 10px;">📘 Facebook</a>
-              <a href="https://wa.me/573001234567" style="color: #8B4513; text-decoration: none; margin: 0 10px;">💬 WhatsApp</a>
+              <a href="https://wa.me/573014664444" style="color: #8B4513; text-decoration: none; margin: 0 10px;">💬 WhatsApp</a>
             </div>
             <p style="margin: 5px 0; font-size: 11px;">
               Este email fue enviado a ${customerEmail}. 
-              <a href="#" style="color: #8B4513;">Cancelar suscripción</a> | 
-              <a href="#" style="color: #8B4513;">Ver en navegador</a>
+              <a href="${unsubscribeUrl}" style="color: #8B4513;">Cancelar suscripción</a> | 
+              <a href="${browserViewUrl}" style="color: #8B4513;">Ver en navegador</a>
             </p>
           </div>
         </div>
       </div>
-    `
+    `,
+    text: `Casa Piñón Ebanistería\n\n${statusContent.title} - Pedido #${orderNumber}\n${statusContent.subtitle}\n\nHola ${customerName},\n${statusContent.message}\n\nDetalles del Pedido\nNúmero: ${orderNumber}\nFecha: ${orderDate}\nEstado del pago: ${statusContent.statusText}\n\nProductos:\n${itemsList}\n\nTotal: ${total}\n\nPago\nID: ${paymentId}\nMétodo: ${paymentMethod}\nFecha: ${paymentDate}\nMonto: ${paymentAmount}\n\nEntrega\nNombre: ${customerName}\nEmail: ${customerEmail}\nTeléfono: ${customerPhone}\nDirección: ${customerAddress}\nZona: ${shippingZone}\nEntrega Estimada: ${estimatedDelivery}\n\nVerificar estado del pago: ${paymentStatusLink}\nContacto WhatsApp: https://wa.me/573014664444\nEmail: info@casapinon.co\n\nCancelar suscripción: ${unsubscribeUrl}\nVer en navegador: ${browserViewUrl}`
   };
 };
 
@@ -589,7 +589,20 @@ const sendOrderConfirmation = async (order, customerInfo) => {
       from: `"Casa Piñón" <${process.env.EMAIL_USER || 'pagos@casapinon.co'}>`,
       to: customerInfo.email,
       subject: emailContent.subject,
-      html: emailContent.html
+      html: emailContent.html,
+      text: emailContent.text,
+      replyTo: 'info@casapinon.co',
+      headers: {
+        'List-Unsubscribe': `<mailto:unsubscribe@casapinon.co?subject=unsubscribe>, <${FRONTEND_URL}/unsubscribe?email=${encodeURIComponent(customerInfo.email || '')}>`,
+        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click'
+      },
+      attachments: [
+        {
+          filename: 'logo.png',
+          path: `${FRONTEND_URL}/logo.png`,
+          cid: 'logo@casapinon'
+        }
+      ]
     };
 
     const result = await transporter.sendMail(mailOptions);
@@ -615,7 +628,20 @@ const sendPaymentStatusEmail = async (order, customerInfo, paymentDetails, payme
       from: `"Casa Piñón" <${process.env.EMAIL_USER || 'pagos@casapinon.co'}>`,
       to: customerInfo.email,
       subject: emailContent.subject,
-      html: emailContent.html
+      html: emailContent.html,
+      text: emailContent.text,
+      replyTo: 'info@casapinon.co',
+      headers: {
+        'List-Unsubscribe': `<mailto:unsubscribe@casapinon.co?subject=unsubscribe>, <${FRONTEND_URL}/unsubscribe?email=${encodeURIComponent(customerInfo.email || '')}>`,
+        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click'
+      },
+      attachments: [
+        {
+          filename: 'logo.png',
+          path: `${FRONTEND_URL}/logo.png`,
+          cid: 'logo@casapinon'
+        }
+      ]
     };
 
     const result = await transporter.sendMail(mailOptions);

@@ -928,6 +928,9 @@ app.get('/api/mercadopago/payment-methods', async (req, res) => {
 
 // 5. Test endpoint
 app.get('/api/mercadopago/test', (req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(404).json({ success: false, error: 'Not found' });
+  }
   res.json({
     success: true,
     message: 'MercadoPago API is working',
@@ -935,8 +938,11 @@ app.get('/api/mercadopago/test', (req, res) => {
   });
 });
 
-// 5.1. Email test endpoint
+// 5.1. Email test endpoint (disabled in production)
 app.get('/api/test-email', async (req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(404).json({ success: false, error: 'Not found' });
+  }
   try {
     const testOrder = {
       orderNumber: 'TEST-123',
@@ -979,8 +985,11 @@ app.get('/api/test-email', async (req, res) => {
   }
 });
 
-// 5.2. Orders status check endpoint
+// 5.2. Orders status check endpoint (disabled in production)
 app.get('/api/orders-status-check', async (req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(404).json({ success: false, error: 'Not found' });
+  }
   try {
     console.log('🔍 Checking orders status...');
     
@@ -1104,8 +1113,11 @@ app.get('/api/orders-status-check', async (req, res) => {
   }
 });
 
-// 5.3. Manual cleanup trigger endpoint
+// 5.3. Manual cleanup trigger endpoint (disabled in production)
 app.post('/api/trigger-cleanup', async (req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(404).json({ success: false, error: 'Not found' });
+  }
   try {
     console.log('🧹 Manual cleanup triggered...');
     
@@ -1129,6 +1141,9 @@ app.post('/api/trigger-cleanup', async (req, res) => {
 
 // 6. Webhook test endpoint
 app.get('/api/mercadopago/webhook-test', (req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(404).json({ success: false, error: 'Not found' });
+  }
   res.json({
     success: true,
     message: 'Webhook endpoint is accessible',
@@ -2192,6 +2207,9 @@ app.use('/images', express.static(path.join(__dirname, '..', 'public', 'images')
 
 // Test endpoint to check if images are accessible
 app.get('/api/test-images', (req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(404).json({ success: false, error: 'Not found' });
+  }
   const fs = require('fs');
   const imagePath = path.join(__dirname, 'public', 'images', 'products', 'product-1.webp');
   const fallbackPath = path.join(__dirname, '..', 'public', 'images', 'products', 'product-1.webp');
@@ -2550,6 +2568,9 @@ app.post('/api/products/initialize', async (req, res) => {
 
 // TEST ENDPOINT - Check database connection and products
 app.get('/api/products/test', async (req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(404).json({ success: false, error: 'Not found' });
+  }
   try {
     console.log('🧪 Testing products endpoint...');
     
@@ -2693,6 +2714,9 @@ async function startServer() {
 
 // Test endpoint to verify email service is working
 app.post('/api/test-email', express.json(), async (req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(404).json({ success: false, error: 'Not found' });
+  }
   try {
     const { email } = req.body;
     
@@ -2767,18 +2791,19 @@ app.post('/api/test-email', express.json(), async (req, res) => {
 app.post('/api/test-success-email', express.json(), async (req, res) => {
   try {
     console.log('🧪 Testing successful payment email...');
+    const { email } = req.body || {};
     
     // Test with minimal data for successful payment
     const testOrder = {
       id: 'test-success',
       orderNumber: 'TEST-SUCCESS-123',
       total: 5000,
-      customer: { name: 'Test User', email: 'test@test.com' }
+      customer: { name: 'Test User', email: email || 'test@test.com' }
     };
     
     const testCustomerInfo = {
       name: 'Test User',
-      email: 'pagos@casapinon.co', // Use your Zoho email for testing
+      email: email || 'pagos@casapinon.co',
       phone: '3001234567',
       address: { city: 'Test City' }
     };

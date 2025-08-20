@@ -247,7 +247,16 @@ const ProductDetail = () => {
                     <Star className="w-5 h-5 fill-current text-yellow-400" />
                     <Star className="w-5 h-5 fill-current text-yellow-400" />
                     <Star className="w-5 h-5 fill-current text-yellow-400" />
-                    <span className="text-sm text-brown-600 ml-2">4.9 (24 reseñas)</span>
+                    {(() => {
+                      const idNum = parseInt(String(product.id).replace(/\D/g, '')) || 1
+                      const base = 4.7
+                      const delta = (idNum % 30) / 100
+                      const rating = Math.min(5, base + delta)
+                      const reviews = 18 + (idNum % 20) // 18-37
+                      return (
+                        <span className="text-sm text-brown-600 ml-2">{rating.toFixed(2)} ({reviews} reseñas)</span>
+                      )
+                    })()}
                   </div>
                   {product.isCustom && (
                     <span className="bg-purple-600 text-white text-xs px-2 py-1 rounded-full">

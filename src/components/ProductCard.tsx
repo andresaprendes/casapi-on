@@ -169,7 +169,16 @@ const ProductCard = ({ product }: ProductCardProps) => {
           </div>
           <div className="flex items-center space-x-1">
             <Star className="w-4 h-4 fill-current text-yellow-400" />
-            <span className="text-sm font-medium text-brown-700">4.9</span>
+            {(() => {
+              // Stable per-product rating between 4.7 and 5.0
+              const idNum = parseInt(String(product.id).replace(/\D/g, '')) || 1
+              const base = 4.7
+              const delta = (idNum % 30) / 100 // 0.00 - 0.29
+              const rating = Math.min(5, base + delta)
+              return (
+                <span className="text-sm font-medium text-brown-700">{rating.toFixed(2)}</span>
+              )
+            })()}
           </div>
         </div>
 
