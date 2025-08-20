@@ -20,6 +20,7 @@ import AdminDatabase from './pages/AdminDatabase'
 import AdminLogin from './pages/AdminLogin'
 import ProtectedRoute from './components/ProtectedRoute'
 import ScrollToTop from './components/ScrollToTop'
+import Analytics from './components/Analytics'
 import { CartProvider } from './store/CartContext'
 import { AuthProvider } from './store/AuthContext'
 
@@ -36,6 +37,7 @@ function App() {
         <Header />
         <CartSidebar />
         <ScrollToTop />
+        <Analytics />
         
         <main className="flex-grow">
           <Routes>
