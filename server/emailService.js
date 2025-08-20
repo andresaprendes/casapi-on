@@ -188,7 +188,7 @@ const formatCurrency = (amount) => {
 };
 
 // URLs
-const FRONTEND_URL = process.env.BASE_URL || 'https://xn--casapion-i3a.co';
+const FRONTEND_URL = process.env.BASE_URL || 'https://casapinon.co';
 
 // Email templates
 const createOrderConfirmationEmail = (order, customerInfo) => {

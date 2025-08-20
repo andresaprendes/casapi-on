@@ -111,6 +111,9 @@ const CheckoutSuccess: React.FC = () => {
             ¡Pago Exitoso!
           </h1>
           <p className="text-lg text-brown-700">
+            Gracias por tu compra{paymentDetails?.customerName ? `, ${paymentDetails.customerName}` : ''}.
+          </p>
+          <p className="text-lg text-brown-700">
             Tu orden ha sido confirmada y está siendo procesada
           </p>
         </div>

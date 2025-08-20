@@ -601,7 +601,7 @@ const client = new MercadoPagoConfig({
 });
 
 // Environment variables for URLs
-const BASE_URL = process.env.BASE_URL || 'https://xn--casapion-i3a.co';
+const BASE_URL = process.env.BASE_URL || 'https://casapinon.co';
 const API_URL = process.env.API_URL || 'https://casa-pinon-backend-production.up.railway.app';
 
 // Root endpoint to test if server is running
