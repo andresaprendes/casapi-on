@@ -42,14 +42,33 @@ const CheckoutSuccess: React.FC = () => {
       const result = await response.json();
 
       if (result.success) {
-        const orderData = result.order || result.payment;
+        const order = result.order;
+        const payment = result.payment;
+
+        const emailFromOrder = order?.customer?.email
+          || order?.customerEmail
+          || payment?.payerEmail
+          || null;
+
+        const nameFromOrder = order?.customer?.name
+          || order?.customerName
+          || null;
+
+        let fallbackEmail: string | null = null;
+        let fallbackName: string | null = null;
+        try {
+          const ls = JSON.parse(localStorage.getItem('checkout_customer_info') || 'null');
+          fallbackEmail = ls?.email || null;
+          fallbackName = ls?.name || null;
+        } catch {}
+
         setPaymentDetails({
-          paymentId: paymentId || orderData?.payment_id,
-          externalReference: externalReference || orderData?.external_reference,
-          amount: orderData?.amount || orderData?.total,
-          orderNumber: orderData?.orderNumber || orderData?.external_reference,
-          customerEmail: orderData?.customerEmail,
-          customerName: orderData?.customerName
+          paymentId: paymentId || order?.payment_id || payment?.id,
+          externalReference: externalReference || order?.external_reference || payment?.externalReference,
+          amount: order?.amount || order?.total || payment?.transactionAmount,
+          orderNumber: order?.orderNumber || order?.external_reference || payment?.externalReference,
+          customerEmail: emailFromOrder || fallbackEmail || undefined,
+          customerName: nameFromOrder || fallbackName || undefined
         });
       } else {
         setError('No se pudo verificar el pago');
@@ -116,6 +135,13 @@ const CheckoutSuccess: React.FC = () => {
           <p className="text-lg text-brown-700">
             Tu orden ha sido confirmada y está siendo procesada
           </p>
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-6 text-left">
+            <p className="text-yellow-900">
+              Enviaremos la confirmación a
+              <span className="font-semibold"> {paymentDetails?.customerEmail || 'tu correo'} </span>.
+              Revisa tu carpeta de SPAM/Correo no deseado y marca nuestro correo como seguro.
+            </p>
+          </div>
         </div>
 
         {/* Order Details Card */}
@@ -138,6 +164,11 @@ const CheckoutSuccess: React.FC = () => {
               <p className="font-semibold text-brown-900 text-lg">
                 {paymentDetails?.amount ? formatPrice(paymentDetails.amount) : 'N/A'}
               </p>
+            </div>
+            
+            <div>
+              <p className="text-sm text-brown-600 mb-1">Email</p>
+              <p className="font-semibold text-brown-900 break-all">{paymentDetails?.customerEmail || 'N/A'}</p>
             </div>
             
             <div>
