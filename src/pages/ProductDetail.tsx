@@ -348,7 +348,7 @@ const ProductDetail = () => {
                 <div>
                   <h3 className="text-lg font-semibold text-brown-900 mb-2">Tamaño</h3>
                   <div role="radiogroup" className="flex flex-wrap gap-2">
-                    {product.sizeOptions.map((s, i) => {
+                    {product.sizeOptions.map((s) => {
                       const label = (s.label || '').trim()
                       const dims = s.dimensions || { length: 0, width: 0, height: 0 }
                       const display = label || `${dims.length}×${dims.width}×${dims.height} cm`
