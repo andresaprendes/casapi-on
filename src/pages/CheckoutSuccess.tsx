@@ -11,6 +11,15 @@ interface PaymentDetails {
   customerName?: string;
 }
 
+declare global {
+  interface Window {
+    gtag?: (...args: unknown[]) => void;
+  }
+}
+
+const ADS_CONVERSION_ID = 'AW-17417625713';
+const ADS_CONVERSION_LABEL = 'p6L7CLvQ4YkBEPhAF_A';
+
 const CheckoutSuccess: React.FC = () => {
   const [searchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(true);
@@ -80,6 +89,24 @@ const CheckoutSuccess: React.FC = () => {
       setIsLoading(false);
     }
   };
+
+  // Fire Google Ads conversion once per successful order
+  useEffect(() => {
+    if (!paymentDetails || !window.gtag) return;
+    const transactionId = paymentDetails.orderNumber || paymentDetails.externalReference || paymentDetails.paymentId;
+    if (!transactionId) return;
+
+    const sentKey = `ads_conv_sent_${transactionId}`;
+    if (localStorage.getItem(sentKey) === '1') return;
+
+    window.gtag('event', 'conversion', {
+      send_to: `${ADS_CONVERSION_ID}/${ADS_CONVERSION_LABEL}`,
+      value: paymentDetails.amount || 0,
+      currency: 'COP',
+      transaction_id: transactionId,
+    });
+    localStorage.setItem(sentKey, '1');
+  }, [paymentDetails]);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('es-CO', {
