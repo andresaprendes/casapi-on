@@ -173,21 +173,27 @@ const ProductDetail = () => {
                   <>
                     <img
                       src={getImageUrl(product.images[selectedImageIndex])}
-                      alt={product.name}
+                      alt={`${product.name} – Variación ${selectedImageIndex + 1} de ${product.images.length}`}
                       className="w-full h-full object-cover"
                     />
+                    {/* Variation badge */}
+                    <div className="absolute top-3 left-3 bg-white/85 text-brown-800 text-xs px-2 py-1 rounded-full shadow">
+                      Variación {selectedImageIndex + 1}/{product.images.length}
+                    </div>
                     
                     {/* Navigation Arrows */}
                     {product.images.length > 1 && (
                       <>
                         <button
                           onClick={prevImage}
+                          aria-label="Ver variación anterior"
                           className="absolute left-4 top-1/2 transform -translate-y-1/2 w-10 h-10 bg-white bg-opacity-80 rounded-full flex items-center justify-center text-brown-800 hover:bg-opacity-100 transition-all duration-200"
                         >
                           <ChevronLeft className="w-6 h-6" />
                         </button>
                         <button
                           onClick={nextImage}
+                          aria-label="Ver siguiente variación"
                           className="absolute right-4 top-1/2 transform -translate-y-1/2 w-10 h-10 bg-white bg-opacity-80 rounded-full flex items-center justify-center text-brown-800 hover:bg-opacity-100 transition-all duration-200"
                         >
                           <ChevronRight className="w-6 h-6" />
@@ -207,11 +213,14 @@ const ProductDetail = () => {
 
               {/* Thumbnail Images */}
               {product.images && product.images.length > 1 && (
-                <div className="flex space-x-2 overflow-x-auto">
+                <div className="flex flex-col gap-2">
+                  <div className="text-xs text-brown-600">Estas imágenes representan variaciones del mismo producto.</div>
+                  <div className="flex space-x-2 overflow-x-auto">
                   {product.images.map((image, index) => (
                     <button
                       key={index}
                       onClick={() => setSelectedImageIndex(index)}
+                      aria-label={`Ver variación ${index + 1}`}
                       className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all duration-200 ${
                         index === selectedImageIndex 
                           ? 'border-brown-600' 
@@ -220,11 +229,12 @@ const ProductDetail = () => {
                     >
                       <img
                         src={getImageUrl(image)}
-                        alt={`${product.name} ${index + 1}`}
+                        alt={`${product.name} – Variación ${index + 1}`}
                         className="w-full h-full object-cover"
                       />
                     </button>
                   ))}
+                  </div>
                 </div>
               )}
             </motion.div>

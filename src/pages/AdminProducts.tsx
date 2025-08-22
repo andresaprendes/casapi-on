@@ -584,18 +584,7 @@ const AdminProducts = () => {
                         </div>
                       </div>
 
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Variaciones de Diseño
-                        </label>
-                        <textarea
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brown-500 focus:border-transparent"
-                          rows={3}
-                          placeholder="Describe las posibles variaciones en el diseño..."
-                          value={formData.designVariations}
-                          onChange={(e) => setFormData(prev => ({ ...prev, designVariations: e.target.value }))}
-                        />
-                      </div>
+                      {/* Removed open design variations field - variations are represented by product images */}
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
