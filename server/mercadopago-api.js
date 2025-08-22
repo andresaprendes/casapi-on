@@ -2350,9 +2350,21 @@ app.post('/api/products', express.json(), async (req, res) => {
     
     console.log('✅ Product created:', newProduct.id);
     
+    // Transform database fields to match frontend expectations (consistent with GET/PUT)
+    const transformedProduct = {
+      ...newProduct,
+      woodType: newProduct.wood_type || newProduct.woodType,
+      estimatedDelivery: newProduct.estimated_delivery || newProduct.estimatedDelivery,
+      designVariations: newProduct.design_variations || newProduct.designVariations,
+      isCustom: newProduct.is_custom || newProduct.isCustom,
+      sizeOptions: newProduct.size_options || newProduct.sizeOptions,
+      createdAt: newProduct.created_at || newProduct.createdAt,
+      updatedAt: newProduct.updated_at || newProduct.updatedAt
+    };
+    
     res.json({
       success: true,
-      product: newProduct
+      product: transformedProduct
     });
   } catch (error) {
     console.error('Error creating product:', error);
