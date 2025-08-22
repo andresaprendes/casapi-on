@@ -106,6 +106,17 @@ const CheckoutSuccess: React.FC = () => {
       transaction_id: transactionId,
     });
     localStorage.setItem(sentKey, '1');
+
+    // Also send GA4 purchase event (deduped)
+    const ga4Key = `ga4_purchase_sent_${transactionId}`;
+    if (localStorage.getItem(ga4Key) !== '1') {
+      window.gtag('event', 'purchase', {
+        transaction_id: transactionId,
+        value: paymentDetails.amount || 0,
+        currency: 'COP',
+      });
+      localStorage.setItem(ga4Key, '1');
+    }
   }, [paymentDetails]);
 
   const formatPrice = (price: number) => {
