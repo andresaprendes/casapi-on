@@ -359,7 +359,7 @@ const ProductDetail = () => {
                           role="radio"
                           aria-checked={selected}
                           onClick={() => setSelectedSizeId(s.id)}
-                          className={`px-4 py-2 rounded-full border text-sm transition-colors whitespace-normal ${selected ? 'bg-brown-600 text-white border-brown-600' : 'border-brown-300 text-brown-800 hover:bg-cream-200'}`}
+                          className={`px-4 py-2 rounded-full border text-sm transition-colors whitespace-normal break-words max-w-full text-left ${selected ? 'bg-brown-600 text-white border-brown-600' : 'border-brown-300 text-brown-800 hover:bg-cream-200'}`}
                           title={display}
                         >
                           {display}
