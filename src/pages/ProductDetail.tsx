@@ -350,8 +350,8 @@ const ProductDetail = () => {
                   <div role="radiogroup" className="flex flex-wrap gap-2">
                     {product.sizeOptions.map((s, i) => {
                       const label = (s.label || '').trim()
-                      const cleaned = label.replace(/\s*\d[\s\S]*$/, '').trim()
-                      const display = cleaned || (label ? label : `Opción ${i + 1}`)
+                      const dims = s.dimensions || { length: 0, width: 0, height: 0 }
+                      const display = label || `${dims.length}×${dims.width}×${dims.height} cm`
                       const selected = (selectedSizeId || product.sizeOptions![0].id) === s.id
                       return (
                         <button
@@ -359,7 +359,8 @@ const ProductDetail = () => {
                           role="radio"
                           aria-checked={selected}
                           onClick={() => setSelectedSizeId(s.id)}
-                          className={`px-4 py-2 rounded-full border text-sm transition-colors ${selected ? 'bg-brown-600 text-white border-brown-600' : 'border-brown-300 text-brown-800 hover:bg-cream-200'}`}
+                          className={`px-4 py-2 rounded-full border text-sm transition-colors whitespace-normal ${selected ? 'bg-brown-600 text-white border-brown-600' : 'border-brown-300 text-brown-800 hover:bg-cream-200'}`}
+                          title={display}
                         >
                           {display}
                         </button>
