@@ -665,9 +665,10 @@ app.post('/api/mercadopago/create-preference', async (req, res) => {
       ],
       external_reference: orderId,
       back_urls: {
-        success: `${BASE_URL}/checkout/success?payment_id={payment_id}&status={status}&collection_id={collection_id}&external_reference=${orderId}`,
-        failure: `${BASE_URL}/checkout/failure?payment_id={payment_id}&status={status}&collection_id={collection_id}&external_reference=${orderId}`,
-        pending: `${BASE_URL}/checkout/pending?payment_id={payment_id}&status={status}&collection_id={collection_id}&external_reference=${orderId}`
+        // Avoid MercadoPago template placeholders; MP appends real params automatically
+        success: `${BASE_URL}/checkout/success?external_reference=${orderId}`,
+        failure: `${BASE_URL}/checkout/failure?external_reference=${orderId}`,
+        pending: `${BASE_URL}/checkout/pending?external_reference=${orderId}`
       },
       auto_return: 'all'
     };
@@ -679,8 +680,7 @@ app.post('/api/mercadopago/create-preference', async (req, res) => {
       customerName,
       description,
       BASE_URL,
-      API_URL,
-      success_url: `${BASE_URL}/checkout/success?payment_id={payment_id}&status={status}&external_reference={external_reference}`
+      API_URL
     });
 
     console.log('MercadoPago Access Token:', MERCADOPAGO_ACCESS_TOKEN ? 'SET' : 'NOT SET');

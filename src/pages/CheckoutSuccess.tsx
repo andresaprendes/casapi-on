@@ -20,14 +20,25 @@ declare global {
 const ADS_CONVERSION_ID = 'AW-17417625713';
 const ADS_CONVERSION_LABEL = 'p6L7CLvQ4YkBEPhAF_A';
 
+// Sanitize query params that may contain MercadoPago placeholders like {payment_id}
+const sanitizeQueryParam = (value: string | null, key: string): string | null => {
+  if (!value) return null;
+  let decoded = value;
+  try { decoded = decodeURIComponent(value); } catch {}
+  const placeholders = new Set([`{${key}}`, `%7B${key}%7D`, 'null', 'undefined']);
+  if (placeholders.has(decoded)) return null;
+  if (/^\{.*\}$/.test(decoded)) return null; // any other encoded placeholder
+  return decoded;
+};
+
 const CheckoutSuccess: React.FC = () => {
   const [searchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(true);
   const [paymentDetails, setPaymentDetails] = useState<PaymentDetails | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const paymentId = searchParams.get('payment_id');
-  const externalReference = searchParams.get('external_reference');
+  const paymentId = sanitizeQueryParam(searchParams.get('payment_id'), 'payment_id');
+  const externalReference = sanitizeQueryParam(searchParams.get('external_reference'), 'external_reference');
 
   useEffect(() => {
     verifyPayment();
